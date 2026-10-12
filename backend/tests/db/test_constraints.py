@@ -39,6 +39,21 @@ def assessment_params(**overrides: Any) -> dict[str, Any]:
     return params | overrides
 
 
+def test_audit_log_accepts_every_known_action_and_rejects_others(
+    db_conn: Connection, expect_rejected: Callable[..., None]
+) -> None:
+    insert = "INSERT INTO audit_logs (user_id, action) VALUES (1, :action)"
+    for action in (
+        "view_class_students",
+        "view_student_profile",
+        "view_class_dashboard",
+        "view_subject_scores",
+    ):
+        db_conn.execute(text(insert), {"action": action})
+
+    expect_rejected(insert, action="xem_het_truong")
+
+
 def test_valid_assessment_is_accepted(db_conn: Connection) -> None:
     db_conn.execute(text(ASSESSMENT), assessment_params())
     db_conn.execute(text(ASSESSMENT), assessment_params(seq=51, score=10))

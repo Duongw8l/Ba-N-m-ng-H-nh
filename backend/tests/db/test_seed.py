@@ -84,7 +84,7 @@ def test_row_counts_match_the_default_parameters(db_conn: Connection) -> None:
     # Các bảng do giai đoạn sau sinh thì để trống.
     assert (counts["risk_alerts"], counts["reports"], counts["ai_logs"]) == (0, 0, 0)
     assert counts["regulation_chunks"] == 0
-    assert counts["settings"] == 12
+    assert counts["settings"] == 13
 
 
 def test_every_student_subject_pair_has_all_scores_by_hand_table(db_conn: Connection) -> None:

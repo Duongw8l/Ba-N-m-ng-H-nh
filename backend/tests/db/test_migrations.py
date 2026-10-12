@@ -43,6 +43,7 @@ EXPECTED_SETTING_KEYS = {
     "score_threshold_good",
     "level_min_subjects",
     "regular_assessment_count",
+    "level_single_subject_adjustment",
 }
 VIEW_COLUMNS = [
     "class_student_id",
@@ -101,6 +102,7 @@ def test_default_settings_are_loaded_by_migration(db_conn: Connection) -> None:
     assert Decimal(str(values["score_threshold_fair"])) == Decimal("6.5")
     assert Decimal(str(values["score_threshold_good"])) == Decimal("8.0")
     assert values["level_min_subjects"] == 6
+    assert values["level_single_subject_adjustment"] is True
     assert values["regular_assessment_count"] == [
         {"max_periods": 35, "count": 2},
         {"max_periods": 70, "count": 3},

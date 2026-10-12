@@ -1,0 +1,327 @@
+{
+  "version": 1,
+  "about": "30 ca Analytics theo Thông tư 22, mỗi ca có đầu vào, kết quả mong đợi và lời giải tính tay trong 'note' (D-047 đến D-051). Điểm viết bằng chuỗi để giữ đúng giá trị thập phân. Cấu hình: hệ số giữa kỳ 2, cuối kỳ 3, HK2 trong cả năm 2; ngưỡng 3,5 / 5,0 / 6,5 / 8,0; 6 môn; nghỉ tối đa 45; bật điều chỉnh mức. Môn điểm số đánh số id từ 1, môn nhận xét từ 101.",
+  "semester_average": [
+    {
+      "id": "S01",
+      "title": "Ví dụ của PROMPTS, môn 105 tiết",
+      "tx": ["8", "7", "9", "6"],
+      "midterm": "7",
+      "final": "8",
+      "expected": "7.6",
+      "note": "(8+7+9+6 + 2×7 + 3×8) / (4+5) = (30+14+24)/9 = 68/9 = 7,5556 -> 7,6"
+    },
+    {
+      "id": "S02",
+      "title": "Đúng nửa: làm tròn nửa lên, không làm tròn kiểu ngân hàng",
+      "tx": ["6", "6", "6"],
+      "midterm": "7",
+      "final": "6",
+      "expected": "6.3",
+      "note": "(18 + 2×7 + 3×6) / (3+5) = (18+14+18)/8 = 50/8 = 6,25 -> 6,3"
+    },
+    {
+      "id": "S03",
+      "title": "Môn 35 tiết, 2 đầu điểm thường xuyên",
+      "tx": ["5", "6"],
+      "midterm": "4",
+      "final": "7",
+      "expected": "5.7",
+      "note": "(11 + 2×4 + 3×7) / (2+5) = (11+8+21)/7 = 40/7 = 5,714 -> 5,7"
+    },
+    {
+      "id": "S04",
+      "title": "Chưa có đầu điểm thường xuyên nào",
+      "tx": [],
+      "midterm": "8",
+      "final": "6",
+      "expected": "6.8",
+      "note": "(0 + 2×8 + 3×6) / (0+5) = 34/5 = 6,8"
+    },
+    {
+      "id": "S05",
+      "title": "Đúng nửa ở mức 3,5: làm tròn lên thành 3,5",
+      "tx": ["3.4", "3.4", "3.5"],
+      "midterm": "3.4",
+      "final": "3.5",
+      "expected": "3.5",
+      "note": "(3,4+3,4+3,5 + 2×3,4 + 3×3,5) / 8 = (10,3+6,8+10,5)/8 = 27,6/8 = 3,45 -> 3,5"
+    },
+    {
+      "id": "S06",
+      "title": "Ngay dưới nửa ở mức 3,5: làm tròn xuống thành 3,4",
+      "tx": ["3.4", "3.4", "3.4"],
+      "midterm": "3.4",
+      "final": "3.5",
+      "expected": "3.4",
+      "note": "(3,4×3 + 2×3,4 + 3×3,5) / 8 = (10,2+6,8+10,5)/8 = 27,5/8 = 3,4375 -> 3,4"
+    },
+    {
+      "id": "S07",
+      "title": "Điểm cuối kỳ cao kéo trung bình lên",
+      "tx": ["9", "8", "7"],
+      "midterm": "6",
+      "final": "10",
+      "expected": "8.3",
+      "note": "(24 + 2×6 + 3×10) / (3+5) = (24+12+30)/8 = 66/8 = 8,25 -> 8,3"
+    }
+  ],
+  "year_average": [
+    {
+      "id": "Y01",
+      "title": "Cả năm từ hai ĐTBmhk",
+      "semester1": "6.5",
+      "semester2": "7.0",
+      "expected": "6.8",
+      "note": "(6,5 + 2×7,0) / 3 = 20,5/3 = 6,8333 -> 6,8"
+    },
+    {
+      "id": "Y02",
+      "title": "Học kỳ II cao hơn nhiều",
+      "semester1": "5.0",
+      "semester2": "9.0",
+      "expected": "7.7",
+      "note": "(5,0 + 2×9,0) / 3 = 23/3 = 7,6667 -> 7,7"
+    },
+    {
+      "id": "Y03",
+      "title": "Dùng ĐTBmhk đã làm tròn (6,14 -> 6,1 và 6,04 -> 6,0)",
+      "semester1": "6.1",
+      "semester2": "6.0",
+      "expected": "6.0",
+      "note": "(6,1 + 2×6,0) / 3 = 18,1/3 = 6,0333 -> 6,0 (nếu dùng số chưa làm tròn: (6,14+12,08)/3 = 6,0733 -> 6,1)"
+    }
+  ],
+  "learning_level": [
+    {
+      "id": "L01",
+      "title": "Tốt: đúng 6 môn từ 8,0, mọi môn từ 6,5",
+      "scores": ["8.0", "8.0", "8.0", "8.0", "8.0", "8.0", "6.5", "6.5"],
+      "comments": ["pass", "pass"],
+      "expected_level": "good",
+      "expected_base_level": "good",
+      "expected_adjusted": false,
+      "note": "mọi môn nhận xét Đạt; mọi môn >= 6,5; số môn >= 8,0 là 6 (đủ 6) -> Tốt"
+    },
+    {
+      "id": "L02",
+      "title": "Khá: chỉ 5 môn từ 8,0 nên không Tốt",
+      "scores": ["8.0", "8.0", "8.0", "8.0", "8.0", "6.5", "6.5", "6.5"],
+      "comments": ["pass"],
+      "expected_level": "fair",
+      "expected_base_level": "fair",
+      "expected_adjusted": false,
+      "note": "số môn >= 8,0 là 5 (< 6) -> không Tốt; mọi môn >= 5,0 và 8 môn >= 6,5 -> Khá"
+    },
+    {
+      "id": "L03",
+      "title": "Khá: tám môn đúng 6,5",
+      "scores": ["6.5", "6.5", "6.5", "6.5", "6.5", "6.5", "6.5", "6.5"],
+      "comments": [],
+      "expected_level": "fair",
+      "expected_base_level": "fair",
+      "expected_adjusted": false,
+      "note": "không môn nào >= 8,0 nên không Tốt; mọi môn >= 5,0 và 8 môn >= 6,5 -> Khá"
+    },
+    {
+      "id": "L04",
+      "title": "Khá: đúng 6 môn từ 6,5 và hai môn đúng 5,0",
+      "scores": ["6.5", "6.5", "6.5", "6.5", "6.5", "6.5", "5.0", "5.0"],
+      "comments": ["pass"],
+      "expected_level": "fair",
+      "expected_base_level": "fair",
+      "expected_adjusted": false,
+      "note": "mọi môn >= 5,0 (đúng 5,0 vẫn đạt); số môn >= 6,5 là 6 (đủ 6) -> Khá"
+    },
+    {
+      "id": "L05",
+      "title": "Đạt: chỉ 5 môn từ 6,5 nên không Khá",
+      "scores": ["6.5", "6.5", "6.5", "6.5", "6.5", "5.0", "5.0", "5.0"],
+      "comments": [],
+      "expected_level": "pass",
+      "expected_base_level": "pass",
+      "expected_adjusted": false,
+      "note": "số môn >= 6,5 là 5 (< 6) -> không Khá; 8 môn >= 5,0, không môn dưới 3,5 -> Đạt. Bỏ riêng một môn cũng không làm đủ 6 môn nên không nâng"
+    },
+    {
+      "id": "L06",
+      "title": "Đạt: một môn đúng 3,5 (không dưới 3,5)",
+      "scores": ["6.0", "6.0", "6.0", "6.0", "6.0", "6.0", "6.0", "6.0", "3.5"],
+      "comments": [],
+      "expected_level": "pass",
+      "expected_base_level": "pass",
+      "expected_adjusted": false,
+      "note": "8 môn >= 5,0 (đủ 6); môn thấp nhất 3,5 không dưới 3,5 -> Đạt. Không môn nào >= 6,5 nên bỏ môn 3,5 cũng chỉ ra Đạt, không nâng"
+    },
+    {
+      "id": "L07",
+      "title": "Chưa đạt: một môn 3,4 (dưới 3,5), các môn còn lại chỉ 6,0",
+      "scores": ["6.0", "6.0", "6.0", "6.0", "6.0", "6.0", "6.0", "6.0", "3.4"],
+      "comments": [],
+      "expected_level": "fail",
+      "expected_base_level": "fail",
+      "expected_adjusted": false,
+      "note": "có môn 3,4 < 3,5 -> không Đạt -> Chưa đạt. Bỏ riêng môn 3,4 thì ra Đạt (hơn Chưa đạt 1 mức) nên không đủ 2 mức để nâng"
+    },
+    {
+      "id": "L08",
+      "title": "Đạt: một môn nhận xét Chưa đạt",
+      "scores": ["6.0", "6.0", "6.0", "6.0", "6.0", "6.0", "6.0", "6.0"],
+      "comments": ["pass", "fail"],
+      "expected_level": "pass",
+      "expected_base_level": "pass",
+      "expected_adjusted": false,
+      "note": "nhiều nhất 1 môn nhận xét Chưa đạt (có 1); 8 môn >= 5,0 -> Đạt"
+    },
+    {
+      "id": "L09",
+      "title": "Chưa đạt: hai môn nhận xét Chưa đạt",
+      "scores": ["6.0", "6.0", "6.0", "6.0", "6.0", "6.0", "6.0", "6.0"],
+      "comments": ["fail", "fail"],
+      "expected_level": "fail",
+      "expected_base_level": "fail",
+      "expected_adjusted": false,
+      "note": "2 môn nhận xét Chưa đạt (> 1) -> Chưa đạt. Bỏ riêng một môn thì còn 1 môn Chưa đạt, ra Đạt (hơn 1 mức) nên không nâng"
+    },
+    {
+      "id": "L10",
+      "title": "Điều chỉnh: tụt từ Tốt xuống Đạt chỉ do một môn 4,0, được nâng lên Khá",
+      "scores": ["8.5", "8.5", "8.5", "8.5", "8.5", "8.5", "8.5", "8.5", "4.0"],
+      "comments": [],
+      "expected_level": "fair",
+      "expected_base_level": "pass",
+      "expected_adjusted": true,
+      "note": "gốc: môn 4,0 < 5,0 nên không Tốt, không Khá; 8 môn >= 5,0 -> Đạt. Bỏ riêng môn 4,0: 8 môn 8,5 -> Tốt, hơn Đạt 2 mức -> nâng 1 mức: Khá"
+    },
+    {
+      "id": "L11",
+      "title": "Điều chỉnh: tụt từ Tốt xuống Chưa đạt chỉ do một môn 3,0, được nâng lên Đạt",
+      "scores": ["8.5", "8.5", "8.5", "8.5", "8.5", "8.5", "8.5", "8.5", "3.0"],
+      "comments": [],
+      "expected_level": "pass",
+      "expected_base_level": "fail",
+      "expected_adjusted": true,
+      "note": "gốc: môn 3,0 < 3,5 -> Chưa đạt. Bỏ riêng môn 3,0 là Tốt, hơn Chưa đạt 3 mức -> nâng 1 mức: Đạt (không nhảy thẳng lên Tốt)"
+    },
+    {
+      "id": "L12",
+      "title": "Không điều chỉnh: hai môn yếu (4,0 và 4,5)",
+      "scores": ["8.5", "8.5", "8.5", "8.5", "8.5", "8.5", "4.0", "4.5"],
+      "comments": [],
+      "expected_level": "pass",
+      "expected_base_level": "pass",
+      "expected_adjusted": false,
+      "note": "gốc: 6 môn 8,5 >= 5,0 (đủ 6), không môn dưới 3,5 -> Đạt. Bỏ riêng môn 4,0 thì môn 4,5 vẫn chặn Tốt và Khá (4,5 < 5,0); bỏ môn 4,5 thì môn 4,0 chặn -> không nâng"
+    }
+  ],
+  "promotion": [
+    {
+      "id": "P01",
+      "title": "Nghỉ đúng 45 buổi vẫn đủ điều kiện",
+      "scores": ["7.0", "7.0", "7.0", "7.0", "7.0", "7.0", "7.0", "7.0"],
+      "comments": [],
+      "conduct": "good",
+      "conduct_derived": false,
+      "absent": 45,
+      "expected_eligible": true,
+      "expected_reasons": [],
+      "expected_retake": [],
+      "note": "học tập: 8 môn 7,0 -> Khá (>= Đạt); rèn luyện Tốt; 45 <= 45 -> đủ"
+    },
+    {
+      "id": "P02",
+      "title": "Nghỉ 46 buổi: không đủ điều kiện",
+      "scores": ["7.0", "7.0", "7.0", "7.0", "7.0", "7.0", "7.0", "7.0"],
+      "comments": [],
+      "conduct": "good",
+      "conduct_derived": false,
+      "absent": 46,
+      "expected_eligible": false,
+      "expected_reasons": ["absent_over_limit"],
+      "expected_retake": [],
+      "note": "như P01 nhưng 46 > 45 -> không đủ vì nghỉ quá số buổi tối đa"
+    },
+    {
+      "id": "P03",
+      "title": "Học tập Đạt và rèn luyện Đạt là đủ",
+      "scores": ["6.0", "6.0", "6.0", "6.0", "6.0", "6.0", "6.0", "6.0"],
+      "comments": [],
+      "conduct": "pass",
+      "conduct_derived": false,
+      "absent": 0,
+      "expected_eligible": true,
+      "expected_reasons": [],
+      "expected_retake": [],
+      "note": "8 môn 6,0 -> Đạt; rèn luyện Đạt; không nghỉ -> đủ"
+    },
+    {
+      "id": "P04",
+      "title": "Rèn luyện cả năm Chưa đạt",
+      "scores": ["7.0", "7.0", "7.0", "7.0", "7.0", "7.0", "7.0", "7.0"],
+      "comments": [],
+      "conduct": "fail",
+      "conduct_derived": false,
+      "absent": 10,
+      "expected_eligible": false,
+      "expected_reasons": ["conduct_fail"],
+      "expected_retake": [],
+      "note": "học tập Khá nhưng rèn luyện Chưa đạt -> không đủ"
+    },
+    {
+      "id": "P05",
+      "title": "Học tập Chưa đạt, ba môn dưới 5,0 phải kiểm tra lại",
+      "scores": ["6.0", "6.0", "6.0", "6.0", "6.0", "4.9", "4.0", "3.0"],
+      "comments": [],
+      "conduct": "good",
+      "conduct_derived": false,
+      "absent": 5,
+      "expected_eligible": false,
+      "expected_reasons": ["learning_fail"],
+      "expected_retake": [
+        { "subject_id": 6, "reason": "below_pass" },
+        { "subject_id": 7, "reason": "below_pass" },
+        { "subject_id": 8, "reason": "below_pass" }
+      ],
+      "note": "chỉ 5 môn >= 5,0 (< 6) -> Chưa đạt; môn 4,9, 4,0, 3,0 đều dưới 5,0 -> kiểm tra lại (5,0 thì không)"
+    },
+    {
+      "id": "P06",
+      "title": "Đủ điều kiện nhưng có một môn nhận xét Chưa đạt cả năm",
+      "scores": ["7.0", "7.0", "7.0", "7.0", "7.0", "7.0", "7.0", "7.0"],
+      "comments": ["pass", "fail"],
+      "conduct": "fair",
+      "conduct_derived": false,
+      "absent": 0,
+      "expected_eligible": true,
+      "expected_reasons": [],
+      "expected_retake": [{ "subject_id": 102, "reason": "comment_fail" }],
+      "note": "1 môn nhận xét Chưa đạt: học tập Đạt (không Khá vì có môn nhận xét Chưa đạt); rèn luyện Khá -> đủ; môn nhận xét Chưa đạt nằm trong danh sách có thể phải đánh giá lại"
+    },
+    {
+      "id": "P07",
+      "title": "Chưa có rèn luyện cả năm: chưa đủ dữ liệu",
+      "scores": ["7.0", "7.0", "7.0", "7.0", "7.0", "7.0", "7.0", "7.0"],
+      "comments": [],
+      "conduct": null,
+      "conduct_derived": false,
+      "absent": 0,
+      "expected_eligible": null,
+      "expected_reasons": ["missing_data"],
+      "expected_retake": [],
+      "note": "không có kết quả rèn luyện nên không kết luận được (không ghi nhận là đủ hay không đủ)"
+    },
+    {
+      "id": "P08",
+      "title": "Thiếu rèn luyện nhưng nghỉ 46 buổi: kết luận không đủ ngay",
+      "scores": ["7.0", "7.0", "7.0", "7.0", "7.0", "7.0", "7.0", "7.0"],
+      "comments": [],
+      "conduct": null,
+      "conduct_derived": false,
+      "absent": 46,
+      "expected_eligible": false,
+      "expected_reasons": ["absent_over_limit"],
+      "expected_retake": [],
+      "note": "nghỉ 46 > 45 đã đủ để kết luận không đủ điều kiện, dù chưa có rèn luyện"
+    }
+  ]
+}

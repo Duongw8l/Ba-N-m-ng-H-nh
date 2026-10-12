@@ -232,7 +232,11 @@ def _new_student(
     params: SeedParams, student_id: int, grade: int, class_index: int, class_id: int, number: int
 ) -> _Student:
     code = f"HS{grade}{class_index:02d}{number:03d}"
-    ability = max(-2.5, min(2.5, _rng(params.seed, code, "ability").gauss(0.0, 1.0)))
+    scenario = SCENARIOS.get(code)
+    if scenario is not None and scenario.ability is not None:
+        ability = scenario.ability
+    else:
+        ability = max(-2.5, min(2.5, _rng(params.seed, code, "ability").gauss(0.0, 1.0)))
     return _Student(
         id=student_id,
         code=code,
@@ -240,7 +244,7 @@ def _new_student(
         class_index=class_index,
         class_id=class_id,
         ability=ability,
-        scenario=SCENARIOS.get(code),
+        scenario=scenario,
     )
 
 

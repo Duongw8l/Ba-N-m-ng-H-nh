@@ -1,6 +1,6 @@
 # Tiến độ
 
-Cập nhật lần cuối: 2026-10-12 (Giai đoạn 2). Tên và thứ tự giai đoạn lấy từ bộ prompt [PROMPTS.md](PROMPTS.md).
+Cập nhật lần cuối: 2026-10-13 (Giai đoạn 3). Tên và thứ tự giai đoạn lấy từ bộ prompt [PROMPTS.md](PROMPTS.md).
 
 ## Bảng 12 giai đoạn
 
@@ -8,8 +8,8 @@ Cập nhật lần cuối: 2026-10-12 (Giai đoạn 2). Tên và thứ tự giai
 | --- | --- | --- |
 | 0 | Khởi tạo dự án | Xong (còn chờ kiểm: CI trên GitHub, cần đẩy lên GitHub, xem bên dưới) |
 | 1 | Cơ sở dữ liệu + dữ liệu giả lập | Xong, đã commit `cab087d` (còn chờ kiểm: CI trên GitHub, xem bên dưới) |
-| 2 | Xác thực và phân quyền | Xong, chưa commit (chưa kiểm giao diện trên trình duyệt, CI trên GitHub; xem bên dưới) |
-| 3 | Analytics theo Thông tư 22 | Chưa làm |
+| 2 | Xác thực và phân quyền | Xong, đã commit `43900ac` (chưa kiểm giao diện trên trình duyệt, CI trên GitHub; xem bên dưới) |
+| 3 | Analytics theo Thông tư 22 | Xong, chưa commit (quy tắc lấy từ nguồn thứ cấp, **cần đối chiếu văn bản gốc**; xem bên dưới) |
 | 4 | Import Excel/CSV | Chưa làm |
 | 5 | Dashboard và giao diện chính | Chưa làm |
 | 6 | Cảnh báo sớm (luật + ML) | Chưa làm |
@@ -135,3 +135,39 @@ Cập nhật lần cuối: 2026-10-12 (Giai đoạn 2). Tên và thứ tự giai
 3. API: mở Swagger <http://localhost:8000/api/docs>, gọi `POST /auth/login` với `bgh1@example.com` và mật khẩu dev trong README, bấm Authorize dán `access_token`, thử `GET /me/assignments` và `GET /classes/1/students`. Thử lại với `gv.dia.10@example.com`: lớp 1 (10A1) được, lớp 2 (10A2) bị 403.
 4. Giao diện: `make up`, mở <http://localhost:5173>, đăng nhập lần lượt `admin@`, `bgh1@`, `gvcn.10a2@`, `gv.dia.10@`, `gv.toan.10@` (`@example.com`): mỗi vai trò thấy trang chủ khác nhau. Thử Đăng xuất, và mở hai tab với hai vai trò.
 5. Xem nhật ký: `docker compose exec db psql -U classroom -d classroom -c "select * from audit_logs"`.
+
+## Giai đoạn 3: Analytics theo Thông tư 22
+
+### Đã làm
+
+- **Lõi tính toán thuần** trong `backend/app/analytics/` (D-047 đến D-051), hệ số và ngưỡng đọc từ `settings` qua `AnalyticsConfig`: ĐTBmhk, ĐTBmcn (từ ĐTBmhk đã làm tròn, làm tròn nửa lên), kết quả học tập Tốt/Khá/Đạt/Chưa đạt kèm **quy định điều chỉnh mức** (công tắc `level_single_subject_adjustment`), rèn luyện và kết quả cả năm (bản ghi `year` hoặc suy ra từ HK2), tổng hợp số buổi nghỉ (theo tuần/tháng), điều kiện lên lớp và môn có thể phải kiểm tra lại.
+- **Ba endpoint** (D-053), đều qua `authorize()`: `GET /classes/{id}/dashboard`, `GET /classes/{id}/subjects/{subject_id}/scores`, `GET /grades/{level}/overview`; dashboard và bảng điểm ghi `audit_logs`.
+- **Migration thứ 5**: khoá `level_single_subject_adjustment` và hai hành động nhật ký mới. View `v_subject_average` giữ nguyên (D-052).
+- **Bộ 30 ca tính tay** `eval/analytics_cases.json` (D-054), đối chiếu bằng script phân số độc lập: 30/30 khớp.
+- **Chỉnh dữ liệu seed** (D-056): ba học sinh biên nghỉ 44/45/46 buổi có năng lực cao, để ca "45 đủ, 46 không đủ" chỉ phụ thuộc số buổi nghỉ.
+- **Test**: 340 test (thêm 179), gồm công thức tính tay, các ca biên, kiểm chéo với tính độc lập từ bảng điểm thô, ma trận phân quyền của ba endpoint, nhật ký, và 8 lần "đột biến" thủ công đều làm test đỏ.
+- **Hiệu năng đo thật** trên seed: dashboard lớp 26 đến 62 ms; tổng quan khối 12 (120 học sinh) 79 ms.
+
+### Chưa làm (thuộc các giai đoạn sau)
+
+- Giao diện cho ba endpoint (Giai đoạn 5); "số cảnh báo" và cảnh báo sớm (Giai đoạn 6); các hàm Analytics làm công cụ cho trợ lý AI và `pseudonymize()` (Giai đoạn 8); nối bộ 30 ca vào `make eval` (Giai đoạn 10).
+- Lọc theo năm học (D-044) và quy tắc kết hợp rèn luyện HK1/HK2 cả năm (D-049) chưa làm.
+
+### Đã kiểm chứng và còn chờ kiểm chứng
+
+| Mục | Trạng thái |
+| --- | --- |
+| `alembic upgrade head` (migration thứ 5), `downgrade -1` rồi `upgrade head`, `alembic check` | Đã chạy, đúng |
+| `make lint` và `make test` (340 test) | Đã chạy, qua |
+| API thật (cổng 8000) với 5 tài khoản: ma trận 200/403 của 3 endpoint; một học sinh (HS1001001, Toán HK1: 8,1 7,8 8,7 6,8 / 8,1 / 7,3) tính tay ra 7,7 khớp API | Đã chạy, đúng |
+| **Quy tắc Thông tư 22** (công thức, ngưỡng, thứ tự làm tròn, điều chỉnh mức, kết quả cả năm, điều kiện lên lớp) | **Cần bạn đối chiếu với văn bản gốc**: tôi chỉ đọc được các nguồn thứ cấp (D-047 đến D-051) |
+| Hiệu năng ở quy mô 1.500 học sinh | Chưa đo (đo ở 120, suy ra khoảng 1 giây) |
+| Giao diện, CI GitHub | Chưa làm / chưa kiểm |
+
+### Cách kiểm tra
+
+1. `make db`, `make migrate` (có migration thứ 5), `make seed`.
+2. `make test` (340 test), `make lint`.
+3. Swagger <http://localhost:8000/api/docs>: đăng nhập `gvcn.11a2@example.com` rồi gọi `GET /classes/5/dashboard?semester=1` (lớp 11A2: em An nghỉ 38 buổi và em Toán 3,0 nằm trong danh sách cần quan tâm); đổi sang `semester=year` để thấy đếm đủ điều kiện lên lớp. Gọi `GET /classes/5/subjects/2/scores?semester=1` (bảng điểm Toán). Đăng nhập `bgh1@example.com` gọi `GET /grades/12/overview?semester=year`.
+4. Thử quyền: `gv.toan.11@example.com` xem được điểm Toán 11A2 nhưng bị 403 ở dashboard 11A2; `admin@example.com` bị 403 ở cả ba.
+5. Xem phần ghi nhật ký: `select action, class_id, details from audit_logs`.

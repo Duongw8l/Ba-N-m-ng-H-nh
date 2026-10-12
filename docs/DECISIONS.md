@@ -135,7 +135,7 @@ Quyết định đã chốt chỉ đổi bằng cách ghi thêm một mục mớ
 **D-027 · `settings` nạp trong migration; danh sách khoá** (Đã duyệt)
 - Nạp trong migration (không trong seed) vì seed bị chặn ở production mà production vẫn cần hệ số và ngưỡng. Migration chạy một lần nên giá trị admin sửa về sau không bị ghi đè; seed cũng không đụng bảng này. Chỉ lưu giá trị; số đọc ra bằng `Decimal(str(giá trị))`.
 - Khoá: `coef_midterm`=2, `coef_final`=3, `coef_year_semester2`=2, `max_absent_sessions`=45, `absent_warning_notice`=30, `absent_warning_high`=40, `score_threshold_fail`=3,5, `score_threshold_pass`=5,0, `score_threshold_fair`=6,5, `score_threshold_good`=8,0, `level_min_subjects`=6, `regular_assessment_count`=`[{max_periods:35,count:2},{max_periods:70,count:3},{max_periods:null,count:4}]` (`max_periods` là ngưỡng bao gồm: ≤35 → 2, trên 35 đến 70 → 3, trên 70 → 4).
-- Việc 6,5 và 8,0 gắn với mức Tốt hay Khá do Giai đoạn 3 quyết khi đọc văn bản Thông tư. Theo một nguồn thứ cấp, Thông tư 10/2025/TT-BGDĐT (hiệu lực 01/07/2025) sửa Thông tư 22 mà DESIGN chưa nhắc: cần kiểm lại trước Giai đoạn 3.
+- Việc 6,5 và 8,0 gắn với mức Tốt hay Khá do Giai đoạn 3 quyết khi đọc văn bản Thông tư (đã quyết ở D-048). Bản đầu của mục này còn ghi "Thông tư 10/2025/TT-BGDĐT sửa Thông tư 22" theo một nguồn thứ cấp; thông tin đó **không xác nhận được**, xem đính chính ở D-055.
 
 **D-028 · Đơn vị "buổi nghỉ"** (Đã duyệt)
 - Mỗi dòng `attendance` có `status` là `absent_excused` hoặc `absent_unexcused` tính là 1 buổi nghỉ; `present` và `late` không tính. Không thêm cột. `UNIQUE (class_student_id, date)` để import không đếm trùng.
@@ -250,3 +250,54 @@ Quyết định đã chốt chỉ đổi bằng cách ghi thêm một mục mớ
 - Fixture DB chuyển từ `tests/db/conftest.py` lên `tests/conftest.py` để `tests/auth/`, `tests/classes/`, `tests/core/` (thư mục `tests/` phản chiếu `app/`) dùng chung; fixture chỉ chạy khi test yêu cầu. Thêm `db_session` (Session trên transaction ngoài với `join_transaction_mode="create_savepoint"`: app commit nhật ký thì chỉ nhả savepoint, hết test vẫn rollback sạch), `api_client` (ghi đè `get_db`), `auth_headers(email)` (tạo JWT trực tiếp để ma trận phân quyền khỏi tốn ~0,25 giây bcrypt mỗi ca; đăng nhập bằng bcrypt thật chỉ kiểm ở `tests/auth/test_login.py`), `class_id_of(tên lớp)`.
 - Test dùng tài khoản seed mặc định: `gv.dia.10` (GVBM một lớp, đúng khối sai lớp ở 10A2 và 10A3), `gv.van.10` (GVBM ba lớp), `gvcn.10a2` (GVCN thuần), `gv.toan.10` (cộng dồn), `bgh1`, `admin`. Đổi cấu trúc tài khoản seed phải sửa test này.
 - `JWT_SECRET` giả trong conftest đổi thành chuỗi dài hơn 32 ký tự.
+
+## Giai đoạn 3
+
+**Nguồn và độ tin cậy của cả giai đoạn:** không đọc được văn bản gốc Thông tư 22/2021 (`vbpl.moj.gov.vn` không truy cập được từ máy phát triển). Các quy tắc dưới đây khớp giữa PROMPTS và các nguồn thứ cấp: [LuatVietnam](https://luatvietnam.vn/tin-phap-luat/danh-gia-xep-loai-hoc-sinh-thcs-thpt-2021-230-32425-article.html) (Điều 9), [Giáo dục & Thời đại](https://giaoduc.net.vn/cac-truong-hop-hoc-sinh-phai-kiem-tra-lai-o-lai-lop-theo-thong-tu-22-cua-bo-gd-post242024.gd) (Điều 12, 14), [Thư viện Pháp luật](https://thuvienphapluat.vn/hoi-dap-phap-luat/cach-danh-gia-xep-loai-hoc-sinh-thcs-thpt-moi-nhat-2023-khi-nao-cach-tinh-diem-cho-hoc-sinh-thcs-th-138003400.html) (trích gần nguyên văn quy định điều chỉnh mức). **Mọi hệ số, ngưỡng và thứ tự làm tròn cần đối chiếu với văn bản gốc.** Ngưỡng và hệ số nằm trong `settings` nên sửa số rất dễ; sửa **cấu trúc** quy tắc thì phải sửa `analytics/`.
+
+**D-047 · Công thức điểm trung bình và làm tròn** (Đã duyệt; bạn chốt thứ tự làm tròn)
+- ĐTBmhk = (Tổng ĐĐGtx + `coef_midterm`×ĐĐGgk + `coef_final`×ĐĐGck) / (Số ĐĐGtx + `coef_midterm` + `coef_final`); với hệ số 2 và 3 thì mẫu số là Số ĐĐGtx + 5. Hệ số và mẫu số đều lấy từ `settings`, nên đổi hệ số là công thức đổi theo (có test). Dùng `tx_sum`, `tx_count`, `gk_score`, `ck_score` của view `v_subject_average`.
+- Làm tròn **nửa lên** đến 1 chữ số thập phân (`Decimal`, `ROUND_HALF_UP`): 6,25 thành 6,3, không làm tròn kiểu ngân hàng.
+- ĐTBmcn = (ĐTBmhkI + `coef_year_semester2`×ĐTBmhkII) / (1 + `coef_year_semester2`), tính từ hai ĐTBmhk **đã làm tròn** rồi làm tròn lại (khớp con số giáo viên thấy trong sổ điểm). Ví dụ ĐTBmhkI 6,14 và ĐTBmhkII 6,04 cho 6,0; nếu dùng số chưa làm tròn sẽ ra 6,1. Hệ số 1 của học kỳ I là ngầm định, không có khoá riêng.
+- Mọi so sánh với ngưỡng (3,5 / 5,0 / 6,5 / 8,0) dùng số đã làm tròn: 3,4 dưới 3,5, còn 3,5 thì không.
+- Số trong JSON là số thập phân một chữ số (`Decimal` tuần tự hoá thành `float`); giao diện chỉ hiển thị (dấu phẩy), không tự tính lại mức hay ngưỡng.
+
+**D-048 · Mức học tập và quy định điều chỉnh mức** (Đã duyệt; bạn chốt làm quy định điều chỉnh)
+- Bốn mức theo PROMPTS và Điều 9, ngưỡng từ `settings` (`score_threshold_fail/pass/fair/good`, `level_min_subjects`). **Tốt**: mọi môn nhận xét Đạt; mọi môn điểm số ≥ 6,5; ít nhất 6 môn ≥ 8,0. **Khá**: mọi môn nhận xét Đạt; mọi môn điểm số ≥ 5,0; ít nhất 6 môn ≥ 6,5. **Đạt**: nhiều nhất 1 môn nhận xét Chưa đạt; ít nhất 6 môn điểm số ≥ 5,0; không môn nào dưới 3,5. **Chưa đạt**: còn lại. Việc gán 6,5 và 8,0 cho Tốt/Khá còn để ngỏ ở D-027 nay đã quyết theo các điều kiện trên.
+- **Điều chỉnh mức**: nếu mức bị thấp hơn từ 2 mức trở lên so với Tốt/Khá **chỉ do duy nhất 1 môn** thì nâng 1 mức. Cách hiểu của tôi (chưa có văn bản gốc để đối chiếu): với mỗi môn `s`, tính lại mức khi bỏ các điều kiện "mọi môn" và "không môn nào dưới 3,5" của riêng `s`, trong khi giá trị của `s` vẫn được đếm vào các điều kiện "ít nhất N môn"; nếu có một `s` làm mức cao hơn mức gốc từ 2 bậc trở lên thì mức cuối = mức gốc + 1, kèm cờ `adjusted`. Ví dụ: 8 môn 8,5 và 1 môn 4,0: gốc Đạt, bỏ môn 4,0 là Tốt (hơn 2 mức) nên thành Khá; 8 môn 8,5 và 1 môn 3,0: gốc Chưa đạt, thành Đạt (không nhảy thẳng lên Tốt); 8 môn 8,5 và 1 môn 6,2: Khá, giữ nguyên (chỉ hơn 1 mức); hai môn yếu: không nâng.
+- Công tắc `level_single_subject_adjustment` trong `settings` (mặc định `true`, migration thứ 5); tắt đi thì chỉ áp dụng 4 quy tắc gốc. Kết quả luôn trả cả mức gốc, mức cuối và cờ `adjusted`.
+- **Hệ quả cần biết:** với công tắc bật, học sinh chỉ có **một** môn dưới 3,5 mà các môn khác đủ tốt vẫn có thể được xếp Đạt. DESIGN mục 6.2 viết "có môn ĐTB dưới 3,5 … không thể đạt mức Đạt"; hai điều này lệch nhau. Cảnh báo sớm (Giai đoạn 6) nên báo "có môn dưới 3,5" như một lý do riêng, không suy ra từ mức học tập.
+- Kết quả chỉ tính khi **mọi môn đủ dữ liệu** (D-050).
+
+**D-049 · Kết quả cả năm của môn nhận xét và của rèn luyện** (Đã duyệt)
+- Môn nhận xét: kết quả cả năm = kết quả học kỳ II (theo trí nhớ về Thông tư, chưa đối chiếu).
+- Rèn luyện: dùng bản ghi `conduct_results.period = 'year'` nếu có (GVCN nhập); chưa có thì lấy mức học kỳ II và đánh dấu `derived` ("suy ra"). Seed không sinh bản ghi `year`, nên dữ liệu seed luôn là "suy ra"; dashboard cả năm báo `conduct_derived_count`. Quy tắc kết hợp HK1 và HK2 của Thông tư (nếu có bảng) chưa kiểm được.
+
+**D-050 · Dữ liệu thiếu và cờ `complete`** (Đã duyệt)
+- ĐTB chỉ tính khi có cả điểm giữa kỳ và cuối kỳ (thiếu thì `None`). `complete` = có ĐTB **và** đủ số đầu điểm thường xuyên theo `regular_assessment_count`. Bảng điểm môn vẫn hiện ĐTB tạm tính kèm `complete = false`; **mức học tập chỉ tính khi mọi môn của lớp đều `complete`**, ngược lại `level = None` ("chưa đủ dữ liệu", kèm danh sách môn thiếu), để giữa kỳ không xếp loại nhầm. Dashboard đếm số học sinh `incomplete`.
+
+**D-051 · Điều kiện lên lớp và môn có thể phải kiểm tra lại** (Đã duyệt)
+- Đủ điều kiện khi học tập **và** rèn luyện cả năm từ Đạt trở lên và nghỉ ≤ `max_absent_sessions` (45 đủ, 46 không). Lý do: `learning_fail`, `conduct_fail`, `absent_over_limit`, `missing_data`. `eligible = None` khi chưa đủ dữ liệu, trừ khi đã có lý do chắc chắn không đủ (nghỉ quá mức, học tập hoặc rèn luyện đã Chưa đạt thì kết luận `False` ngay). Nguồn thứ cấp cũng ghi một buổi nghỉ tính theo 1 buổi/ngày, khớp D-028.
+- `retake_subjects` liệt kê môn điểm số có ĐTBmcn dưới 5,0 (DESIGN mục 6.2; đúng 5,0 thì không) **và** môn nhận xét Chưa đạt cả năm (Điều 14, vượt DESIGN và PROMPTS; nguồn thứ cấp). Danh sách là "môn có thể phải kiểm tra lại"; việc có bắt buộc hay không phụ thuộc kết quả cả năm.
+
+**D-052 · Cấu trúc `analytics/` và view không đổi** (Đã duyệt)
+- Hàm thuần nhận `AnalyticsConfig` (dựng từ `settings` bằng `load_config`/`config_from_values`, thiếu khoá thì báo tên khoá): `scores.py`, `learning.py`, `conduct.py`, `attendance.py`, `promotion.py`. Phần đọc DB ở `repository.py` (view `v_subject_average` qua `Table` trong `MetaData` riêng, `views.py`) và ghép ở `service.py`. `thresholds.py` (D-037) dùng lại.
+- **View `v_subject_average` giữ nguyên** (PROMPTS cho phép hoàn thiện "nếu cần cho hiệu năng"): đo thật trên seed, dashboard lớp 40 học sinh mất khoảng 26 đến 62 ms và tổng quan khối 12 (120 học sinh) khoảng 79 ms, nên suy ra khoảng 1 giây cho 1.500 học sinh; chưa đo ở quy mô đó. Số buổi nghỉ đếm bằng SQL (`COUNT … FILTER`) chứ không kéo 175 dòng mỗi học sinh.
+
+**D-053 · Ba endpoint** (Đã duyệt; chi tiết khi làm)
+- `GET /classes/{id}/dashboard?semester=1|2|year`: `authorize(class_id)` rồi `Access.require_all_subjects()` (GVCN lớp và BGH; GVBM, kể cả người dạy Toán ở lớp đó, bị 403 vì thấy một số môn); `GET /classes/{id}/subjects/{subject_id}/scores?semester=1|2`: `authorize(class_id, subject_id)`; `GET /grades/{level}/overview?semester=1|2|year`: `authorize(grade_level)`, chỉ BGH. Mặc định `semester=1`; giá trị khác 422. Lớp hoặc khối không có: 404 (giáo viên và Admin nhận 403 trước). Môn không có trong lớp: 404.
+- Số buổi nghỉ trong dashboard đếm theo **cả năm học**, không theo học kỳ (45 buổi là hạn mức cả năm); "nghỉ từ 30 buổi" dùng `absent_warning_notice`. "Học sinh cần quan tâm" (`absent_over_limit`, `absent_notice`, `subject_below_fail`, `level_fail`) đọc từ kết quả Analytics, **chưa phải cảnh báo sớm** (Giai đoạn 6); chưa có "số cảnh báo".
+- Tổng quan khối: số liệu gộp theo lớp, và trung bình theo lớp của các môn **điểm số mà mọi lớp trong khối đều học** (môn lựa chọn khác tổ hợp thì không so sánh). Trung bình lớp là số mô tả, làm tròn 1 chữ số, không phải số của Thông tư.
+- Nhật ký (mở rộng D-043, migration thứ 5): thêm `view_class_dashboard` và `view_subject_scores`; hai endpoint này trả dữ liệu từng học sinh nên ghi một dòng mỗi lần 200. Tổng quan khối chỉ có số liệu gộp nên không ghi.
+- Bảng điểm môn nhận xét trả kết quả Đạt / Chưa đạt, không có ĐTB; môn điểm số trả các đầu điểm, ĐTB học kỳ đang xem, ĐTB hai học kỳ và ĐTBmcn khi đủ hai học kỳ, phân bố theo các ngưỡng. Giao diện chưa dùng (Giai đoạn 5); thử qua Swagger.
+
+**D-054 · Bộ 30 ca tính tay và cách kiểm** (Đã duyệt)
+- `eval/analytics_cases.json` (7 ca ĐTBmhk, 3 ca ĐTBmcn, 12 ca mức học tập, 8 ca lên lớp), mỗi ca có lời giải tay trong `note`; `tests/analytics/test_eval_cases.py` nạp và kiểm bằng mã dự án. Trước khi chốt, kết quả mong đợi được đối chiếu bằng một script phân số độc lập (`fractions`, không import mã dự án; không đưa vào repo): 30/30 khớp.
+- Đã thử "đột biến" thủ công (làm tròn kiểu ngân hàng, hệ số cố định, mẫu số cả năm cố định, `>` thay `>=` ở ngưỡng 3,5 và 6 môn, nâng mức khi chỉ hơn 1 bậc, 45 buổi bị coi là quá hạn, đi muộn tính là nghỉ; trước đó cả bốn cách phá `authorize()`): tất cả đều làm test đỏ.
+- `make eval` vẫn là lệnh giữ chỗ; bộ 30 ca chạy qua `pytest`, Giai đoạn 10 mới nối vào `make eval`.
+
+**D-055 · Đính chính: Thông tư 10/2025/TT-BGDĐT** (thay câu tương ứng ở D-027)
+- D-027 và các ghi chú Giai đoạn 1 ghi "Thông tư 10/2025/TT-BGDĐT (hiệu lực 01/07/2025) sửa Thông tư 22" theo một nguồn thứ cấp. Lần tra ở Giai đoạn 3 **không xác nhận được** thông tư đó tồn tại; chỉ thấy một **dự thảo** sửa Thông tư 22 về kiểm tra định kỳ trên máy tính, không đụng điểm hay mức đánh giá. Coi như chưa có sửa đổi đã ban hành ảnh hưởng tới công thức, nhưng vẫn cần đối chiếu văn bản gốc.
+
+**D-056 · Học sinh biên nghỉ 44/45/46 buổi có năng lực cao** (Đã duyệt; sửa D-032)
+- `HS1201001` đến `HS1201003` có `ability = 2.0` cố định trong `scenarios.py`. Trước đó điểm và rèn luyện của hai em nghỉ 45 và 46 buổi bị kéo xuống (rèn luyện Chưa đạt) nên ca "45 đủ, 46 không đủ" không tách riêng được nguyên nhân là số buổi nghỉ. Sau chỉnh: 44 và 45 buổi đủ điều kiện lên lớp, 46 buổi không đủ chỉ vì `absent_over_limit`. Chỉ ba em này thay đổi trong dữ liệu seed.

@@ -61,7 +61,7 @@ from sqlalchemy.pool import NullPool
 from alembic import command
 from app.auth.models import User
 from app.auth.tokens import create_access_token
-from app.classes.models import SchoolClass
+from app.classes.models import SchoolClass, Subject
 from app.core.db import get_db
 from app.main import app
 from data.seed.load import seed_database
@@ -238,6 +238,18 @@ def auth_headers(db_session: Session) -> Callable[[str], dict[str, str]]:
         return {"Authorization": f"Bearer {token}"}
 
     return make
+
+
+@pytest.fixture
+def subject_id_of(db_session: Session) -> Callable[[str], int]:
+    """Id của môn theo tên (ví dụ "Toán") trong dữ liệu seed."""
+
+    def find(name: str) -> int:
+        subject_id = db_session.scalar(select(Subject.id).where(Subject.name == name))
+        assert subject_id is not None, f"Không có môn seed {name}"
+        return subject_id
+
+    return find
 
 
 @pytest.fixture

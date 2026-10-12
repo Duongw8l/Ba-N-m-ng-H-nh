@@ -25,6 +25,9 @@ class StudentScenario:
     absences: int | None = None  # số buổi nghỉ cố định
     flat_subject: str | None = None  # môn mà mọi đầu điểm bằng một giá trị
     flat_score: Decimal | None = None
+    # Năng lực cố định (thay cho số ngẫu nhiên) để điểm và rèn luyện của em đó tốt: học sinh biên
+    # về số buổi nghỉ chỉ bị quyết định bởi số buổi nghỉ chứ không bởi học tập hay rèn luyện yếu.
+    ability: float | None = None
 
     @property
     def is_heavy_absence(self) -> bool:
@@ -42,9 +45,10 @@ SCENARIOS: dict[str, StudentScenario] = {
         full_name="Lê Hoàng Bảo", flat_subject="Toán", flat_score=Decimal("3.0")
     ),
     # Lớp 12A1, học sinh biên: nghỉ 44, 45, 46 buổi (quanh mức 45); môn Toán đúng 3,4 / 3,5 / 5,0.
-    "HS1201001": StudentScenario(absences=44),
-    "HS1201002": StudentScenario(absences=45),
-    "HS1201003": StudentScenario(absences=46),
+    # Ba em nghỉ có năng lực cao để chỉ số buổi nghỉ quyết định điều kiện lên lớp (D-032).
+    "HS1201001": StudentScenario(absences=44, ability=2.0),
+    "HS1201002": StudentScenario(absences=45, ability=2.0),
+    "HS1201003": StudentScenario(absences=46, ability=2.0),
     "HS1201004": StudentScenario(flat_subject="Toán", flat_score=Decimal("3.4")),
     "HS1201005": StudentScenario(flat_subject="Toán", flat_score=Decimal("3.5")),
     "HS1201006": StudentScenario(flat_subject="Toán", flat_score=Decimal("5.0")),

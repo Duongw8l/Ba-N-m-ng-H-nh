@@ -85,6 +85,8 @@ LABELS_VI: dict[type[StrEnum], dict[StrEnum, str]] = {
     AuditAction: {
         AuditAction.VIEW_CLASS_STUDENTS: "Xem danh sách học sinh của lớp",
         AuditAction.VIEW_STUDENT_PROFILE: "Xem hồ sơ học sinh",
+        AuditAction.VIEW_CLASS_DASHBOARD: "Xem dashboard lớp",
+        AuditAction.VIEW_SUBJECT_SCORES: "Xem bảng điểm môn",
     },
 }
 

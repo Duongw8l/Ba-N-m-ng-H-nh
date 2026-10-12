@@ -72,6 +72,8 @@ Mật khẩu dev dùng chung cho mọi tài khoản (chỉ dành cho môi trư�
 
 Thử API: mở Swagger, gọi `POST /api/v1/auth/login` với email và mật khẩu ở trên, bấm **Authorize** và dán `access_token`, rồi thử `GET /api/v1/me/assignments` và `GET /api/v1/classes/{id}/students`. Admin bị 403 ở danh sách lớp; GVBM chỉ vào được lớp mình dạy và không thấy thông tin phụ huynh; GVCN và BGH thấy thông tin phụ huynh. Mỗi lần mở danh sách lớp được ghi vào bảng `audit_logs`.
 
+Số liệu (Giai đoạn 3), thử trong Swagger sau khi đăng nhập: `GET /api/v1/classes/{id}/dashboard?semester=1|2|year` (GVCN của lớp và BGH), `GET /api/v1/classes/{id}/subjects/{subject_id}/scores?semester=1|2` (GVBM đúng môn, GVCN, BGH), `GET /api/v1/grades/{level}/overview?semester=1|2|year` (chỉ BGH). Ví dụ lớp 11A2 có id 5, môn Toán có id 2, `semester=year` là cả năm. Công thức và ngưỡng của Thông tư 22 chỉ nằm trong `backend/app/analytics/`, hệ số và ngưỡng lấy từ bảng `settings`; bộ 30 ca tính tay ở `eval/analytics_cases.json`.
+
 Mã môn trong email: `van` `toan` `anh` `su` `gdtc` `gdqp` `hdtn` `gddp` `dia` `gdktpl` `ly` `hoa` `sinh` `cn` `tin` `nhac` `mt`.
 
 Học sinh dùng cho kịch bản demo và test biên: `HS1102001` (11A2, em An nghỉ 38 buổi), `HS1102002` (11A2, môn Toán dưới 3,5), `HS1201001` đến `HS1201003` (12A1, nghỉ 44, 45, 46 buổi), `HS1201004` đến `HS1201006` (12A1, mọi đầu điểm Toán đúng 3,4 / 3,5 / 5,0). Mã học sinh có dạng `HS` + khối + lớp (2 chữ số) + số thứ tự (3 chữ số).

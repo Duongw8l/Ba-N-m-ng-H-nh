@@ -52,6 +52,11 @@ class ConductLevel(StrEnum):
     FAIL = "fail"  # Chưa đạt
 
 
+# Mức kết quả học tập (tính ra, không lưu) dùng chung bốn giá trị Tốt, Khá, Đạt, Chưa đạt với
+# rèn luyện.
+LearningLevel = ConductLevel
+
+
 class RiskLevel(StrEnum):
     HIGH = "high"
     MEDIUM = "medium"
@@ -84,3 +89,5 @@ class ReportStatus(StrEnum):
 class AuditAction(StrEnum):
     VIEW_CLASS_STUDENTS = "view_class_students"  # mở danh sách học sinh của một lớp
     VIEW_STUDENT_PROFILE = "view_student_profile"  # mở hồ sơ một học sinh (màn hình ở Giai đoạn 5)
+    VIEW_CLASS_DASHBOARD = "view_class_dashboard"  # dashboard lớp (có tên học sinh cần quan tâm)
+    VIEW_SUBJECT_SCORES = "view_subject_scores"  # bảng điểm một môn của lớp

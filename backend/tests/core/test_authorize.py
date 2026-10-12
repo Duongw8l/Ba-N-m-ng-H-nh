@@ -12,7 +12,6 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.auth.models import User
-from app.classes.models import Subject
 from app.core.authorize import Access, AuthorizationError, authorize
 from app.core.enums import UserRole
 
@@ -27,16 +26,6 @@ def user_of(db_session: Session) -> Callable[[str], User]:
         user = db_session.scalar(select(User).where(func.lower(User.email) == email))
         assert user is not None, email
         return user
-
-    return find
-
-
-@pytest.fixture
-def subject_id_of(db_session: Session) -> Callable[[str], int]:
-    def find(name: str) -> int:
-        subject_id = db_session.scalar(select(Subject.id).where(Subject.name == name))
-        assert subject_id is not None, name
-        return subject_id
 
     return find
 
@@ -199,6 +188,28 @@ def test_permissions_add_up_per_class_for_a_homeroom_teacher_who_also_teaches(
     # Khối khác: không có quyền gì (gv.toan.11 mới là GVCN 11A1).
     assert denied(db_session, teacher, class_id=class_id_of("11A1"))
     assert denied(db_session, teacher, grade_level=10)
+
+
+# --- Dữ liệu cả lớp (mọi môn) --------------------------------------------------------------------
+
+
+def test_require_all_subjects_passes_for_homeroom_and_principal_but_not_subject_teachers(
+    db_session: Session, user_of: Callable[[str], User], class_id_of: Callable[[str], int]
+) -> None:
+    ten_a1 = class_id_of("10A1")
+
+    # BGH và GVCN của lớp: mọi môn
+    authorize(db_session, user_of("bgh1@example.com"), class_id=ten_a1).require_all_subjects()
+    authorize(db_session, user_of("gv.toan.10@example.com"), class_id=ten_a1).require_all_subjects()
+    # GVBM (Văn ở 10A1) và người cộng dồn khi ở lớp chỉ dạy Toán (10A2): không phải mọi môn
+    with pytest.raises(AuthorizationError):
+        authorize(
+            db_session, user_of("gv.van.10@example.com"), class_id=ten_a1
+        ).require_all_subjects()
+    with pytest.raises(AuthorizationError):
+        authorize(
+            db_session, user_of("gv.toan.10@example.com"), class_id=class_id_of("10A2")
+        ).require_all_subjects()
 
 
 # --- Gọi sai -----------------------------------------------------------------------------------

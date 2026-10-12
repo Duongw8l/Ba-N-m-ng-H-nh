@@ -46,6 +46,11 @@ class Access:
     def allows_subject(self, subject_id: int) -> bool:
         return self.subject_ids is None or subject_id in self.subject_ids
 
+    def require_all_subjects(self) -> None:
+        """Cho dữ liệu cả lớp (mọi môn): GVBM chỉ có một số môn nên bị từ chối."""
+        if self.subject_ids is not None:
+            raise AuthorizationError
+
 
 def authorize(
     session: Session,
