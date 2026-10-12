@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "classroom-ai-backend"
+version = "0.1.0"
+description = "Back-end (FastAPI) của Trợ lý AI quản lý lớp học THPT"
+requires-python = ">=3.11"
+# Ghim phiên bản chính xác để mọi máy và CI dựng ra cùng một môi trường.
+# Nâng cấp là quyết định có chủ đích: sửa số ở đây rồi chạy lại make lint, make test.
+dependencies = [
+    "alembic==1.20.0",
+    "fastapi==0.143.0",
+    "psycopg[binary]==3.3.6",
+    "pydantic==2.14.1",
+    "pydantic-settings==2.15.0",
+    "sqlalchemy==2.0.54",
+    "uvicorn[standard]==0.54.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "httpx2==2.13.1",  # Starlette TestClient dùng httpx2; httpx cũ đã bị cảnh báo deprecated
+    "pytest==9.1.1",
+    "ruff==0.17.0",
+]
+
+# Ứng dụng chạy thẳng từ thư mục backend/ (uvicorn app.main:app), không đóng gói thành thư viện.
+# pip chỉ dùng file này để cài dependency; packages = [] tắt tự dò package của setuptools.
+[tool.setuptools]
+packages = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+# importlib: thư mục tests/ phản chiếu app/ nên không cần __init__.py và không đụng tên file test.
+addopts = "-ra --strict-markers --import-mode=importlib"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["."]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.ruff.lint.per-file-ignores]
+# conftest đặt biến môi trường giả trước khi import app nên import không nằm ở đầu file.
+"tests/conftest.py" = ["E402"]

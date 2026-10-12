@@ -1,0 +1,79 @@
+# ---------------------------------------------------------------------------
+# Bí mật và cấu hình cục bộ: không bao giờ commit
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+docker-compose.override.yml
+.claude/settings.local.json
+
+# ---------------------------------------------------------------------------
+# Dữ liệu: chỉ dữ liệu GIẢ LẬP trong data/seed/ được commit (nguyên tắc 7 của CLAUDE.md).
+# Bảng tính / CSV có thể là sổ điểm thật nên bị chặn mặc định.
+# Ngoại lệ: data/seed/, eval/ (bộ câu hỏi đánh giá) và backend/tests/fixtures/ (dữ liệu giả).
+# ---------------------------------------------------------------------------
+data/*
+!data/seed/
+*.csv
+*.xls
+*.xlsx
+!data/seed/**
+!eval/**
+!backend/tests/fixtures/**
+
+# ---------------------------------------------------------------------------
+# Mô hình ML và file lớn (tải/huấn luyện lại được; cần commit thì dùng git add -f)
+# ---------------------------------------------------------------------------
+*.pkl
+*.joblib
+*.onnx
+*.pt
+*.pth
+*.safetensors
+*.gguf
+*.ckpt
+*.h5
+backend/ml/models/
+.cache/
+
+# ---------------------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.ipynb_checkpoints/
+
+# ---------------------------------------------------------------------------
+# Node / front-end
+# ---------------------------------------------------------------------------
+node_modules/
+dist/
+*.tsbuildinfo
+.vite/
+npm-debug.log*
+
+# ---------------------------------------------------------------------------
+# Editor, hệ điều hành, log
+# ---------------------------------------------------------------------------
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.log
+
+# ---------------------------------------------------------------------------
+# Tài liệu gốc người dùng để ở thư mục gốc, không thuộc repo
+# (bản chính thức của thiết kế là docs/DESIGN.md)
+# ---------------------------------------------------------------------------
+/claude-code-kit/
+/claude-code-kit.zip
+/*.docx
+/Thiết kế hệ thống*.md

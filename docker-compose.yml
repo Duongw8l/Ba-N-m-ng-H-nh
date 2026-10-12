@@ -1,0 +1,76 @@
+# Môi trường phát triển: db + backend + frontend. Không cần GPU.
+# Yêu cầu file .env (cp .env.example .env). Chạy bằng: make up
+name: classroom-ai
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      # Chỉ mở cho máy cục bộ (để make dev-be, make migrate kết nối được), không mở ra mạng.
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  backend:
+    build: ./backend
+    env_file: .env
+    environment:
+      # Trong mạng Docker, DB có hostname "db" (khác với localhost khi chạy ngoài Docker).
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      # Bind mount từ Windows không phát sự kiện file, nên cần polling để --reload hoạt động.
+      WATCHFILES_FORCE_POLLING: "true"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      # Chỉ kiểm tra tiến trình còn trả lời HTTP (mọi mã trạng thái đều tính, kể cả 404 của "/"),
+      # KHÔNG gọi /api/v1/health: khi container db tắt, endpoint đó mất ~4 giây (Docker DNS không
+      # phân giải được "db") và backend sẽ bị đánh dấu unhealthy dù tiến trình vẫn sống.
+      test:
+        - CMD
+        - python
+        - -c
+        - "import http.client as h; c = h.HTTPConnection('127.0.0.1', 8000, timeout=3); c.request('GET', '/'); c.getresponse()"
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+
+  frontend:
+    build: ./frontend
+    environment:
+      # Vite chuyển tiếp /api tới back-end trong mạng Docker (xem frontend/vite.config.ts).
+      VITE_API_PROXY_TARGET: http://backend:8000
+      VITE_USE_POLLING: "true"
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      # Giữ node_modules của image (Linux), không bị thư mục node_modules của Windows đè lên.
+      - /app/node_modules
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:5173/"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+
+volumes:
+  db_data:
