@@ -1,13 +1,13 @@
 # Tiến độ
 
-Cập nhật lần cuối: 2026-10-12. Tên và thứ tự giai đoạn lấy từ bộ prompt [PROMPTS.md](PROMPTS.md).
+Cập nhật lần cuối: 2026-10-12 (Giai đoạn 1). Tên và thứ tự giai đoạn lấy từ bộ prompt [PROMPTS.md](PROMPTS.md).
 
 ## Bảng 12 giai đoạn
 
 | Giai đoạn | Nội dung | Trạng thái |
 | --- | --- | --- |
 | 0 | Khởi tạo dự án | Xong (còn chờ kiểm: CI trên GitHub, cần đẩy lên GitHub, xem bên dưới) |
-| 1 | Cơ sở dữ liệu + dữ liệu giả lập | Chưa làm |
+| 1 | Cơ sở dữ liệu + dữ liệu giả lập | Xong, chưa commit (còn chờ kiểm: CI trên GitHub, xem bên dưới) |
 | 2 | Xác thực và phân quyền | Chưa làm |
 | 3 | Analytics theo Thông tư 22 | Chưa làm |
 | 4 | Import Excel/CSV | Chưa làm |
@@ -31,7 +31,7 @@ Cập nhật lần cuối: 2026-10-12. Tên và thứ tự giai đoạn lấy t�
 
 ### Chưa làm (thuộc các giai đoạn sau)
 
-- Bảng nghiệp vụ, migration đầu tiên, bật extension `vector` (Giai đoạn 1 hoặc 7); công thức Thông tư 22; gọi LLM; xác thực.
+- Bảng nghiệp vụ, migration đầu tiên, bật extension `vector` (đã làm ở Giai đoạn 1); công thức Thông tư 22; gọi LLM; xác thực.
 - Vitest/Playwright, image triển khai (nginx, không reload), tắt Swagger trên môi trường thật (đã có công tắc `APP_ENV=production`).
 
 ### Đã kiểm chứng và còn chờ kiểm chứng
@@ -55,6 +55,45 @@ Cập nhật lần cuối: 2026-10-12. Tên và thứ tự giai đoạn lấy t�
 3. Mở <http://localhost:5173>: "Máy chủ: ok", "Cơ sở dữ liệu: ok". Hoặc `curl http://localhost:8000/api/v1/health` trả `{"status":"ok","db":true}`.
 4. `docker compose stop db`, chờ tối đa 15 giây (trang tự làm mới khi tab đang hiển thị): "Cơ sở dữ liệu: lỗi", còn backend vẫn `healthy`. `docker compose start db`: trở lại "ok".
 5. Ngoài Docker, trong venv đã kích hoạt: `make install`, rồi `make lint` và `make test` đều qua.
-6. `make db` rồi `make migrate`: chạy không lỗi (chỉ tạo bảng `alembic_version` rỗng, chưa có bảng nghiệp vụ).
-7. `make seed` và `make eval`: in "chưa triển khai", thoát mã 0.
+6. `make db` rồi `make migrate`: chạy không lỗi (ở Giai đoạn 0 chỉ tạo bảng `alembic_version` rỗng; từ Giai đoạn 1 tạo đủ bảng nghiệp vụ, xem bên dưới).
+7. `make seed` và `make eval`: in "chưa triển khai", thoát mã 0 (từ Giai đoạn 1 `make seed` chạy thật; `make eval` vẫn như vậy).
 8. `make down`.
+
+## Giai đoạn 1: Cơ sở dữ liệu và dữ liệu giả lập
+
+### Đã làm
+
+- **Schema** (D-024, D-025, D-035): model SQLAlchemy 2.0 theo module (`Base` ở `core/base.py`) và 3 migration Alembic, đều có `downgrade`. Đúng 15 bảng của DESIGN mục 5 cộng `settings`; khoá ngoại, `CHECK` (điểm 0..10 `NUMERIC(4,2)`, học kỳ 1/2, `kind` tx/gk/ck, mã liệt kê...), ràng buộc duy nhất và index cho truy vấn thường dùng. Extension `vector` bật trong migration; cột `regulation_chunks.embedding` là `vector(EMBEDDING_DIM)` (mặc định 1024, D-029).
+- **`settings`** (D-027): 12 khoá hệ số và ngưỡng nạp trong migration (không phải trong seed). Chỉ lưu giá trị, không có công thức.
+- **View `v_subject_average`** (D-026): khung gom dữ liệu (số lần và tổng điểm thường xuyên, điểm giữa kỳ, cuối kỳ, nhận xét), cố ý không có hệ số và công thức; công thức Thông tư 22 để Giai đoạn 3 trong `analytics/`.
+- **Dữ liệu giả lập** (`data/seed/`, `make seed`; D-030 đến D-032, D-036): năm học 2026-2027 đủ hai học kỳ, 9 lớp × 40 = 360 học sinh, 17 môn theo GDPT 2018, 60 tài khoản (admin, 2 BGH, 51 GVBM, 9 GVCN trong đó 3 người kiêm GVBM), 34.080 đầu điểm, 63.000 dòng điểm danh, rèn luyện HK1 và HK2, đăng ký thi khối 12. Tham số `--seed`, `--classes-per-grade`, `--class-size`; cùng tham số cho cùng dữ liệu; chạy lại không lỗi; từ chối chạy khi `APP_ENV=production`. Phân bố: 18 em nghỉ 30-50 buổi (5%), 29 em có môn dưới 3,5 (8%), tương quan nghỉ nhiều với điểm thấp; nhân vật demo `HS1102001` (nghỉ 38 buổi) và `HS1102002` (Toán dưới 3,5) ở 11A2; học sinh biên đúng 44/45/46 buổi nghỉ và đúng 3,4/3,5/5,0.
+- **Hàm dùng lại cho các giai đoạn sau:** `core/security.py` (`hash_password`, `verify_password`, bcrypt; D-033), `core/labels.py` (nhãn tiếng Việt), `analytics/thresholds.py` (`required_regular_count`; D-037).
+- **Test** (D-034): 94 test, trong đó 47 test cần PostgreSQL thật có pgvector (migration lên/xuống, model khớp migration, ràng buộc chặn dữ liệu sai, seed). Test `/health` cũ vẫn chạy. `make test` dừng với thông báo "Chạy make db trước" khi chưa có DB (sau khoảng 7 giây).
+- **Hạ tầng và tài liệu:** `make seed`; `make lint` bao cả `data/`; CI có service PostgreSQL; `.env.example` thêm `EMBEDDING_DIM`, `TEST_DATABASE_URL`; README thêm mục dữ liệu giả lập và tài khoản dev; D-024 đến D-038 trong DECISIONS.
+
+### Chưa làm (thuộc các giai đoạn sau)
+
+- Công thức Thông tư 22 (ĐTB môn, mức học tập, điều kiện lên lớp) — Giai đoạn 3. Đăng nhập, `authorize`, `pseudonymize` — Giai đoạn 2. Import Excel/CSV, kịch bản "nhập file điểm danh tháng mới" — Giai đoạn 4. Dữ liệu năm trước cho ML — Giai đoạn 6. Nạp văn bản quy định và vector — Giai đoạn 7.
+- Cột DESIGN còn thiếu (`ai_logs` chưa có thời điểm, `reports` chưa có `created_at`/`approved_at`): chưa thêm, xin bằng migration ở Giai đoạn 8, 9 (D-035).
+
+### Đã kiểm chứng và còn chờ kiểm chứng
+
+| Mục | Trạng thái |
+| --- | --- |
+| `alembic downgrade base` rồi `make migrate` trên DB `classroom`: chỉ còn `alembic_version` sau khi xuống; sau khi lên có 16 bảng + `alembic_version`, view `v_subject_average`, extension `vector` 0.8.7, 12 khoá `settings`, cột `vector(1024)` | Đã chạy, đúng |
+| `alembic check` (model so với migration) trên máy và trong container backend | Đã chạy: "No new upgrade operations detected" |
+| `make seed` hai lần liên tiếp: bảng tóm tắt giống nhau, dữ liệu giống nhau từng dòng (băm các bảng lớn, bỏ `password_hash`) | Đã chạy, đúng. Mỗi lần khoảng 9 giây |
+| `make lint` (ruff trên `backend/` và `data/`, eslint, tsc) và `make test` (94 test) | Đã chạy, qua |
+| Tắt container db rồi `make test`: dừng với thông báo "Chạy make db trước" | Đã chạy, đúng (7 giây) |
+| `make up`: build lại image backend (thêm bcrypt, pgvector), 3 dịch vụ `healthy`; `/api/v1/health` trả `{"status":"ok","db":true}` qua cổng 8000 và qua proxy Vite cổng 5173; `alembic current` trong container là head | Đã chạy, đúng. Trang chủ trong trình duyệt ("Máy chủ: ok", "Cơ sở dữ liệu: ok") chưa mở lại; tôi chỉ kiểm bằng gọi `/health` qua proxy |
+| CI GitHub Actions với service PostgreSQL | **Chưa kiểm**: cần đẩy lên GitHub. YAML hợp lệ; đường đi `TEST_DATABASE_URL` tường minh đã chạy thử trên máy |
+| Số tiết và tổ hợp môn (D-031), quy chế thi 4 môn (D-036) | **Cần bạn đối chiếu** với Thông tư 32/2018, 13/2022 và quy chế thi tốt nghiệp; nguồn tôi tra là thứ cấp |
+
+### Cách kiểm tra
+
+1. `cp .env.example .env` (nếu chưa có), kích hoạt venv (`backend\.venv\Scripts\Activate.ps1`), `make install`.
+2. `make db`, `make migrate`. Soi: `docker compose exec db psql -U classroom -d classroom -c "\dt"` (16 bảng + `alembic_version`), `-c "\dv"` (view), `-c "select * from settings"` (12 khoá).
+3. `make seed`: xem bảng tóm tắt (360 học sinh, 18 nghỉ từ 30 buổi, 29 có đầu điểm dưới 3,5, đủ học sinh biên). Chạy lần hai cho kết quả y hệt.
+4. `make lint`, `make test` (cần DB đang chạy). Thử `docker compose stop db` rồi `make test` để thấy thông báo thiếu DB.
+5. Thử đăng nhập bằng tài khoản mẫu ở Giai đoạn 2 (bảng tài khoản dev trong README).
+6. `make up`, mở <http://localhost:5173>: vẫn "Máy chủ: ok" và "Cơ sở dữ liệu: ok".

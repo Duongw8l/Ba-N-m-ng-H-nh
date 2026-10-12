@@ -11,7 +11,9 @@ requires-python = ">=3.11"
 # Nâng cấp là quyết định có chủ đích: sửa số ở đây rồi chạy lại make lint, make test.
 dependencies = [
     "alembic==1.20.0",
+    "bcrypt==5.0.0",
     "fastapi==0.143.0",
+    "pgvector==0.5.1",
     "psycopg[binary]==3.3.6",
     "pydantic==2.14.1",
     "pydantic-settings==2.15.0",
@@ -33,14 +35,17 @@ packages = []
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["."]
+# ".." là thư mục gốc repo: để test import được gói data.seed (script sinh dữ liệu giả).
+pythonpath = [".", ".."]
 # importlib: thư mục tests/ phản chiếu app/ nên không cần __init__.py và không đụng tên file test.
 addopts = "-ra --strict-markers --import-mode=importlib"
+markers = ["db: test cần PostgreSQL thật (chạy make db trước); bỏ qua bằng: pytest -m \"not db\""]
 
 [tool.ruff]
 line-length = 100
 target-version = "py311"
-src = ["."]
+# ".." để gói data.seed (ở thư mục gốc repo) được xếp vào nhóm import nội bộ.
+src = [".", ".."]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]

@@ -16,6 +16,21 @@ jobs:
     name: Lint và test (back-end, front-end)
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Test có DB thật (backend/tests/db/) cần PostgreSQL 16 có pgvector, cùng image với docker-compose.
+    # POSTGRES_USER là superuser nên tạo được database classroom_test và extension vector.
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v7
 
@@ -38,8 +53,10 @@ jobs:
       - name: Lint (ruff, eslint, tsc)
         run: make lint
 
-      - name: Test (pytest)
+      - name: Test (pytest, gồm test cần PostgreSQL)
         run: make test
+        env:
+          TEST_DATABASE_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/classroom_test
 
       - name: Build front-end
         run: npm --prefix frontend run build

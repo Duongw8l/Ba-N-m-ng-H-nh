@@ -7,7 +7,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import SecretStr
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # backend/app/core/config.py -> thư mục gốc repo là parents[3].
@@ -31,6 +31,10 @@ class Settings(BaseSettings):
     llm_model: str = ""
     ollama_url: str = "http://localhost:11434"
     embedding_model: str = ""
+    # Số chiều vector của regulation_chunks.embedding. Migration đọc giá trị này lúc chạy và cố định
+    # vào cột; đổi về sau cần migration mới (ALTER COLUMN ... TYPE vector(N)) và tính lại vector.
+    # 1024 là số chiều của bge-m3 và multilingual-e5-large. Trần 2000 là giới hạn chỉ mục pgvector.
+    embedding_dim: int = Field(default=1024, ge=1, le=2000)
 
 
 @lru_cache

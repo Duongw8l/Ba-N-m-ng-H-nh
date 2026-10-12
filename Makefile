@@ -34,8 +34,10 @@ db:
 migrate:
 	cd backend && python -m alembic upgrade head
 
+# Sinh dữ liệu giả lập (data/seed/), cần DB đã migrate (make db, make migrate). Xoá dữ liệu cũ rồi
+# nạp lại. Tham số tuỳ chọn: make seed SEED_ARGS="--seed 7 --classes-per-grade 2 --class-size 30"
 seed:
-	@$(call NOT_IMPLEMENTED,seed)
+	python data/seed/run.py $(SEED_ARGS)
 
 dev-be:
 	cd backend && python -m uvicorn app.main:app --reload --reload-dir app
@@ -46,9 +48,10 @@ dev-fe:
 test:
 	cd backend && python -m pytest
 
+# ruff lint cả ../data (script seed); --config để data/ dùng đúng cấu hình của backend/pyproject.toml.
 lint:
-	cd backend && python -m ruff check .
-	cd backend && python -m ruff format --check .
+	cd backend && python -m ruff check --config pyproject.toml . ../data
+	cd backend && python -m ruff format --check --config pyproject.toml . ../data
 	npm --prefix frontend run lint
 	npm --prefix frontend run typecheck
 
