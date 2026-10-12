@@ -340,6 +340,41 @@ def test_seed_twice_with_same_params_gives_identical_data_and_other_seed_differs
     assert other != first
 
 
+def test_seed_hold_out_leaves_that_month_out_of_the_attendance_table(
+    fresh_database: Callable[[], Engine], upgrade_db: Callable[[Engine], None]
+) -> None:
+    engine = fresh_database()
+    upgrade_db(engine)
+    held = SeedParams(seed=1, classes_per_grade=2, class_size=12, hold_out_month=(2027, 3))
+
+    seed_database(engine, held)
+    with engine.connect() as conn:
+        total = scalar(conn, "SELECT count(*) FROM attendance")
+        march = scalar(
+            conn,
+            "SELECT count(*) FROM attendance WHERE date >= '2027-03-01' AND date < '2027-04-01'",
+        )
+        february = scalar(
+            conn,
+            "SELECT count(*) FROM attendance WHERE date >= '2027-02-01' AND date < '2027-03-01'",
+        )
+        ids = scalar(conn, "SELECT count(DISTINCT id) FROM attendance")
+
+    assert march == 0
+    assert february == 72 * 10  # các tháng khác còn nguyên (tháng 2/2027 có 10 ngày học)
+    assert total == ids == 72 * (175 - 23)
+
+    seed_database(engine, SMALL)  # chạy lại không có --hold-out: đủ cả năm
+    with engine.connect() as conn:
+        assert scalar(conn, "SELECT count(*) FROM attendance") == 72 * 175
+
+
+def test_seed_empties_the_import_tables(db_engine: Engine) -> None:
+    with db_engine.connect() as conn:
+        assert scalar(conn, "SELECT count(*) FROM import_jobs") == 0
+        assert scalar(conn, "SELECT count(*) FROM import_mappings") == 0
+
+
 def test_seed_refuses_production_and_leaves_data_untouched(
     fresh_database: Callable[[], Engine], upgrade_db: Callable[[Engine], None]
 ) -> None:

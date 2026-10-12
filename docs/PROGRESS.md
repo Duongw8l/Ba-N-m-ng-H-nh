@@ -1,6 +1,6 @@
 # Tiến độ
 
-Cập nhật lần cuối: 2026-10-13 (Giai đoạn 3). Tên và thứ tự giai đoạn lấy từ bộ prompt [PROMPTS.md](PROMPTS.md).
+Cập nhật lần cuối: 2026-10-13 (Giai đoạn 4). Tên và thứ tự giai đoạn lấy từ bộ prompt [PROMPTS.md](PROMPTS.md).
 
 ## Bảng 12 giai đoạn
 
@@ -9,8 +9,8 @@ Cập nhật lần cuối: 2026-10-13 (Giai đoạn 3). Tên và thứ tự giai
 | 0 | Khởi tạo dự án | Xong (còn chờ kiểm: CI trên GitHub, cần đẩy lên GitHub, xem bên dưới) |
 | 1 | Cơ sở dữ liệu + dữ liệu giả lập | Xong, đã commit `cab087d` (còn chờ kiểm: CI trên GitHub, xem bên dưới) |
 | 2 | Xác thực và phân quyền | Xong, đã commit `43900ac` (chưa kiểm giao diện trên trình duyệt, CI trên GitHub; xem bên dưới) |
-| 3 | Analytics theo Thông tư 22 | Xong, chưa commit (quy tắc lấy từ nguồn thứ cấp, **cần đối chiếu văn bản gốc**; xem bên dưới) |
-| 4 | Import Excel/CSV | Chưa làm |
+| 3 | Analytics theo Thông tư 22 | Xong, đã commit `15c8d97` (quy tắc lấy từ nguồn thứ cấp, **cần đối chiếu văn bản gốc**; xem bên dưới) |
+| 4 | Import Excel/CSV | Xong, chưa commit (chưa kiểm giao diện trên trình duyệt, chưa thử với sổ điểm thật; xem bên dưới) |
 | 5 | Dashboard và giao diện chính | Chưa làm |
 | 6 | Cảnh báo sớm (luật + ML) | Chưa làm |
 | 7 | RAG văn bản quy định | Chưa làm |
@@ -171,3 +171,40 @@ Cập nhật lần cuối: 2026-10-13 (Giai đoạn 3). Tên và thứ tự giai
 3. Swagger <http://localhost:8000/api/docs>: đăng nhập `gvcn.11a2@example.com` rồi gọi `GET /classes/5/dashboard?semester=1` (lớp 11A2: em An nghỉ 38 buổi và em Toán 3,0 nằm trong danh sách cần quan tâm); đổi sang `semester=year` để thấy đếm đủ điều kiện lên lớp. Gọi `GET /classes/5/subjects/2/scores?semester=1` (bảng điểm Toán). Đăng nhập `bgh1@example.com` gọi `GET /grades/12/overview?semester=year`.
 4. Thử quyền: `gv.toan.11@example.com` xem được điểm Toán 11A2 nhưng bị 403 ở dashboard 11A2; `admin@example.com` bị 403 ở cả ba.
 5. Xem phần ghi nhật ký: `select action, class_id, details from audit_logs`.
+
+## Giai đoạn 4: Import Excel/CSV
+
+### Đã làm
+
+- **Luồng nhập tệp** (`backend/app/imports/`; D-057 đến D-063): tải `.xlsx`/`.csv` → đọc mọi ô dưới dạng chuỗi → ánh xạ cột (bí danh, mẫu đã lưu, chọn tay) → kiểm từng dòng → so với dữ liệu hiện có (`new` / `changed` kèm giá trị cũ / `unchanged`) → bản xem trước lưu DB → xác nhận mới ghi bằng upsert trong một transaction. Ba loại: điểm (một môn, một học kỳ mỗi tệp, môn điểm số và môn nhận xét), điểm danh, rèn luyện.
+- **Ba endpoint**: `POST /classes/{id}/import/{kind}`, `POST /imports/{job_id}/confirm`, `GET /imports/mappings`. Quyền ghi qua `authorize_write()` trong `core/authorize.py` (D-058): điểm do giáo viên được phân công đúng lớp-môn, điểm danh và rèn luyện do GVCN; BGH và Admin không nhập; kiểm trước khi đọc tệp và kiểm lại lúc xác nhận.
+- **Migration thứ 6**: bảng `import_jobs`, `import_mappings`, hành động nhật ký `import_confirm`. Hook rỗng `on_data_changed(class_id)` cho Giai đoạn 6.
+- **Tệp mẫu** `data/samples/` (3 tệp, `make samples`, README riêng) và tuỳ chọn seed **`--hold-out YYYY-MM`** (D-064) cho kịch bản demo "GVCN nhập tệp điểm danh tháng mới". Mặc định của seed không đổi (băm dữ liệu y hệt trước Giai đoạn 4).
+- **Front-end** (không thêm thư viện): trang `/classes/:classId/import` (chọn loại, môn, học kỳ hoặc kỳ; kéo thả tệp; chọn cột và lưu mẫu; bảng xem trước tô đỏ lỗi, vàng cảnh báo, hiện cũ → mới, lọc chỉ lỗi; xác nhận khoá khi còn lỗi; tóm tắt kết quả), liên kết "Nhập điểm", "Nhập điểm danh", "Nhập rèn luyện" ở trang chủ.
+- **Test**: 630 test (thêm 290): đọc tệp, cột và ánh xạ, từng quy tắc kiểm dòng tính tay, luồng xem trước và xác nhận trên DB thật, ma trận phân quyền, tệp mẫu, seed `--hold-out`. Các ca bắt buộc của PROMPTS đều có: tệp đúng nhập được, tệp lỗi không ghi gì và báo đúng dòng, GVBM nhập môn khác bị 403, nhập lại cùng tệp không nhân đôi. Đã thử "đột biến" thủ công 6 chỗ (bỏ kiểm GVCN, bỏ kiểm phân công, upsert thành `DO NOTHING`, nới ngưỡng 10 thành 10,5, cho xác nhận khi còn lỗi, bỏ kiểm người tạo job): test đỏ cả 6, riêng chỗ cuối cần thêm một ca (giáo viên mới nhận môn không xác nhận được bản xem trước của người cũ).
+
+### Chưa làm (thuộc các giai đoạn sau, hoặc ngoài phạm vi)
+
+- Điểm danh dạng "rộng" (mỗi ngày một cột). Nhập qua giao diện cho BGH/Admin (không có quyền ghi). Giới hạn dung lượng tải lên ở reverse proxy và giới hạn tần suất: Giai đoạn 11. Gắn cảnh báo sớm vào `on_data_changed`: Giai đoạn 6. Làm mới dashboard sau khi nhập: Giai đoạn 5 (dashboard hiện đọc trực tiếp DB nên số liệu mới thấy ngay khi mở lại).
+
+### Đã kiểm chứng và còn chờ kiểm chứng
+
+| Mục | Trạng thái |
+| --- | --- |
+| `alembic upgrade head` (migration thứ 6), lên/xuống/lên, `alembic check` | Đã chạy, đúng |
+| `make seed` hai lần: băm dữ liệu giống nhau (63.000 dòng điểm danh); `--hold-out 2027-03` còn 54.720 dòng | Đã chạy, đúng |
+| `make lint` và `make test` (630 test) | Đã chạy, qua |
+| `make up` (dựng lại image vì thêm pandas, openpyxl, python-multipart), 3 dịch vụ `healthy`; Vite biên dịch cả 13 module mới/sửa và trả trang SPA cho `/classes/5/import` | Đã chạy, đúng |
+| API thật bằng `curl -F` (qua proxy Vite và cổng 8000) với 3 tệp mẫu: tệp đúng (3 dòng đổi, xác nhận ghi 3 ô, xác nhận lần hai không ghi lại), tệp lỗi (6 lỗi + 1 cảnh báo đúng dòng đúng cột, xác nhận 422), `gv.van.11` / BGH / GVCN không dạy Toán / `gv.toan.11` điểm danh 11A2 đều 403 | Đã chạy, đúng |
+| Kịch bản demo: seed `--hold-out 2027-03`, `gvcn.11a2` nhập tệp điểm danh: 920 dòng mới, em An nghỉ 34 → 38 buổi trên dashboard; đối chiếu `HS1102005` bằng SQL (ĐĐGtx 2 = 6,60) và `audit_logs` (2 dòng `import_confirm`) | Đã chạy, đúng |
+| **Giao diện trên trình duyệt** (kéo thả, chọn cột, bảng xem trước, nút xác nhận) | **Chưa kiểm**: không có công cụ trình duyệt, chưa có Vitest/Playwright (D-004). Mới kiểm bằng `eslint`, `tsc`, `vite build` và API thật. Cần bạn mở thử |
+| **Định dạng sổ điểm điện tử thật** (VNEDU, SMAS…) | **Chưa thử**: không có tệp thật; định dạng tệp mẫu là suy đoán (D-057). Cần thử với một tệp xuất thật đã ẩn danh |
+| CI GitHub Actions | **Chưa kiểm**: cần đẩy lên GitHub. CI cài dependency bằng `make install` nên tự có thư viện mới (`pandas`, `openpyxl`, `python-multipart` trong `pyproject.toml`); test tệp mẫu đọc `data/samples/` đã commit |
+
+### Cách kiểm tra
+
+1. `make db`, `make migrate` (có migration thứ 6), `make seed SEED_ARGS="--hold-out 2027-03"`, `make up` (dựng lại image).
+2. Mở <http://localhost:5173>, đăng nhập `gvcn.11a2@example.com` (mật khẩu dev trong README), bấm "Nhập điểm danh" ở thẻ lớp 11A2, chọn `data/samples/diem-danh-11a2-2027-03.csv`: 920 dòng mới → "Xác nhận nhập".
+3. Đăng nhập `gv.toan.11@example.com`, bấm "Nhập điểm" ở dòng Toán 11A2, học kỳ I, thử `diem-toan-11a2-hk1.xlsx` (3 dòng đổi) rồi `diem-toan-11a2-hk1-loi.xlsx` (lỗi, nút xác nhận bị khoá). Thử đổi tên cột trong tệp để xem bước chọn cột.
+4. Thử quyền: đăng nhập `gv.van.11@example.com` rồi mở `/classes/5/import` (không có quyền); `bgh1@` không có nút nhập nào.
+5. `make test`, `make lint`. Xem nhật ký: `select action, class_id, details from audit_logs where action = 'import_confirm'`. Chạy `make seed` không tham số để về dữ liệu đầy đủ.

@@ -91,3 +91,15 @@ class AuditAction(StrEnum):
     VIEW_STUDENT_PROFILE = "view_student_profile"  # mở hồ sơ một học sinh (màn hình ở Giai đoạn 5)
     VIEW_CLASS_DASHBOARD = "view_class_dashboard"  # dashboard lớp (có tên học sinh cần quan tâm)
     VIEW_SUBJECT_SCORES = "view_subject_scores"  # bảng điểm một môn của lớp
+    IMPORT_CONFIRM = "import_confirm"  # xác nhận ghi dữ liệu nhập từ tệp (Giai đoạn 4)
+
+
+class ImportKind(StrEnum):
+    ASSESSMENTS = "assessments"  # điểm một môn, một học kỳ
+    ATTENDANCE = "attendance"  # điểm danh
+    CONDUCT = "conduct"  # rèn luyện
+
+
+class ImportStatus(StrEnum):
+    PREVIEWED = "previewed"  # đã xem trước, chưa ghi vào bảng dữ liệu
+    CONFIRMED = "confirmed"  # đã xác nhận và ghi

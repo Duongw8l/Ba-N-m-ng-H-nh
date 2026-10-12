@@ -15,8 +15,14 @@ def record_access(
     *,
     class_id: int | None,
     details: dict[str, Any],
+    commit: bool = True,
 ) -> None:
     """Ghi và commit NGAY. Gọi trước khi trả dữ liệu cho người dùng: ghi lỗi thì request lỗi,
-    không bao giờ trả dữ liệu mà không có nhật ký."""
+    không bao giờ trả dữ liệu mà không có nhật ký.
+
+    `commit=False` để ghi nhật ký cùng transaction với thay đổi dữ liệu (nhập từ tệp): hoặc cả
+    hai cùng vào, hoặc không gì cả.
+    """
     session.add(AuditLog(user_id=user.id, action=action, class_id=class_id, details=details))
-    session.commit()
+    if commit:
+        session.commit()

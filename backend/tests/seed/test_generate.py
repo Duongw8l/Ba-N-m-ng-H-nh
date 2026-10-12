@@ -258,6 +258,39 @@ def test_attendance_has_one_row_per_school_day_and_late_is_not_an_absence(
     assert statuses[AttendanceStatus.PRESENT] > statuses[AttendanceStatus.LATE]
 
 
+def test_default_attendance_ids_are_one_to_n_without_gaps(data: TableRows) -> None:
+    """Mặc định (không --hold-out) dữ liệu y hệt các giai đoạn trước: id điểm danh liên tục."""
+    assert [r["id"] for r in data["attendance"]] == list(range(1, 360 * 175 + 1))
+
+
+def test_hold_out_removes_exactly_that_months_attendance_and_nothing_else(
+    data: TableRows,
+) -> None:
+    held = generate(SeedParams(hold_out_month=(2027, 3)), RULES, "bcrypt-hash-gia")
+    march_days = [d.day for d in school_days() if (d.day.year, d.day.month) == (2027, 3)]
+    assert len(march_days) == 23  # tính tay: tháng 3/2027 có 23 ngày thứ Hai đến thứ Sáu
+
+    assert len(held["attendance"]) == 360 * (175 - 23)
+    assert not any(r["date"].month == 3 and r["date"].year == 2027 for r in held["attendance"])
+    # Dòng còn lại giống hệt dữ liệu mặc định (cùng id, cùng trạng thái): chỉ thiếu tháng 3.
+    kept = [r for r in data["attendance"] if (r["date"].year, r["date"].month) != (2027, 3)]
+    assert held["attendance"] == kept
+    assert len({r["id"] for r in held["attendance"]}) == len(held["attendance"])
+    # Mọi bảng khác không đổi.
+    assert {name: rows for name, rows in held.items() if name != "attendance"} == {
+        name: rows for name, rows in data.items() if name != "attendance"
+    }
+
+
+def test_hold_out_month_must_be_a_month_with_school_days() -> None:
+    SeedParams(hold_out_month=(2026, 9))
+    SeedParams(hold_out_month=(2027, 5))
+    SeedParams(hold_out_month=(2027, 2))  # nghỉ Tết hai tuần nhưng vẫn có 10 ngày học
+    for month in [(2026, 8), (2027, 6), (2027, 13), (2027, 0), (1999, 3)]:
+        with pytest.raises(ValueError, match="hold_out"):
+            SeedParams(hold_out_month=month)
+
+
 def test_accounts_are_fake_and_follow_the_roles(data: TableRows) -> None:
     users = data["users"]
     roles = Counter(u["role"].value for u in users)

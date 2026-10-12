@@ -10,14 +10,17 @@ docker-compose.override.yml
 # ---------------------------------------------------------------------------
 # Dữ liệu: chỉ dữ liệu GIẢ LẬP trong data/seed/ được commit (nguyên tắc 7 của CLAUDE.md).
 # Bảng tính / CSV có thể là sổ điểm thật nên bị chặn mặc định.
-# Ngoại lệ: data/seed/, eval/ (bộ câu hỏi đánh giá) và backend/tests/fixtures/ (dữ liệu giả).
+# Ngoại lệ: data/seed/, data/samples/ (tệp mẫu nhập dữ liệu, do script sinh từ dữ liệu giả),
+# eval/ (bộ câu hỏi đánh giá) và backend/tests/fixtures/ (dữ liệu giả).
 # ---------------------------------------------------------------------------
 data/*
 !data/seed/
+!data/samples/
 *.csv
 *.xls
 *.xlsx
 !data/seed/**
+!data/samples/**
 !eval/**
 !backend/tests/fixtures/**
 

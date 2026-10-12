@@ -8,6 +8,8 @@ import pytest
 from sqlalchemy import Connection, text
 from sqlalchemy.exc import DataError, IntegrityError
 
+from app.core.enums import AuditAction
+
 pytestmark = pytest.mark.db
 
 ASSESSMENT = (
@@ -48,8 +50,12 @@ def test_audit_log_accepts_every_known_action_and_rejects_others(
         "view_student_profile",
         "view_class_dashboard",
         "view_subject_scores",
+        "import_confirm",
     ):
         db_conn.execute(text(insert), {"action": action})
+    # Mọi hành động trong enum đều được CHECK chấp nhận (chặn quên mở rộng CHECK).
+    for action in AuditAction:
+        db_conn.execute(text(insert), {"action": action.value})
 
     expect_rejected(insert, action="xem_het_truong")
 

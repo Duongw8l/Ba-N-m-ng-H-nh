@@ -301,3 +301,48 @@ Quyết định đã chốt chỉ đổi bằng cách ghi thêm một mục mớ
 
 **D-056 · Học sinh biên nghỉ 44/45/46 buổi có năng lực cao** (Đã duyệt; sửa D-032)
 - `HS1201001` đến `HS1201003` có `ability = 2.0` cố định trong `scenarios.py`. Trước đó điểm và rèn luyện của hai em nghỉ 45 và 46 buổi bị kéo xuống (rèn luyện Chưa đạt) nên ca "45 đủ, 46 không đủ" không tách riêng được nguyên nhân là số buổi nghỉ. Sau chỉnh: 44 và 45 buổi đủ điều kiện lên lớp, 46 buổi không đủ chỉ vì `absent_over_limit`. Chỉ ba em này thay đổi trong dữ liệu seed.
+
+## Giai đoạn 4: nhập Excel/CSV
+
+**D-057 · Định dạng tệp và cột** (Đã duyệt)
+- Nhận `.xlsx` và `.csv` UTF-8 (có hoặc không BOM; dấu `,` `;` hoặc tab tự nhận). Từ chối `.xls`, `.xlsm`, tệp có macro, CSV không phải UTF-8 (kể cả "Unicode Text" của Excel, kèm gợi ý lưu "CSV UTF-8"). Giới hạn 5 MB, 20.000 dòng, 60 cột, tệp zip giải nén không quá 50 MB (chống zip bomb). Lỗi trả 413/415/422 kèm thông điệp tiếng Việt.
+- Đọc bằng pandas + openpyxl với `dtype=str`: **mọi ô là chuỗi**, điểm đổi sang `Decimal` ở bước kiểm dòng, nên ô số `8.7` không bao giờ thành `8.700000000000001`. Chỉ đọc trang tính đầu tiên.
+- **Điểm dạng "rộng"** như sổ điểm điện tử: mỗi học sinh một dòng; **một môn, một học kỳ mỗi tệp**; `subject_id`, `semester` truyền kèm yêu cầu, không nằm trong tệp (nên quyền được kiểm trước khi đọc tệp). Cột: mã học sinh, `tx1…txN` (N theo số tiết của môn, đọc từ `settings`), giữa kỳ, cuối kỳ; họ tên chỉ để đối chiếu; cột lạ (STT, ĐTB…) bị bỏ qua và được liệt kê. Môn nhận xét: một cột Đạt / Chưa đạt.
+- **Điểm danh dạng "dài"**: mã học sinh, ngày (dd/mm/yyyy, yyyy-mm-dd hoặc ô ngày của Excel), trạng thái (tiếng Việt, mã tiếng Anh hoặc CP/KP/M). **Rèn luyện**: mã học sinh, mức (Tốt/Khá/Đạt/Chưa đạt hoặc good/fair/pass/fail), nhận xét tuỳ chọn; `period` (hk1/hk2/year) truyền kèm. Chưa hỗ trợ điểm danh dạng "rộng" (mỗi ngày một cột).
+- Tên cột được chuẩn hoá (bỏ dấu, chữ thường, bỏ dấu câu) rồi khớp bí danh ("Mã HS", "mã học sinh", "MA_HS" là một; "ĐĐGtx 1", "TX1"…). Dòng tiêu đề tự dò trong 15 dòng đầu (sổ điểm xuất ra thường có dòng tiêu đề lớn phía trên) hoặc chỉ định bằng `header_row`. Mã học sinh so không phân biệt hoa thường.
+- **Định dạng thật của sổ điểm điện tử (VNEDU, SMAS…) là suy đoán**: không có tệp xuất thật để đối chiếu. Ánh xạ cột và tự dò dòng tiêu đề là để bù; cần thử với một tệp thật đã ẩn danh khi có.
+
+**D-058 · Quyền ghi: `authorize_write`** (Đã duyệt; mở rộng nguyên tắc 4)
+- Quyền ghi hẹp hơn quyền xem. **Điểm**: chỉ giáo viên có phân công đúng lớp-môn. **Điểm danh và rèn luyện**: chỉ GVCN của lớp. **BGH và Admin không nhập** (BGH xem toàn trường nhưng không ghi). GVCN không dạy môn đó cũng không nhập được điểm môn đó. Quyền cộng dồn, tính riêng từng lớp (người chủ nhiệm 11A1 và dạy Toán 11A2 nhập được điểm danh 11A1 và điểm Toán 11A2, không ngược lại).
+- Hàm nằm cùng `core/authorize.py`, cùng kiểu `AuthorizationError` (403 chung, không nói lý do). Endpoint kiểm quyền **trước khi đọc nội dung tệp**. Xác nhận kiểm lại quyền (giáo viên bị rút phân công giữa chừng thì không ghi được) và chỉ **người tạo bản xem trước** được xác nhận.
+
+**D-059 · Bản xem trước lưu trong DB; tất cả hoặc không gì** (Đã duyệt; migration thứ 6)
+- Bảng mới `import_jobs` (ngoài 15 bảng của DESIGN): `id` UUID ngẫu nhiên, người tạo, lớp, loại, môn, học kỳ/kỳ, ánh xạ cột, số đếm, các bản ghi hợp lệ đã chuẩn hoá, `expires_at` (24 giờ), `confirmed_at`. Lưu DB thay vì bộ nhớ tiến trình để sống qua khởi động lại và chạy được nhiều tiến trình. **Không lưu tệp gốc và không lưu họ tên.** Dọn job hết hạn mỗi khi có tải lên mới.
+- Xem trước **không ghi gì** vào bảng dữ liệu. **Có dòng lỗi thì không ghi gì** (kể cả các dòng đúng): xác nhận bị từ chối 422. Cảnh báo (họ tên lệch, thiếu đầu điểm khi `allow_partial`) không chặn.
+- Xác nhận ghi trong **một transaction**, khoá job `FOR UPDATE`; xác nhận lặp lại trả kết quả cũ (`already_confirmed`), không ghi lần hai; job hết hạn 410; không có job 404; lỗi toàn vẹn khi ghi thì rollback toàn bộ và trả 409.
+- Nhật ký `audit_logs`: hành động mới `import_confirm` (mở rộng `CHECK` như D-053), chỉ ghi **lúc xác nhận** (xem trước không đổi dữ liệu), `details` chỉ có id job, loại, môn, học kỳ/kỳ và số bản ghi, không có tên học sinh.
+
+**D-060 · Ghi đè, ô trống không xoá, không nhân đôi** (Đã duyệt)
+- Nhập lại **ghi đè** giá trị đã đổi; bản xem trước phân loại từng dòng `new` / `changed` / `unchanged` và hiện cũ → mới. **Ô trống không bao giờ xoá** dữ liệu có sẵn; nhận xét rèn luyện để trống thì giữ nhận xét cũ.
+- Ghi bằng `INSERT … ON CONFLICT DO UPDATE` dựa trên khoá duy nhất của Giai đoạn 1 nên nhập lại cùng tệp không nhân đôi bản ghi; đếm bản ghi tạo mới / ghi đè bằng `xmax = 0`.
+
+**D-061 · Quy tắc kiểm từng dòng** (Đã duyệt; **thay câu "chuẩn hoá về 1 chữ số thập phân ở tầng import" của D-035**)
+- Điểm: số từ 0 đến 10, **tối đa 1 chữ số thập phân; nhiều hơn là lỗi, không tự làm tròn** (tự làm tròn âm thầm sẽ đổi điểm của học sinh). Chấp nhận dấu phẩy (`7,5`) và dấu chấm; từ chối `1e1`, `NaN`, `Infinity`.
+- **Thiếu đầu điểm là lỗi mặc định**; tuỳ chọn `allow_partial` đổi thành cảnh báo và ô trống không ghi.
+- Mã học sinh không có trong lớp, hoặc trùng trong tệp (điểm danh: trùng học sinh + ngày): lỗi, ghi rõ trùng với dòng nào. Họ tên trong tệp lệch hệ thống: cảnh báo. Ngày điểm danh ngoài năm học của lớp, trạng thái hay mức lạ: lỗi. Mọi thông điệp tiếng Việt kèm tên cột và đúng số dòng của tệp.
+- Giá trị cũ lấy từ DB (`NUMERIC(4,2)`) được hiển thị thống nhất một chữ số thập phân (`4,7`, không phải `4,70`).
+
+**D-062 · Mẫu ánh xạ cột** (Đã duyệt)
+- Bảng `import_mappings` (mỗi người dùng, mỗi loại, một tên; lưu cùng tên thì ghi đè). Thứ tự ưu tiên: lựa chọn tay của người dùng, rồi mẫu đã lưu, rồi tự khớp theo bí danh. Thiếu cột bắt buộc: bản xem trước báo `missing_required`, **không tạo job**; giao diện hiện bước chọn cột rồi gửi lại. Mẫu chỉ được lưu khi ánh xạ đủ cột để tạo job. Mẫu của giáo viên này không hiện cho giáo viên khác.
+
+**D-063 · Hook `on_data_changed(class_id)`** (Đã duyệt)
+- `imports/hooks.py`, hiện rỗng. Gọi **một lần, sau khi commit**, và **chỉ khi dữ liệu thật sự đổi** (tạo mới hoặc ghi đè ít nhất một bản ghi). Giai đoạn 6 gắn Early Warning chạy lại cho lớp vào đây. Analytics tính khi đọc (D-052) nên chưa có gì để "tính lại". Nếu hook sau này có thể ném lỗi thì người gọi phải bắt và ghi log, không được làm hỏng việc nhập đã commit.
+
+**D-064 · Tệp mẫu và `--hold-out`** (Đã duyệt)
+- `data/samples/` (ngoại lệ `.gitignore`, như `data/seed/`; sinh bằng `make samples` từ chính bộ sinh của seed nên mã học sinh khớp): `diem-toan-11a2-hk1.xlsx` (đúng, có dòng tiêu đề lớn, STT, ĐTB; khác DB ở 3 học sinh), `diem-toan-11a2-hk1-loi.xlsx` (7 lỗi/cảnh báo cài sẵn và một dòng dấu phẩy hợp lệ), `diem-danh-11a2-2027-03.csv` (UTF-8 có BOM). ĐTB trong tệp tính bằng `app.analytics.scores` với hệ số đọc từ `settings`, không cài công thức thứ hai.
+- `make seed SEED_ARGS="--hold-out 2027-03"` bỏ điểm danh tháng đó khỏi DB để nhập tệp mẫu là dữ liệu **mới** (kịch bản demo "GVCN nhập tệp điểm danh tháng mới", DESIGN mục 12). Mặc định không đổi (dữ liệu y hệt các giai đoạn trước). Id điểm danh tính theo số ngày học nên không bị trùng khi bỏ tháng. Khi hold-out, số buổi nghỉ trong DB chưa tính tháng đó cho tới khi nhập tệp.
+
+**D-065 · Thư viện, giới hạn và điều chưa kiểm** (Đã duyệt)
+- Thư viện mới (ghim phiên bản): `pandas==3.0.6`, `openpyxl==3.1.5`, `python-multipart==0.0.32` (cần cho `UploadFile`; kéo theo numpy). Image Docker backend nặng thêm khoảng 60 MB. Front-end không thêm thư viện.
+- Starlette nhận trọn thân `multipart` trước khi gọi hàm xử lý, nên **giới hạn dung lượng thật phải đặt thêm ở reverse proxy (Giai đoạn 11)**; trong code chỉ chặn khi đọc nội dung. Xem trước cắt ở 500 dòng bình thường (luôn đủ dòng lỗi và cảnh báo); xác nhận vẫn ghi toàn bộ tệp.
+- Giao diện `/classes/:classId/import` kiểm bằng `eslint`, `tsc`, `vite build` và gọi API thật; **chưa kiểm trên trình duyệt** (không có công cụ trình duyệt, chưa có Vitest hay Playwright, D-004).

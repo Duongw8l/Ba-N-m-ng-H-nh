@@ -44,6 +44,7 @@ make dev-fe              # terminal 2: giao diện tại http://localhost:5173
 | `make install` | Cài dependency ngoài Docker |
 | `make migrate` | `alembic upgrade head` |
 | `make seed` | Sinh dữ liệu giả lập vào DB (cần `make db` và `make migrate` trước) |
+| `make samples` | Sinh lại 3 tệp mẫu nhập dữ liệu trong `data/samples/` (cần DB đã migrate) |
 | `make dev-be` / `make dev-fe` | Chạy back-end (uvicorn) / front-end (Vite) với tự nạp lại |
 | `make test` | pytest. Gồm test cần PostgreSQL thật nên phải `make db` trước; chỉ chạy test không cần DB: `cd backend && python -m pytest -m "not db"` |
 | `make lint` | ruff check, ruff format --check (cả `backend/` và `data/`), eslint, tsc |
@@ -58,6 +59,7 @@ make dev-fe              # terminal 2: giao diện tại http://localhost:5173
 ```bash
 make seed                                                   # mặc định: --seed 2026, 3 lớp/khối, sĩ số 40
 make seed SEED_ARGS="--seed 7 --classes-per-grade 2 --class-size 30"
+make seed SEED_ARGS="--hold-out 2027-03"                    # bỏ điểm danh tháng 3/2027 để demo nhập tệp (xem mục nhập tệp)
 ```
 
 Mật khẩu dev dùng chung cho mọi tài khoản (chỉ dành cho môi trường phát triển): `ThdaDev#2026`
@@ -77,6 +79,16 @@ Số liệu (Giai đoạn 3), thử trong Swagger sau khi đăng nhập: `GET /a
 Mã môn trong email: `van` `toan` `anh` `su` `gdtc` `gdqp` `hdtn` `gddp` `dia` `gdktpl` `ly` `hoa` `sinh` `cn` `tin` `nhac` `mt`.
 
 Học sinh dùng cho kịch bản demo và test biên: `HS1102001` (11A2, em An nghỉ 38 buổi), `HS1102002` (11A2, môn Toán dưới 3,5), `HS1201001` đến `HS1201003` (12A1, nghỉ 44, 45, 46 buổi), `HS1201004` đến `HS1201006` (12A1, mọi đầu điểm Toán đúng 3,4 / 3,5 / 5,0). Mã học sinh có dạng `HS` + khối + lớp (2 chữ số) + số thứ tự (3 chữ số).
+
+## Nhập điểm, điểm danh, rèn luyện từ tệp
+
+Giai đoạn 4: giáo viên nhập tệp `.xlsx` hoặc `.csv` (UTF-8) xuất từ sổ điểm điện tử. Luồng luôn là **tải tệp, xem trước (chưa ghi gì), xác nhận mới ghi**; còn dòng lỗi thì không ghi gì cả. Giao diện: <http://localhost:5173/classes/5/import> (id lớp 11A2), hoặc bấm "Nhập điểm" ở bảng lớp-môn, "Nhập điểm danh" / "Nhập rèn luyện" ở thẻ lớp chủ nhiệm trên trang chủ.
+
+- **Ai nhập được:** điểm chỉ do giáo viên được phân công đúng lớp-môn; điểm danh và rèn luyện chỉ do GVCN của lớp. Ban giám hiệu và Admin xem được nhưng không nhập.
+- **API** (xem Swagger): `POST /api/v1/classes/{id}/import/{assessments|attendance|conduct}` (multipart, trả bản xem trước), `POST /api/v1/imports/{job_id}/confirm` (ghi dữ liệu), `GET /api/v1/imports/mappings` (mẫu chọn cột đã lưu). Nhập lại cùng tệp không nhân đôi dữ liệu; ô trống không xoá điểm đã có; bản xem trước hết hạn sau 24 giờ.
+- **Tệp mẫu** (`data/samples/`, cột và kịch bản thử xem [data/samples/README.md](data/samples/README.md)): `diem-toan-11a2-hk1.xlsx` (đúng), `diem-toan-11a2-hk1-loi.xlsx` (có lỗi cài sẵn), `diem-danh-11a2-2027-03.csv`.
+- **Kịch bản demo "GVCN nhập tệp điểm danh tháng mới":** `make seed SEED_ARGS="--hold-out 2027-03"`, đăng nhập `gvcn.11a2@example.com`, nhập `diem-danh-11a2-2027-03.csv` cho lớp 11A2: 920 dòng mới, số buổi nghỉ của em An (`HS1102001`) từ 34 lên 38. Chạy `make seed` không tham số để về dữ liệu đầy đủ.
+- Tệp tối đa 5 MB, 20.000 dòng, 60 cột. Giới hạn dung lượng thật khi triển khai cần đặt thêm ở reverse proxy (Giai đoạn 11).
 
 ## Test có PostgreSQL thật
 

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import type { TeachingItem } from '../api/auth'
 
 export function TeachingTable({ items }: { items: TeachingItem[] }) {
@@ -18,6 +19,9 @@ export function TeachingTable({ items }: { items: TeachingItem[] }) {
             <th scope="col" className="py-2 font-medium">
               Môn
             </th>
+            <th scope="col" className="py-2 text-right font-medium">
+              <span className="sr-only">Thao tác</span>
+            </th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
@@ -25,6 +29,15 @@ export function TeachingTable({ items }: { items: TeachingItem[] }) {
             <tr key={`${item.class_id}-${item.subject_id}`}>
               <td className="py-2">{item.class_name}</td>
               <td className="py-2">{item.subject_name}</td>
+              <td className="py-2 text-right">
+                <Link
+                  to={`/classes/${item.class_id}/import?kind=assessments&subject=${item.subject_id}`}
+                  aria-label={`Nhập điểm ${item.subject_name} lớp ${item.class_name}`}
+                  className="font-medium text-blue-700 hover:underline"
+                >
+                  Nhập điểm
+                </Link>
+              </td>
             </tr>
           ))}
         </tbody>

@@ -2,12 +2,16 @@ interface AppHeaderProps {
   fullName: string
   roleLabel: string
   onLogout: () => void
+  // Trang có bảng rộng (nhập dữ liệu) dùng bề ngang lớn hơn trang chủ.
+  wide?: boolean
 }
 
-export function AppHeader({ fullName, roleLabel, onLogout }: AppHeaderProps) {
+export function AppHeader({ fullName, roleLabel, onLogout, wide = false }: AppHeaderProps) {
   return (
     <header className="border-b border-slate-200 bg-white">
-      <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-4 py-3">
+      <div
+        className={`mx-auto flex ${wide ? 'max-w-6xl' : 'max-w-3xl'} items-center justify-between gap-4 px-4 py-3`}
+      >
         <span className="font-semibold">Trợ lý AI quản lý lớp học</span>
         <div className="flex items-center gap-4 text-sm">
           <span className="text-right">

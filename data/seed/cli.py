@@ -22,6 +22,8 @@ from data.seed.params import (
 )
 from data.seed.people import EMAIL_DOMAIN
 
+SAMPLE_ATTENDANCE_MONTH = (2027, 3)  # tháng của data/samples/diem-danh-11a2-2027-03.csv
+
 
 def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -35,7 +37,26 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
         "--classes-per-grade", type=int, default=DEFAULT_CLASSES_PER_GRADE, help="số lớp mỗi khối"
     )
     parser.add_argument("--class-size", type=int, default=DEFAULT_CLASS_SIZE, help="sĩ số mỗi lớp")
+    parser.add_argument(
+        "--hold-out",
+        type=_parse_month,
+        default=None,
+        metavar="YYYY-MM",
+        help="bỏ điểm danh của tháng này khỏi DB để nhập lại từ tệp mẫu data/samples/ "
+        "(kịch bản demo: --hold-out 2027-03). Mặc định: đủ cả năm học",
+    )
     return parser.parse_args(argv)
+
+
+def _parse_month(text: str) -> tuple[int, int]:
+    try:
+        year_text, month_text = text.split("-")
+        year, month = int(year_text), int(month_text)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"'{text}' không phải tháng dạng YYYY-MM.") from None
+    if not 1 <= month <= 12:
+        raise argparse.ArgumentTypeError(f"'{text}' không phải tháng dạng YYYY-MM.")
+    return year, month
 
 
 def format_summary(summary: SeedSummary, params: SeedParams) -> str:
@@ -47,6 +68,15 @@ def format_summary(summary: SeedSummary, params: SeedParams) -> str:
         "Số dòng mỗi bảng:",
     ]
     lines += [f"  {name:<22}{summary.row_counts[name]:>8}" for name in table_order()]
+    if params.hold_out_month is not None:
+        year, month = params.hold_out_month
+        lines += ["", f"Đã bỏ điểm danh tháng {month:02d}/{year} khỏi DB (--hold-out)."]
+        if (year, month) == SAMPLE_ATTENDANCE_MONTH:
+            lines.append(
+                "Nhập lại bằng tệp data/samples/diem-danh-11a2-2027-03.csv (xem "
+                "data/samples/README.md)."
+            )
+        lines.append("Số buổi nghỉ trong thống kê dưới đây chưa tính tháng đó.")
     lines += [
         "",
         f"Học sinh: {summary.row_counts['students']}",
@@ -71,7 +101,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = _parse_args(argv)
     try:
         params = SeedParams(
-            seed=args.seed, classes_per_grade=args.classes_per_grade, class_size=args.class_size
+            seed=args.seed,
+            classes_per_grade=args.classes_per_grade,
+            class_size=args.class_size,
+            hold_out_month=args.hold_out,
         )
     except ValueError as error:
         print(f"Tham số không hợp lệ: {error}", file=sys.stderr)

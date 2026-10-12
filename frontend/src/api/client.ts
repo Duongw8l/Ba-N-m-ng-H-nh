@@ -50,12 +50,14 @@ async function request<T>(
   const headers: Record<string, string> = { Accept: 'application/json' }
   const token = options.authenticated === false ? null : getToken()
   if (token) headers.Authorization = `Bearer ${token}`
-  if (body !== undefined) headers['Content-Type'] = 'application/json'
+  // FormData: không tự đặt Content-Type, để trình duyệt thêm ranh giới (boundary) của multipart.
+  const isForm = body instanceof FormData
+  if (body !== undefined && !isForm) headers['Content-Type'] = 'application/json'
 
   const response = await fetch(`${API_BASE}${path}`, {
     method,
     headers,
-    body: body === undefined ? undefined : JSON.stringify(body),
+    body: body === undefined ? undefined : isForm ? body : JSON.stringify(body),
     signal: options.signal,
   })
   if (!response.ok) {
@@ -71,4 +73,9 @@ export function apiGet<T>(path: string, signal?: AbortSignal): Promise<T> {
 
 export function apiPost<T>(path: string, body: unknown, options: RequestOptions = {}): Promise<T> {
   return request<T>('POST', path, body, options)
+}
+
+// Tải tệp lên (multipart/form-data).
+export function apiUpload<T>(path: string, form: FormData): Promise<T> {
+  return request<T>('POST', path, form, {})
 }

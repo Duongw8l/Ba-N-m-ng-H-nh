@@ -14,6 +14,8 @@ from app.core.enums import (
     CommentResult,
     ConductLevel,
     ConductPeriod,
+    ImportKind,
+    ImportStatus,
     ReportScope,
     ReportStatus,
     ReportType,
@@ -87,6 +89,16 @@ LABELS_VI: dict[type[StrEnum], dict[StrEnum, str]] = {
         AuditAction.VIEW_STUDENT_PROFILE: "Xem hồ sơ học sinh",
         AuditAction.VIEW_CLASS_DASHBOARD: "Xem dashboard lớp",
         AuditAction.VIEW_SUBJECT_SCORES: "Xem bảng điểm môn",
+        AuditAction.IMPORT_CONFIRM: "Xác nhận nhập dữ liệu từ tệp",
+    },
+    ImportKind: {
+        ImportKind.ASSESSMENTS: "Điểm",
+        ImportKind.ATTENDANCE: "Điểm danh",
+        ImportKind.CONDUCT: "Rèn luyện",
+    },
+    ImportStatus: {
+        ImportStatus.PREVIEWED: "Đã xem trước",
+        ImportStatus.CONFIRMED: "Đã xác nhận",
     },
 }
 

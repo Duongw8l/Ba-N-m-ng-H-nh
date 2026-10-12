@@ -125,6 +125,7 @@ def generate(
     attendance_rows: list[Row] = []
     conduct_rows: list[Row] = []
     exam_rows: list[Row] = []
+    attendance_first_id = 1  # đếm theo số ngày học, không theo số dòng còn lại sau khi bỏ tháng
     for student in students:
         subjects = class_subjects(student.class_index)
         if student.absences is None:
@@ -132,7 +133,12 @@ def generate(
         assessment_rows.extend(
             _assessments(params, student, subjects, subject_ids, rules, assessment_ids)
         )
-        attendance_rows.extend(_attendance(params, student, days, len(attendance_rows) + 1))
+        attendance_rows.extend(
+            row
+            for row in _attendance(params, student, days, attendance_first_id)
+            if not _is_held_out(params, row["date"])
+        )
+        attendance_first_id += len(days)
         conduct_rows.extend(_conduct(params, student, len(conduct_rows) + 1))
         if student.grade == 12:
             exam_rows.extend(
@@ -406,6 +412,10 @@ def _pick_absent_days(rng: random.Random, day_count: int, absences: int) -> set[
             if len(chosen) < absences and start + offset < day_count:
                 chosen.add(start + offset)
     return chosen
+
+
+def _is_held_out(params: SeedParams, day: date) -> bool:
+    return params.hold_out_month == (day.year, day.month)
 
 
 def _attendance(

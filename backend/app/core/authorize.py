@@ -104,6 +104,48 @@ def authorize(
     return access
 
 
+def authorize_write(
+    session: Session, user: User, *, class_id: int, subject_id: int | None = None
+) -> Access:
+    """Quyền GHI dữ liệu của lớp (nhập từ tệp), hẹp hơn quyền xem (D-058).
+
+    - Có `subject_id` (nhập điểm): phải có phân công đúng lớp-môn đó. GVCN không dạy môn đó, BGH,
+      Admin đều bị từ chối.
+    - Không có `subject_id` (điểm danh, rèn luyện): phải là GVCN của lớp.
+    Người dạy môn ở lớp này và chủ nhiệm lớp kia có quyền cộng dồn, tính riêng từng lớp.
+    """
+    if user.role is not UserRole.TEACHER:
+        raise AuthorizationError
+    if subject_id is None:
+        is_homeroom = session.scalar(
+            select(SchoolClass.id).where(
+                SchoolClass.id == class_id, SchoolClass.homeroom_teacher_id == user.id
+            )
+        )
+        if is_homeroom is None:
+            raise AuthorizationError
+        return Access(user.role, class_id, True, None, True)
+
+    assigned = session.scalar(
+        select(TeachingAssignment.id).where(
+            TeachingAssignment.class_id == class_id,
+            TeachingAssignment.subject_id == subject_id,
+            TeachingAssignment.teacher_id == user.id,
+        )
+    )
+    if assigned is None:
+        raise AuthorizationError
+    is_homeroom_too = (
+        session.scalar(
+            select(SchoolClass.id).where(
+                SchoolClass.id == class_id, SchoolClass.homeroom_teacher_id == user.id
+            )
+        )
+        is not None
+    )
+    return Access(user.role, class_id, is_homeroom_too, frozenset({subject_id}), is_homeroom_too)
+
+
 def authorization_error_handler(_request: Request, _exc: Exception) -> JSONResponse:
     """Đăng ký trong app/main.py: AuthorizationError thành HTTP 403."""
     return JSONResponse(status_code=403, content={"detail": FORBIDDEN_MESSAGE})

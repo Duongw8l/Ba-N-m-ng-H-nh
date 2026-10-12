@@ -1,3 +1,6 @@
 # Chuẩn hoá về LF khi commit và khi checkout, kể cả trên Windows.
 # Makefile, Dockerfile và script shell sẽ hỏng nếu bị đổi sang CRLF.
 * text=auto eol=lf
+
+# Tệp Excel mẫu (data/samples/) là nhị phân: không bao giờ đổi ký tự xuống dòng.
+*.xlsx binary

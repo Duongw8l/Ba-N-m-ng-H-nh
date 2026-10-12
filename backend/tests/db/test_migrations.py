@@ -11,7 +11,8 @@ from app.core.config import get_settings
 
 pytestmark = pytest.mark.db
 
-# 15 bảng của DESIGN mục 5; bảng settings và audit_logs (Giai đoạn 2) tính riêng.
+# 15 bảng của DESIGN mục 5; settings, audit_logs (Giai đoạn 2), import_jobs và import_mappings
+# (Giai đoạn 4) tính riêng.
 BUSINESS_TABLES = {
     "users",
     "school_years",
@@ -29,7 +30,7 @@ BUSINESS_TABLES = {
     "regulation_chunks",
     "ai_logs",
 }
-EXTRA_TABLES = {"settings", "audit_logs"}
+EXTRA_TABLES = {"settings", "audit_logs", "import_jobs", "import_mappings"}
 EXPECTED_SETTING_KEYS = {
     "coef_midterm",
     "coef_final",
@@ -61,7 +62,7 @@ VIEW_COLUMNS = [
 ]
 
 
-def test_upgrade_head_creates_15_business_tables_plus_settings_and_audit_logs(
+def test_upgrade_head_creates_15_business_tables_plus_support_tables(
     db_conn: Connection,
 ) -> None:
     tables = set(inspect(db_conn).get_table_names())
