@@ -1,0 +1,218 @@
+{
+  "version": "rf-20261012",
+  "trained_at": "2026-10-12T21:45:12+00:00",
+  "algorithm": "RandomForestClassifier",
+  "sklearn_version": "1.9.1",
+  "snapshot_weeks": 9,
+  "trend_weeks": 4,
+  "features": [
+    {
+      "name": "tx_mean",
+      "label": "Điểm thường xuyên học kỳ I (trung bình các môn)"
+    },
+    {
+      "name": "tx_min_subject",
+      "label": "Điểm thường xuyên thấp nhất của một môn"
+    },
+    {
+      "name": "n_tx_below_pass",
+      "label": "Số môn có điểm thường xuyên dưới mức Đạt"
+    },
+    {
+      "name": "gk_mean",
+      "label": "Điểm giữa kỳ học kỳ I (trung bình các môn)"
+    },
+    {
+      "name": "gk_min",
+      "label": "Điểm giữa kỳ thấp nhất của một môn"
+    },
+    {
+      "name": "n_gk_below_pass",
+      "label": "Số môn có điểm giữa kỳ dưới mức Đạt"
+    },
+    {
+      "name": "absent_total",
+      "label": "Số buổi nghỉ tới giữa học kỳ I"
+    },
+    {
+      "name": "absent_last_4_weeks",
+      "label": "Số buổi nghỉ trong 4 tuần gần nhất"
+    },
+    {
+      "name": "late_total",
+      "label": "Số buổi đi muộn tới giữa học kỳ I"
+    }
+  ],
+  "medians": {
+    "tx_mean": 6.878260869565217,
+    "tx_min_subject": 6.033333333333334,
+    "n_tx_below_pass": 0.0,
+    "gk_mean": 6.888888888888889,
+    "gk_min": 5.6,
+    "n_gk_below_pass": 0.0,
+    "absent_total": 0.0,
+    "absent_last_4_weeks": 0.0,
+    "late_total": 1.0
+  },
+  "thresholds": {
+    "medium": 0.54,
+    "high": 0.8
+  },
+  "data": {
+    "cohorts": 20,
+    "seeds": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20
+    ],
+    "students": 7200,
+    "positives": 811,
+    "train": 5760,
+    "test": 1440,
+    "test_positives": 162,
+    "source": "dữ liệu giả lập sinh bằng data/seed (không dùng UCI, không dùng seed 2026)"
+  },
+  "metrics": {
+    "logistic_regression": {
+      "thresholds": {
+        "medium": 0.76,
+        "high": 0.88
+      },
+      "test_at_medium": {
+        "threshold": 0.76,
+        "recall": 0.8888888888888888,
+        "precision": 0.8,
+        "f1": 0.8421052631578947,
+        "roc_auc": 0.9817181552966633,
+        "average_precision": 0.9318727152425679,
+        "tp": 144,
+        "fp": 36,
+        "fn": 18,
+        "tn": 1242
+      },
+      "test_at_0.5": {
+        "threshold": 0.5,
+        "recall": 0.9506172839506173,
+        "precision": 0.6637931034482759,
+        "f1": 0.7817258883248731,
+        "roc_auc": 0.9817181552966633,
+        "average_precision": 0.9318727152425679,
+        "tp": 154,
+        "fp": 78,
+        "fn": 8,
+        "tn": 1200
+      },
+      "train_cv_at_medium": {
+        "threshold": 0.76,
+        "recall": 0.9060092449922958,
+        "precision": 0.8054794520547945,
+        "f1": 0.8527918781725888,
+        "roc_auc": 0.9805157551659778,
+        "average_precision": 0.924079036250084,
+        "tp": 588,
+        "fp": 142,
+        "fn": 61,
+        "tn": 4969
+      }
+    },
+    "random_forest": {
+      "thresholds": {
+        "medium": 0.54,
+        "high": 0.8
+      },
+      "test_at_medium": {
+        "threshold": 0.54,
+        "recall": 0.9197530864197531,
+        "precision": 0.9254658385093167,
+        "f1": 0.9226006191950464,
+        "roc_auc": 0.9820755810583667,
+        "average_precision": 0.9531390938236376,
+        "tp": 149,
+        "fp": 12,
+        "fn": 13,
+        "tn": 1266
+      },
+      "test_at_0.5": {
+        "threshold": 0.5,
+        "recall": 0.9197530864197531,
+        "precision": 0.9197530864197531,
+        "f1": 0.9197530864197531,
+        "roc_auc": 0.9820755810583667,
+        "average_precision": 0.9531390938236376,
+        "tp": 149,
+        "fp": 13,
+        "fn": 13,
+        "tn": 1265
+      },
+      "train_cv_at_medium": {
+        "threshold": 0.54,
+        "recall": 0.9044684129429892,
+        "precision": 0.9114906832298136,
+        "f1": 0.9079659706109822,
+        "roc_auc": 0.9835844558957552,
+        "average_precision": 0.9535246811621088,
+        "tp": 587,
+        "fp": 57,
+        "fn": 62,
+        "tn": 5054
+      }
+    }
+  },
+  "recall_target": 0.75,
+  "test_recall": 0.9197530864197531,
+  "feature_importances": [
+    {
+      "feature": "tx_min_subject",
+      "importance": 0.3866778690002694
+    },
+    {
+      "feature": "gk_min",
+      "importance": 0.22276243461389597
+    },
+    {
+      "feature": "n_tx_below_pass",
+      "importance": 0.1616905438306678
+    },
+    {
+      "feature": "tx_mean",
+      "importance": 0.11816983523565011
+    },
+    {
+      "feature": "gk_mean",
+      "importance": 0.05324712881963266
+    },
+    {
+      "feature": "n_gk_below_pass",
+      "importance": 0.0364375823864789
+    },
+    {
+      "feature": "absent_total",
+      "importance": 0.01086816435954774
+    },
+    {
+      "feature": "late_total",
+      "importance": 0.005501931475320886
+    },
+    {
+      "feature": "absent_last_4_weeks",
+      "importance": 0.004644510278536592
+    }
+  ]
+}

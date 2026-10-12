@@ -29,3 +29,8 @@ export function formatMonth(month: string): string {
 export function formatMonthShort(month: string): string {
   return `T${Number(month.split('-')[1])}`
 }
+
+// Xác suất của mô hình (0 đến 1) thành "97%".
+export function formatProbability(value: number): string {
+  return `${Math.round(value * 100)}%`
+}

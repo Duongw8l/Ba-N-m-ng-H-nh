@@ -1,10 +1,14 @@
-"""Cảnh báo sớm. Bảng này do Giai đoạn 6 ghi; Giai đoạn 1 chỉ tạo schema."""
+"""Cảnh báo sớm (Giai đoạn 6).
+
+Mỗi lần đánh giá chỉ thêm dòng mới khi nội dung đổi (D-071); cảnh báo hiện hành của một học sinh
+là dòng có id lớn nhất của em đó, các dòng cũ là lịch sử (kể cả các lần GVCN ghi "báo nhầm").
+"""
 
 from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Numeric, String, func, text
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, Numeric, String, func, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -18,6 +22,8 @@ class RiskAlert(Base):
         CheckConstraint(
             "risk_score IS NULL OR (risk_score >= 0 AND risk_score <= 1)", name="risk_score_range"
         ),
+        # Truy vấn "dòng mới nhất của từng học sinh".
+        Index("ix_risk_alerts_cs_latest", "class_student_id", "id"),
     )
 
     id: Mapped[IntPk]

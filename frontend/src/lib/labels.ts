@@ -1,6 +1,7 @@
 // Nhãn tiếng Việt cho các giá trị mà back-end trả (mã tiếng Anh). Không ghi cứng ngưỡng điểm hay số
 // buổi nghỉ trong nhãn: các ngưỡng lấy từ API (`thresholds`, `absence_limits`) khi cần hiện số.
 import type { Period } from '../api/analytics'
+import type { RiskLevel, TeacherStatus } from '../api/warning'
 
 export const LEVEL_KEYS = ['good', 'fair', 'pass', 'fail'] as const
 
@@ -55,4 +56,23 @@ export const COMMENT_LABELS: Record<string, string> = {
 
 export function levelLabel(level: string | null | undefined, fallback = 'Chưa có dữ liệu'): string {
   return level ? (LEVEL_LABELS[level] ?? level) : fallback
+}
+
+// Cảnh báo sớm (Giai đoạn 6). Từ ngữ trung tính: "cần hỗ trợ", không gắn nhãn học sinh.
+export const RISK_LABELS: Record<RiskLevel, string> = {
+  high: 'Mức cao',
+  medium: 'Mức trung bình',
+  low: 'Mức thấp',
+}
+
+export const RISK_STYLES: Record<RiskLevel, string> = {
+  high: 'bg-red-100 text-red-800',
+  medium: 'bg-amber-100 text-amber-900',
+  low: 'bg-slate-100 text-slate-700',
+}
+
+export const TEACHER_STATUS_LABELS: Record<TeacherStatus, string> = {
+  new: 'Chưa xử lý',
+  contacted: 'Đã trao đổi',
+  false_alarm: 'Báo nhầm',
 }

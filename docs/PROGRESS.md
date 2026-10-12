@@ -1,6 +1,6 @@
 # Tiến độ
 
-Cập nhật lần cuối: 2026-10-13 (Giai đoạn 5). Tên và thứ tự giai đoạn lấy từ bộ prompt [PROMPTS.md](PROMPTS.md).
+Cập nhật lần cuối: 2026-10-13 (Giai đoạn 6). Tên và thứ tự giai đoạn lấy từ bộ prompt [PROMPTS.md](PROMPTS.md).
 
 ## Bảng 12 giai đoạn
 
@@ -11,8 +11,8 @@ Cập nhật lần cuối: 2026-10-13 (Giai đoạn 5). Tên và thứ tự giai
 | 2 | Xác thực và phân quyền | Xong, đã commit `43900ac` (chưa kiểm giao diện trên trình duyệt, CI trên GitHub; xem bên dưới) |
 | 3 | Analytics theo Thông tư 22 | Xong, đã commit `15c8d97` (quy tắc lấy từ nguồn thứ cấp, **cần đối chiếu văn bản gốc**; xem bên dưới) |
 | 4 | Import Excel/CSV | Xong, đã commit `667bf88` (giao diện đã chạy thử trên Chrome ở Giai đoạn 5; chưa thử với sổ điểm thật; xem bên dưới) |
-| 5 | Dashboard và giao diện chính | Xong, chưa commit (hoãn Vitest/Playwright theo lựa chọn của bạn; xem bên dưới) |
-| 6 | Cảnh báo sớm (luật + ML) | Chưa làm |
+| 5 | Dashboard và giao diện chính | Xong, đã commit `36b2882` (hoãn Vitest/Playwright theo lựa chọn của bạn; xem bên dưới) |
+| 6 | Cảnh báo sớm (luật + ML) | Xong, chưa commit (dữ liệu huấn luyện là giả lập; xem bên dưới) |
 | 7 | RAG văn bản quy định | Chưa làm |
 | 8 | Trợ lý AI gọi hàm | Chưa làm |
 | 9 | Nhận xét và báo cáo | Chưa làm |
@@ -247,3 +247,45 @@ Cập nhật lần cuối: 2026-10-13 (Giai đoạn 5). Tên và thứ tự giai
 4. Đăng nhập `bgh1@example.com`: "Khối 11" trên thanh điều hướng → so sánh các lớp, đổi kỳ, chọn môn ở phần học kỳ I so với II; bấm tên lớp để vào dashboard lớp.
 5. Thử `/assistant` và `/reports` (khung giao diện). Resize cửa sổ về 1366px để xem bố cục.
 6. `make test`, `make lint`. Swagger: `GET /classes/{id}/students/{student_id}/profile`.
+
+
+## Giai đoạn 6: Cảnh báo sớm (luật + ML)
+
+### Đã làm
+
+- **Lớp luật** (`backend/app/warning/rules.py`, D-071): 10 luật theo DESIGN mục 6.2 (nghỉ 30/40/45 buổi, mức học tập Chưa đạt, môn dưới 3,5, ít hơn 6 môn từ 5,0, từ 2 môn nhận xét Chưa đạt, rèn luyện HK I Chưa đạt, môn có thể kiểm tra lại, khối 12 môn thi thấp); mỗi luật trả mã, mức, câu lý do tiếng Việt kèm số liệu; ngưỡng đọc từ `settings`. Theo D-048 (bạn chọn giữ), câu lý do chỉ nêu số liệu.
+- **Lớp ML** (`backend/ml/`, `app/warning/features.py`, `app/warning/model.py`; D-072): đặc trưng giữa học kỳ I (chỉ điểm và chuyên cần), huấn luyện trên 20 khoá giả lập (7.200 học sinh, trong database tạm, loại seed 2026), Logistic Regression làm mốc và Random Forest làm mô hình chính, ngưỡng chọn bằng cross-validation trên train, giải thích 3 yếu tố bằng đóng góp cục bộ thay-về-trung-vị. **Recall trên tập test 0,92** (Precision 0,93, F1 0,92; mốc Logistic Regression 0,89, 0,80, 0,84); báo cáo đầy đủ ở `backend/ml/REPORT.md`. Mô hình nhỏ được commit; thiếu hoặc hỏng thì chỉ chạy lớp luật.
+- **Gộp và lưu** (D-071): mức Cao / Trung bình / Thấp = mức cao nhất giữa luật và ML; chỉ thêm dòng `risk_alerts` khi nội dung đổi (giữ `teacher_status`, giữ lịch sử).
+- **API** (D-073): `GET /classes/{id}/alerts`, `PATCH /alerts/{id}` (GVCN của lớp), `GET /alerts?level=` (BGH, ngoài DESIGN mục 7); migration thứ 7 (nhật ký 3 hành động mới, chỉ mục dòng mới nhất). Dashboard thêm `alert_counts`, hồ sơ thêm `alert`.
+- **Hook và lệnh** (D-074): `on_data_changed` chạy cảnh báo của lớp sau mỗi lần nhập (lỗi chỉ ghi log), `make warn`, `make train`; `make seed` chạy cảnh báo ở cuối.
+- **Giao diện** (D-075): panel "Học sinh cần hỗ trợ" ở dashboard lớp, panel cảnh báo ở hồ sơ, số cảnh báo ở thẻ lớp chủ nhiệm, panel mức Cao toàn trường cho BGH; nút "Đã trao đổi" / "Báo nhầm" cho GVCN.
+- **Test**: 759 test (thêm 99): từng luật tính tay và trên học sinh biên của seed, gộp mức, lưu kiểu thêm-khi-đổi (không thêm dòng khi chạy lại, `teacher_status` còn nguyên), ma trận phân quyền của cả ba endpoint, nhật ký, hook (kể cả lỗi trong cảnh báo không làm import thất bại), đặc trưng tính tay, mô hình đã lưu, giải thích, đường lùi khi thiếu mô hình, huấn luyện trên dữ liệu tổng hợp và trên một khoá thật. Đã thử "đột biến" thủ công 7 chỗ (bỏ `authorize_write` của PATCH, cho GVBM xem cảnh báo, 45 buổi bị coi là vượt, 30 buổi không nhắc, luôn thêm dòng mới, hook không bắt lỗi, 1 môn nhận xét Chưa đạt bị cảnh báo): test đỏ cả 7.
+
+### Chưa làm (thuộc các giai đoạn sau, hoặc ngoài phạm vi)
+
+- Dùng cảnh báo trong trợ lý AI (`get_student_detail`, `list_students` có lọc theo mức cảnh báo): Giai đoạn 8. Bộ đánh giá mô hình cảnh báo chạy bằng `make eval`: Giai đoạn 10. Đánh giá lại mô hình từ các lần "báo nhầm": dữ liệu đã được lưu (lịch sử `risk_alerts`), chưa có script.
+- Mô hình thật sự học từ dữ liệu thật, đặc trưng "kết quả năm trước" và "rèn luyện kỳ trước", UCI, nhiều thời điểm chụp (D-072). Kiểm tự động giao diện vẫn hoãn (D-069).
+
+### Đã kiểm chứng và còn chờ kiểm chứng
+
+| Mục | Trạng thái |
+| --- | --- |
+| `alembic upgrade head` (migration thứ 7), `downgrade -1` rồi lên lại, `alembic check` | Đã chạy, đúng |
+| `make lint` và `make test` (759 test) | Đã chạy, qua |
+| `make train` (khoảng 2 đến 3 phút): Recall trên tập test 0,92 (mục tiêu 0,75), Precision 0,93, F1 0,92 | Đã chạy, **đạt**; xem giới hạn ở REPORT.md |
+| `make seed` hai lần: băm các dòng `risk_alerts` giống nhau (360 dòng, cảnh báo tất định) | Đã chạy, đúng |
+| `make up` (dựng lại image vì thêm scikit-learn, Python 3.12 trong container nạp được mô hình huấn luyện bằng Python 3.13) | Đã chạy, đúng |
+| API thật bằng `curl` với 5 tài khoản: `GET /classes/5/alerts` (GVCN, BGH 200; GVBM, Admin 403), `PATCH` (GVCN 200; BGH, GVBM 403), `GET /alerts` (BGH 200; GVCN, Admin 403), nhật ký | Đã chạy, đúng |
+| Kịch bản demo: seed `--hold-out 2027-03` → em An "nghỉ 34 buổi"; GVCN nhập tệp điểm danh tháng 3 → hook chạy → "nghỉ 38 buổi" (thêm 1 dòng mới) | Đã chạy, đúng |
+| Trình duyệt thật (Chrome, 1366×768): ghi nhận "Báo nhầm" lưu qua tải lại trang, hồ sơ có cảnh báo, BGH thấy 39 cảnh báo mức Cao và không có nút ghi nhận, không lỗi console | Đã chạy, đúng |
+| **Mô hình trên dữ liệu thật** | **Chưa thử**: chỉ có dữ liệu giả lập; Recall cao chưa chứng minh dùng được với dữ liệu thật (D-072) |
+| Quy tắc Thông tư 22 | Vẫn **cần bạn đối chiếu văn bản gốc** (D-047 đến D-051); D-048 bạn đã chọn giữ |
+| CI GitHub Actions | **Chưa kiểm**: cần đẩy lên GitHub (CI cài `scikit-learn` qua `make install`) |
+
+### Cách kiểm tra
+
+1. `make db`, `make migrate` (migration thứ 7), `make seed` (tự chạy cảnh báo), `make up` (dựng lại image vì thêm scikit-learn).
+2. Đăng nhập `gvcn.11a2@example.com`: thẻ lớp 11A2 hiện số cảnh báo; "Dashboard lớp" → panel "Học sinh cần hỗ trợ"; bấm "Báo nhầm" ở em An rồi tải lại trang (còn nguyên); mở hồ sơ em An xem lý do và "vì sao mô hình dự báo như vậy".
+3. Kịch bản demo: `make seed SEED_ARGS="--hold-out 2027-03"`, vào dashboard lớp 11A2 (em An "nghỉ 34 buổi"), nhập `data/samples/diem-danh-11a2-2027-03.csv` ở trang Nhập dữ liệu, mở lại dashboard (em An "nghỉ 38 buổi", cảnh báo đã cập nhật). Chạy `make seed` không tham số để về dữ liệu đầy đủ.
+4. Đăng nhập `bgh1@example.com`: panel "mức cao, toàn trường" ở trang chủ; vào dashboard một lớp: chỉ xem, không có nút ghi nhận. `gv.van.11@example.com` mở `/classes/5` hay gọi `/classes/5/alerts` bị 403.
+5. `make train` để huấn luyện lại (ghi `backend/ml/REPORT.md` và mô hình), rồi `make warn` để tính lại cảnh báo; `make test`, `make lint`.

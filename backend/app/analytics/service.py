@@ -5,6 +5,7 @@ chỉ gom dữ liệu, gọi hàm, đếm và định dạng.
 """
 
 from collections import Counter, defaultdict
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
@@ -60,6 +61,7 @@ from app.core.enums import (
     ConductPeriod,
     LearningLevel,
 )
+from app.warning.schemas import AlertCountsOut, ProfileAlertOut
 
 CONDUCT_PERIOD = {
     "1": ConductPeriod.HK1,
@@ -288,7 +290,11 @@ def _class_ref(info: repo.ClassInfo) -> ClassRefOut:
 
 
 def build_dashboard(
-    session: Session, class_info: repo.ClassInfo, period: Period, config: AnalyticsConfig
+    session: Session,
+    class_info: repo.ClassInfo,
+    period: Period,
+    config: AnalyticsConfig,
+    alert_counts: AlertCountsOut | None = None,
 ) -> DashboardOut:
     results = build_class_results(session, class_info, period, config)
     notice, over = _absence_counts(results, config)
@@ -318,6 +324,7 @@ def build_dashboard(
         ),
         absence_limits=_absence_limits(config),
         thresholds=_thresholds(config),
+        alert_counts=alert_counts or AlertCountsOut(high=0, medium=0, low=0),
     )
 
 
@@ -578,6 +585,7 @@ def build_student_profile(
     config: AnalyticsConfig,
     *,
     subject_ids: frozenset[int] | None,
+    alert_lookup: Callable[[int], ProfileAlertOut | None] | None = None,
 ) -> StudentProfileFullOut | StudentProfileSubjectsOut | None:
     """Hồ sơ một học sinh; None nếu em không thuộc lớp.
 
@@ -666,4 +674,5 @@ def build_student_profile(
         ),
         attention_reasons=_attention_reasons(result, config),
         thresholds=_thresholds(config),
+        alert=None if alert_lookup is None else alert_lookup(student.class_student_id),
     )

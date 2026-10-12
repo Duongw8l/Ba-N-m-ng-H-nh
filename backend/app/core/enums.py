@@ -92,6 +92,9 @@ class AuditAction(StrEnum):
     VIEW_CLASS_DASHBOARD = "view_class_dashboard"  # dashboard lớp (có tên học sinh cần quan tâm)
     VIEW_SUBJECT_SCORES = "view_subject_scores"  # bảng điểm một môn của lớp
     IMPORT_CONFIRM = "import_confirm"  # xác nhận ghi dữ liệu nhập từ tệp (Giai đoạn 4)
+    VIEW_CLASS_ALERTS = "view_class_alerts"  # danh sách cảnh báo sớm của một lớp (Giai đoạn 6)
+    VIEW_SCHOOL_ALERTS = "view_school_alerts"  # cảnh báo mức Cao toàn trường (BGH)
+    UPDATE_ALERT = "update_alert"  # GVCN ghi nhận "đã trao đổi" hoặc "báo nhầm"
 
 
 class ImportKind(StrEnum):

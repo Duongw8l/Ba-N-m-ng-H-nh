@@ -1,5 +1,6 @@
 import { Link, useParams } from 'react-router-dom'
 import type { Dashboard } from '../api/analytics'
+import { ClassAlertsPanel } from '../components/alerts/ClassAlertsPanel'
 import { AbsenceChart } from '../components/charts/AbsenceChart'
 import { LevelChart } from '../components/charts/LevelChart'
 import { LevelBar } from '../components/LevelBar'
@@ -10,7 +11,7 @@ import { StatCard, StatGrid } from '../components/StatCard'
 import { useAssignments } from '../hooks/useAssignments'
 import { useDashboard, usePeriod } from '../hooks/useAnalytics'
 import { formatInt, formatScore } from '../lib/format'
-import { ATTENTION_LABELS, PERIOD_LABELS } from '../lib/labels'
+import { PERIOD_LABELS } from '../lib/labels'
 
 const PERIODS = ['1', '2', 'year'] as const
 const LEARNING_KEYS = ['good', 'fair', 'pass', 'fail', 'incomplete'] as const
@@ -91,63 +92,7 @@ function SubjectTable({ dashboard }: { dashboard: Dashboard }) {
   )
 }
 
-function AttentionTable({ dashboard }: { dashboard: Dashboard }) {
-  if (dashboard.attention.length === 0) {
-    return <p className="text-sm text-slate-600">Không có học sinh nào cần quan tâm.</p>
-  }
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-max text-left text-sm">
-        <thead className="border-b border-slate-200 text-slate-500">
-          <tr>
-            <th scope="col" className="py-2 pr-4 font-medium">
-              Học sinh
-            </th>
-            <th scope="col" className="px-3 py-2 font-medium">
-              Mã HS
-            </th>
-            <th scope="col" className="px-3 py-2 text-right font-medium">
-              Số buổi nghỉ
-            </th>
-            <th scope="col" className="px-3 py-2 font-medium">
-              Lý do
-            </th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-100">
-          {dashboard.attention.map((item) => (
-            <tr key={item.student_id}>
-              <th scope="row" className="py-2 pr-4 font-normal">
-                <Link
-                  to={`/classes/${dashboard.class_info.id}/students/${item.student_id}`}
-                  className="text-blue-700 hover:underline"
-                >
-                  {item.full_name}
-                </Link>
-              </th>
-              <td className="px-3 py-2 font-mono">{item.student_code}</td>
-              <td className="px-3 py-2 text-right tabular-nums">{item.absent_sessions}</td>
-              <td className="px-3 py-2">
-                <ul className="flex flex-wrap gap-1">
-                  {item.reasons.map((reason) => (
-                    <li
-                      key={reason}
-                      className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900"
-                    >
-                      {ATTENTION_LABELS[reason] ?? reason}
-                    </li>
-                  ))}
-                </ul>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  )
-}
-
-function DashboardContent({ dashboard }: { dashboard: Dashboard }) {
+function DashboardContent({ dashboard, canRecord }: { dashboard: Dashboard; canRecord: boolean }) {
   const { absence_limits: limits } = dashboard
   return (
     <>
@@ -173,7 +118,12 @@ function DashboardContent({ dashboard }: { dashboard: Dashboard }) {
           valueClassName={dashboard.absent_notice_students > 0 ? 'text-amber-700' : 'text-slate-900'}
           hint={`Nghỉ quá ${limits.maximum} buổi: ${dashboard.absent_over_limit_students}`}
         />
-        <StatCard label="Cảnh báo sớm" value="—" hint="Sẽ có ở Giai đoạn 6" />
+        <StatCard
+          label="Cảnh báo sớm: mức cao"
+          value={formatInt(dashboard.alert_counts.high)}
+          valueClassName={dashboard.alert_counts.high > 0 ? 'text-red-700' : 'text-slate-900'}
+          hint={`Mức trung bình: ${dashboard.alert_counts.medium}`}
+        />
       </StatGrid>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -227,13 +177,7 @@ function DashboardContent({ dashboard }: { dashboard: Dashboard }) {
         <SubjectTable dashboard={dashboard} />
       </Panel>
 
-      <Panel
-        id="can-quan-tam"
-        title="Học sinh cần quan tâm"
-        description="Lấy từ kết quả tính điểm và chuyên cần; chưa phải cảnh báo sớm (Giai đoạn 6)."
-      >
-        <AttentionTable dashboard={dashboard} />
-      </Panel>
+      <ClassAlertsPanel classId={dashboard.class_info.id} canRecord={canRecord} />
 
       <Panel
         id="nghi-theo-thang"
@@ -275,7 +219,9 @@ export default function ClassDashboardPage() {
           </>
         }
       />
-      <QueryState query={dashboard}>{(data) => <DashboardContent dashboard={data} />}</QueryState>
+      <QueryState query={dashboard}>
+        {(data) => <DashboardContent dashboard={data} canRecord={isHomeroom} />}
+      </QueryState>
     </>
   )
 }

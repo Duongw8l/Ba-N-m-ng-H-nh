@@ -38,6 +38,11 @@ data/*
 *.h5
 backend/ml/models/
 .cache/
+# Ngoại lệ: mô hình cảnh báo sớm nhỏ (khoảng 2 MB) được commit để máy mới chạy được ngay, không phải
+# huấn luyện lại (xem backend/ml/REPORT.md). Phải thêm lại các dòng này SAU các dòng chặn ở trên.
+!backend/ml/models/
+!backend/ml/models/early-warning-*.joblib
+!backend/ml/models/early-warning-*.json
 
 # ---------------------------------------------------------------------------
 # Python

@@ -217,10 +217,27 @@ def fresh_database(test_database_url: str) -> Iterator[Callable[[], Engine]]:
 # --- API trên DB thật -------------------------------------------------------------------------
 
 
+class _BorrowedSession:
+    """Context manager đưa `db_session` cho hook on_data_changed (không đóng, không tạo mới)."""
+
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def __enter__(self) -> Session:
+        return self.session
+
+    def __exit__(self, *exc_info: object) -> None:
+        return None
+
+
 @pytest.fixture
-def api_client(db_session: Session) -> Iterator[TestClient]:
-    """TestClient gọi app thật, mọi request dùng `db_session`."""
+def api_client(db_session: Session, monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
+    """TestClient gọi app thật, mọi request dùng `db_session`. Hook on_data_changed (cảnh báo sớm
+    sau khi nhập tệp) cũng dùng `db_session` thay vì mở phiên mới vào DB thật."""
     app.dependency_overrides[get_db] = lambda: db_session
+    monkeypatch.setattr(
+        "app.imports.hooks.get_session_factory", lambda: lambda: _BorrowedSession(db_session)
+    )
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()

@@ -45,6 +45,8 @@ make dev-fe              # terminal 2: giao diện tại http://localhost:5173
 | `make migrate` | `alembic upgrade head` |
 | `make seed` | Sinh dữ liệu giả lập vào DB (cần `make db` và `make migrate` trước) |
 | `make samples` | Sinh lại 3 tệp mẫu nhập dữ liệu trong `data/samples/` (cần DB đã migrate) |
+| `make warn` | Chạy cảnh báo sớm cho cả trường (`make seed` đã tự chạy; chỉ thêm dòng mới khi nội dung đổi) |
+| `make train` | Huấn luyện lại mô hình cảnh báo sớm (2 đến 3 phút, dùng database tạm), ghi `backend/ml/models/` và `backend/ml/REPORT.md` |
 | `make dev-be` / `make dev-fe` | Chạy back-end (uvicorn) / front-end (Vite) với tự nạp lại |
 | `make test` | pytest. Gồm test cần PostgreSQL thật nên phải `make db` trước; chỉ chạy test không cần DB: `cd backend && python -m pytest -m "not db"` |
 | `make lint` | ruff check, ruff format --check (cả `backend/` và `data/`), eslint, tsc |
@@ -95,6 +97,16 @@ Giao diện tiếng Việt, số kiểu `6,5`, dùng được ở 1366px. Mọi 
 | `/assistant`, `/reports` | Mọi vai trò | Khung Trợ lý AI và Nhận xét & báo cáo (nối API ở Giai đoạn 8 và 9) |
 
 Id lớp và học sinh xem ở mục tài khoản dev (lớp 11A2 có id 5, môn Toán có id 2). Hồ sơ học sinh qua API: `GET /api/v1/classes/{id}/students/{student_id}/profile?semester=1|2|year`; GVBM nhận hồ sơ chỉ có các môn mình dạy.
+
+## Cảnh báo sớm
+
+Giai đoạn 6: hai lớp, gộp thành mức **Cao / Trung bình / Thấp** cho từng học sinh (từ ngữ trong giao diện: "cần hỗ trợ"; chỉ là gợi ý để giáo viên quyết định, không tự gửi cho học sinh hay phụ huynh).
+
+- **Luật cứng theo Thông tư 22** (`backend/app/warning/rules.py`): nghỉ từ 30, 40, quá 45 buổi; mức học tập Chưa đạt; môn dưới 3,5; ít hơn 6 môn từ 5,0; từ 2 môn nhận xét Chưa đạt; rèn luyện học kỳ I Chưa đạt; môn có thể kiểm tra lại; khối 12: môn thi tốt nghiệp ĐTB thấp. Mỗi luật có câu lý do tiếng Việt kèm số liệu; ngưỡng đọc từ bảng `settings`.
+- **Mô hình ML** (Random Forest, dự báo "Chưa đạt cả năm" từ giữa học kỳ I): huấn luyện trên dữ liệu **giả lập** nhiều khoá (`make train`), số liệu và giới hạn ở [backend/ml/REPORT.md](backend/ml/REPORT.md). Recall trên tập test 0,92, nhưng vì dữ liệu tự sinh nên **chưa chứng minh dùng được với dữ liệu thật**. Mô hình nhỏ đã commit; thiếu mô hình thì chỉ chạy lớp luật.
+- **API** (xem Swagger): `GET /api/v1/classes/{id}/alerts` (GVCN của lớp, BGH), `PATCH /api/v1/alerts/{id}` (GVCN ghi `contacted` / `false_alarm` / `new`), `GET /api/v1/alerts?level=high` (chỉ BGH, cảnh báo toàn trường). GVBM không thấy cảnh báo.
+- **Tự chạy lại** sau mỗi lần nhập tệp (hook `on_data_changed`; lỗi chỉ ghi log, không làm hỏng việc nhập). Cảnh báo chỉ thêm dòng mới khi nội dung đổi nên ghi nhận "đã trao đổi" / "báo nhầm" của GVCN không bị mất.
+- **Demo**: `make seed SEED_ARGS="--hold-out 2027-03"`, đăng nhập `gvcn.11a2@example.com`, xem em An ("nghỉ 34 buổi") ở dashboard lớp 11A2, nhập `data/samples/diem-danh-11a2-2027-03.csv`, mở lại dashboard: cảnh báo của em An đã đổi thành "nghỉ 38 buổi".
 
 ## Nhập điểm, điểm danh, rèn luyện từ tệp
 

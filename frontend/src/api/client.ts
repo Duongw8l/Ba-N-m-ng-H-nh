@@ -42,7 +42,7 @@ async function errorMessage(response: Response): Promise<string> {
 }
 
 async function request<T>(
-  method: 'GET' | 'POST',
+  method: 'GET' | 'POST' | 'PATCH',
   path: string,
   body: unknown,
   options: RequestOptions,
@@ -73,6 +73,10 @@ export function apiGet<T>(path: string, signal?: AbortSignal): Promise<T> {
 
 export function apiPost<T>(path: string, body: unknown, options: RequestOptions = {}): Promise<T> {
   return request<T>('POST', path, body, options)
+}
+
+export function apiPatch<T>(path: string, body: unknown): Promise<T> {
+  return request<T>('PATCH', path, body, {})
 }
 
 // Tải tệp lên (multipart/form-data).

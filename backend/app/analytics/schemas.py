@@ -10,6 +10,7 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, PlainSerializer
 
 from app.core.enums import AssessmentType, CommentResult
+from app.warning.schemas import AlertCountsOut, ProfileAlertOut
 
 Score = Annotated[Decimal, PlainSerializer(float, return_type=float, when_used="json")]
 
@@ -95,6 +96,8 @@ class DashboardOut(BaseModel):
     absences_by_month: list[MonthAbsenceOut]
     absence_limits: AbsenceLimitsOut
     thresholds: ThresholdsOut
+    # Số cảnh báo sớm hiện hành của lớp theo mức (Giai đoạn 6); luôn đủ ba khoá.
+    alert_counts: AlertCountsOut
 
 
 # --- Hồ sơ học sinh -----------------------------------------------------------------------------
@@ -182,6 +185,7 @@ class StudentProfileFullOut(BaseModel):
     promotion: ProfilePromotionOut | None  # chỉ khi xem cả năm
     attention_reasons: list[str]  # cùng quy tắc với dashboard lớp
     thresholds: ThresholdsOut
+    alert: ProfileAlertOut | None  # cảnh báo sớm hiện hành (None: chưa chạy cảnh báo)
 
 
 class StudentProfileSubjectsOut(BaseModel):

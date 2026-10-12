@@ -4,7 +4,7 @@
 # cú pháp chung của cả hai shell: "cd dir && lệnh", không dùng bash-ism.
 # Python (venv đã kích hoạt, xem README) và Node phải có sẵn trên PATH khi chạy ngoài Docker.
 
-.PHONY: install up down db migrate seed samples dev-be dev-fe test lint eval
+.PHONY: install up down db migrate seed samples warn train dev-be dev-fe test lint eval
 
 # In "chưa triển khai: <lệnh>". Dòng lệnh Python dưới đây cố ý thuần ASCII (dùng chr() cho hai chữ
 # có dấu): nếu để chữ có dấu trong Makefile, make trên Windows chuyển byte UTF-8 cho cmd.exe theo
@@ -43,6 +43,15 @@ seed:
 # Dong nay cung thuan ASCII vi make tren Windows chuyen byte cho cmd.exe theo bang ma ANSI.
 samples:
 	python data/samples/make_samples.py
+
+# Chay canh bao som cho ca truong (them dong moi vao risk_alerts neu noi dung doi). Can DB da migrate.
+warn:
+	cd backend && python -m app.warning.run
+
+# Huan luyen lai mo hinh ML canh bao som (vai phut): dung database tam, ghi backend/ml/models/ va
+# backend/ml/REPORT.md. Can PostgreSQL dang chay (make db).
+train:
+	cd backend && python -m ml.train
 
 dev-be:
 	cd backend && python -m uvicorn app.main:app --reload --reload-dir app

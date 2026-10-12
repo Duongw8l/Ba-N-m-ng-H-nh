@@ -17,6 +17,7 @@ from app.classes.academic import Assessment, Attendance
 from app.classes.models import ClassStudent, Student
 from app.core.enums import AuditAction
 from app.imports.models import ImportJob
+from app.warning.models import RiskAlert
 from tests.imports.conftest import ImportApi, ScoreSheet, build_csv, build_xlsx
 
 pytestmark = pytest.mark.db
@@ -247,6 +248,43 @@ def test_hook_runs_after_the_commit_and_only_when_data_changed(
     events.clear()
     imp.confirm(TOAN_TEACHER, same_job)  # không có gì đổi: ghi nhận xong nhưng không báo hook
     assert events == ["commit"]
+
+
+# --- Cảnh báo sớm sau khi nhập (D-071) ---------------------------------------------------------
+
+
+def test_confirm_runs_the_early_warning_for_the_class(imp: ImportApi) -> None:
+    sheet = imp.score_sheet()
+    sheet.rows[0][sheet.column("TX1")] = other_score(sheet.rows[0][sheet.column("TX1")])
+    job_id = imp.upload_scores(TOAN_TEACHER, sheet).json()["job_id"]
+    assert count(imp, RiskAlert) == 0
+
+    response = imp.confirm(TOAN_TEACHER, job_id)
+
+    assert response.status_code == 200
+    assert count(imp, RiskAlert) == 40  # mỗi học sinh của 11A2 có một cảnh báo hiện hành
+
+
+def test_a_failing_warning_does_not_fail_the_confirm(
+    imp: ImportApi, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from app.warning import service
+
+    def boom(*_args: Any, **_kwargs: Any) -> None:
+        raise RuntimeError("lỗi giả lập")
+
+    monkeypatch.setattr(service, "refresh_class", boom)
+    sheet = imp.score_sheet()
+    code = sheet.rows[2][1]
+    old = sheet.rows[2][sheet.column("GK")]
+    sheet.rows[2][sheet.column("GK")] = other_score(old)
+    job_id = imp.upload_scores(TOAN_TEACHER, sheet).json()["job_id"]
+
+    response = imp.confirm(TOAN_TEACHER, job_id)
+
+    assert response.status_code == 200 and response.json()["updated"] == 1
+    assert imp.score_snapshot()[(code, "gk", 1)] == Decimal(str(other_score(old)))  # đã ghi
+    assert count(imp, RiskAlert) == 0
 
 
 # --- File lỗi: không ghi gì ---------------------------------------------------------------------

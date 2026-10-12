@@ -7,6 +7,7 @@ from app.core.authorize import AuthorizationError, authorization_error_handler
 from app.core.config import get_settings
 from app.core.health import router as health_router
 from app.imports.router import router as imports_router
+from app.warning.router import router as warning_router
 
 API_PREFIX = "/api/v1"
 
@@ -30,6 +31,7 @@ def create_app() -> FastAPI:
     app.include_router(classes_router, prefix=API_PREFIX)
     app.include_router(analytics_router, prefix=API_PREFIX)
     app.include_router(imports_router, prefix=API_PREFIX)
+    app.include_router(warning_router, prefix=API_PREFIX)
     return app
 
 

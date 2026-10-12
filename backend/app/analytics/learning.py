@@ -21,6 +21,10 @@ from app.core.enums import AssessmentType, CommentResult, LearningLevel
 # Thứ tự từ thấp lên cao; chỉ số trong danh sách là "bậc" dùng để so sánh mức.
 LEVELS = (LearningLevel.FAIL, LearningLevel.PASS, LearningLevel.FAIR, LearningLevel.GOOD)
 
+# Mức Đạt chấp nhận nhiều nhất bấy nhiêu môn nhận xét Chưa đạt; từ số này trở lên là Chưa đạt. Cảnh
+# báo sớm (warning/rules.py) dùng lại hằng này để số của Thông tư chỉ nằm trong analytics/.
+MAX_FAILED_COMMENTS_FOR_PASS = 1
+
 
 @dataclass(frozen=True)
 class SubjectResult:
@@ -80,7 +84,7 @@ def _rank(results: list[SubjectResult], config: AnalyticsConfig, waived_id: int 
     ):
         return 2
     if (
-        failed_comments <= 1
+        failed_comments <= MAX_FAILED_COMMENTS_FOR_PASS
         and count_pass >= minimum
         and all(v >= config.score_threshold_fail for v in others)
     ):

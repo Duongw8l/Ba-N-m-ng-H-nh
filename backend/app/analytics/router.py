@@ -24,6 +24,8 @@ from app.auth.deps import CurrentUser
 from app.core.authorize import authorize
 from app.core.db import DbSession
 from app.core.enums import AuditAction
+from app.warning import repository as warning_repo
+from app.warning import service as warning_service
 
 router = APIRouter(tags=["analytics"])
 
@@ -50,7 +52,13 @@ def class_dashboard(
     if class_info is None:
         raise _not_found("Không có lớp này.")
 
-    dashboard = service.build_dashboard(session, class_info, semester, load_config(session))
+    dashboard = service.build_dashboard(
+        session,
+        class_info,
+        semester,
+        load_config(session),
+        warning_service.counts_out(warning_repo.current_counts(session, class_id=class_id)),
+    )
     record_access(
         session,
         user,
@@ -122,6 +130,9 @@ def student_profile(
         semester,
         load_config(session),
         subject_ids=access.subject_ids,
+        alert_lookup=lambda class_student_id: warning_service.profile_alert(
+            session, class_student_id
+        ),
     )
     if profile is None:
         raise _not_found("Không có học sinh này trong lớp.")

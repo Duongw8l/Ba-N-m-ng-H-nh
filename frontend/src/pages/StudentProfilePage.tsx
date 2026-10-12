@@ -6,6 +6,7 @@ import type {
   StudentProfileFull,
   Thresholds,
 } from '../api/analytics'
+import { ProfileAlertPanel } from '../components/alerts/ProfileAlertPanel'
 import { AbsenceMeter } from '../components/AbsenceMeter'
 import { AbsenceChart } from '../components/charts/AbsenceChart'
 import { PageTitle, Panel } from '../components/Panel'
@@ -16,11 +17,11 @@ import { useAssignments } from '../hooks/useAssignments'
 import { usePeriod, useStudentProfile } from '../hooks/useAnalytics'
 import { formatScore } from '../lib/format'
 import {
-  ATTENTION_LABELS,
   COMMENT_LABELS,
   PERIOD_LABELS,
   PROMOTION_REASON_LABELS,
   RETAKE_REASON_LABELS,
+  RISK_LABELS,
   levelLabel,
 } from '../lib/labels'
 
@@ -130,7 +131,7 @@ function SubjectsTable({
   )
 }
 
-function FullProfile({ profile }: { profile: StudentProfileFull }) {
+function FullProfile({ profile, canRecord }: { profile: StudentProfileFull; canRecord: boolean }) {
   const { learning, conduct, attendance, promotion } = profile
   const eligibleText =
     promotion === null
@@ -181,36 +182,16 @@ function FullProfile({ profile }: { profile: StudentProfileFull }) {
             hint="Chỉ để tham khảo; hội đồng nhà trường quyết định"
           />
         ) : (
-          <StatCard label="Cảnh báo sớm" value="—" hint="Sẽ có ở Giai đoạn 6" />
+          <StatCard
+            label="Cảnh báo sớm"
+            value={profile.alert ? RISK_LABELS[profile.alert.level] : '—'}
+            valueClassName={profile.alert?.level === 'high' ? 'text-red-700' : 'text-slate-900'}
+            hint="Chi tiết ở mục Cảnh báo sớm bên dưới"
+          />
         )}
       </StatGrid>
 
-      {(profile.attention_reasons.length > 0 ||
-        learning.below_fail_subjects.length > 0 ||
-        learning.failed_comment_subjects.length > 0) && (
-        <Panel id="can-quan-tam" title="Cần quan tâm">
-          <ul className="flex flex-wrap gap-2">
-            {profile.attention_reasons.map((reason) => (
-              <li
-                key={reason}
-                className="rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-900"
-              >
-                {ATTENTION_LABELS[reason] ?? reason}
-              </li>
-            ))}
-          </ul>
-          {learning.below_fail_subjects.length > 0 && (
-            <p className="mt-3 text-sm text-slate-700">
-              Môn điểm quá thấp: <strong>{learning.below_fail_subjects.join(', ')}</strong>
-            </p>
-          )}
-          {learning.failed_comment_subjects.length > 0 && (
-            <p className="mt-1 text-sm text-slate-700">
-              Môn nhận xét Chưa đạt: <strong>{learning.failed_comment_subjects.join(', ')}</strong>
-            </p>
-          )}
-        </Panel>
-      )}
+      <ProfileAlertPanel alert={profile.alert} canRecord={canRecord} />
 
       <Panel
         id="cac-mon"
@@ -258,27 +239,20 @@ function FullProfile({ profile }: { profile: StudentProfileFull }) {
         </Panel>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Panel id="phu-huynh" title="Thông tin phụ huynh">
-          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-            <dt className="text-slate-500">Họ tên</dt>
-            <dd>{profile.guardian_name ?? '—'}</dd>
-            <dt className="text-slate-500">Số điện thoại</dt>
-            <dd className="tabular-nums">{profile.guardian_phone ?? '—'}</dd>
-          </dl>
-        </Panel>
-        <Panel id="canh-bao-som" title="Cảnh báo sớm">
-          <p className="text-sm text-slate-600">
-            Nguy cơ và lý do cảnh báo của học sinh sẽ hiện ở đây khi có Giai đoạn 6.
-          </p>
-        </Panel>
-      </div>
+      <Panel id="phu-huynh" title="Thông tin phụ huynh">
+        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
+          <dt className="text-slate-500">Họ tên</dt>
+          <dd>{profile.guardian_name ?? '—'}</dd>
+          <dt className="text-slate-500">Số điện thoại</dt>
+          <dd className="tabular-nums">{profile.guardian_phone ?? '—'}</dd>
+        </dl>
+      </Panel>
     </>
   )
 }
 
-function ProfileContent({ profile }: { profile: StudentProfile }) {
-  if (profile.scope === 'full') return <FullProfile profile={profile} />
+function ProfileContent({ profile, canRecord }: { profile: StudentProfile; canRecord: boolean }) {
+  if (profile.scope === 'full') return <FullProfile profile={profile} canRecord={canRecord} />
   return (
     <>
       <p className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600 shadow-sm">
@@ -301,6 +275,7 @@ export default function StudentProfilePage() {
   const profile = useStudentProfile(classId, studentId, period)
   const assignments = useAssignments()
   const data = profile.data
+  const isHomeroom = assignments.data?.homeroom_classes.some((item) => item.id === classId) ?? false
   const canOpenDashboard =
     assignments.data !== undefined &&
     (assignments.data.user.role === 'principal' ||
@@ -342,7 +317,9 @@ export default function StudentProfilePage() {
           </>
         }
       />
-      <QueryState query={profile}>{(result) => <ProfileContent profile={result} />}</QueryState>
+      <QueryState query={profile}>
+        {(result) => <ProfileContent profile={result} canRecord={isHomeroom} />}
+      </QueryState>
     </>
   )
 }

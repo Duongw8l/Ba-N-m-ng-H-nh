@@ -1,5 +1,24 @@
 import { Link } from 'react-router-dom'
 import type { ClassRef } from '../api/auth'
+import { useClassAlerts } from '../hooks/useAlerts'
+
+function AlertSummary({ classId }: { classId: number }) {
+  const alerts = useClassAlerts(classId)
+  if (alerts.isPending) {
+    return <span className="block text-sm text-slate-500">Cảnh báo sớm: đang tải…</span>
+  }
+  if (alerts.isError) {
+    return <span className="block text-sm text-slate-500">Cảnh báo sớm: chưa tải được</span>
+  }
+  const { high, medium } = alerts.data.counts
+  return (
+    <span className="block text-sm text-slate-600">
+      Cảnh báo sớm:{' '}
+      <strong className={high > 0 ? 'text-red-700' : 'text-slate-900'}>{high}</strong> mức cao,{' '}
+      <strong className="text-slate-900">{medium}</strong> mức trung bình
+    </span>
+  )
+}
 
 export function HomeroomClasses({ classes }: { classes: ClassRef[] }) {
   return (
@@ -15,9 +34,7 @@ export function HomeroomClasses({ classes }: { classes: ClassRef[] }) {
           <li key={item.id} className="rounded-lg border border-slate-200 p-4">
             <span className="block text-xl font-semibold">{item.name}</span>
             <span className="block text-sm text-slate-500">Khối {item.grade_level}</span>
-            <span className="block text-sm text-slate-500">
-              Cảnh báo sớm: sẽ có ở Giai đoạn 6
-            </span>
+            <AlertSummary classId={item.id} />
             <span className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm font-medium">
               <Link
                 to={`/classes/${item.id}`}

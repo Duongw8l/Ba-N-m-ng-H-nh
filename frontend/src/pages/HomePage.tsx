@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { SchoolAlertsPanel } from '../components/alerts/SchoolAlertsPanel'
 import { GradeCards } from '../components/GradeCards'
 import { HomeroomClasses } from '../components/HomeroomClasses'
 import { QueryState } from '../components/QueryState'
@@ -28,6 +29,7 @@ export default function HomePage() {
             <h1 className="text-xl font-semibold">Xin chào, {data.user.full_name}</h1>
 
             {role === 'principal' && <GradeCards grades={data.grades} />}
+            {role === 'principal' && <SchoolAlertsPanel />}
             {data.homeroom_classes.length > 0 && (
               <HomeroomClasses classes={data.homeroom_classes} />
             )}

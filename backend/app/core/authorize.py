@@ -104,6 +104,12 @@ def authorize(
     return access
 
 
+def authorize_school(user: User) -> None:
+    """Dữ liệu cấp toàn trường (ví dụ cảnh báo mức Cao của mọi lớp): chỉ BGH (D-072)."""
+    if user.role is not UserRole.PRINCIPAL:
+        raise AuthorizationError
+
+
 def authorize_write(
     session: Session, user: User, *, class_id: int, subject_id: int | None = None
 ) -> Access:

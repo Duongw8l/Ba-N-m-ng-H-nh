@@ -90,6 +90,9 @@ LABELS_VI: dict[type[StrEnum], dict[StrEnum, str]] = {
         AuditAction.VIEW_CLASS_DASHBOARD: "Xem dashboard lớp",
         AuditAction.VIEW_SUBJECT_SCORES: "Xem bảng điểm môn",
         AuditAction.IMPORT_CONFIRM: "Xác nhận nhập dữ liệu từ tệp",
+        AuditAction.VIEW_CLASS_ALERTS: "Xem cảnh báo sớm của lớp",
+        AuditAction.VIEW_SCHOOL_ALERTS: "Xem cảnh báo mức cao toàn trường",
+        AuditAction.UPDATE_ALERT: "Ghi nhận cảnh báo sớm",
     },
     ImportKind: {
         ImportKind.ASSESSMENTS: "Điểm",

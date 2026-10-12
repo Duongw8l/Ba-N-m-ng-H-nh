@@ -45,6 +45,11 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
         help="bỏ điểm danh của tháng này khỏi DB để nhập lại từ tệp mẫu data/samples/ "
         "(kịch bản demo: --hold-out 2027-03). Mặc định: đủ cả năm học",
     )
+    parser.add_argument(
+        "--no-warn",
+        action="store_true",
+        help="không chạy cảnh báo sớm sau khi nạp (mặc định có chạy)",
+    )
     return parser.parse_args(argv)
 
 
@@ -128,4 +133,30 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 1
 
     print(format_summary(summary, params))
+    if not args.no_warn:
+        print(_run_early_warning())
     return 0
+
+
+def _run_early_warning() -> str:
+    """Chạy cảnh báo sớm cho mọi lớp vừa nạp (Giai đoạn 6) để demo có cảnh báo ngay.
+
+    Lỗi ở bước này không làm hỏng việc nạp dữ liệu giả: chỉ báo và hướng dẫn chạy `make warn`.
+    """
+    from app.core.db import get_session_factory
+    from app.warning.model import load_predictor
+    from app.warning.service import refresh_all
+
+    try:
+        predictor = load_predictor()
+        with get_session_factory()() as session:
+            result = refresh_all(session, predictor=predictor)
+            session.commit()
+    except Exception as error:  # noqa: BLE001
+        return f"Chưa chạy được cảnh báo sớm ({error}). Chạy lại bằng make warn."
+    counts = result.counts
+    mode = f"luật + mô hình {predictor.version}" if predictor else "chỉ lớp luật"
+    return (
+        f"Cảnh báo sớm ({mode}): mức Cao {counts['high']}, Trung bình {counts['medium']}, "
+        f"Thấp {counts['low']}."
+    )

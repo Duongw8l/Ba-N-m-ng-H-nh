@@ -1,3 +1,4 @@
+import type { AlertCounts, ProfileAlert } from './warning'
 import type { ClassRef } from './auth'
 import { apiGet } from './client'
 
@@ -63,6 +64,7 @@ export interface Dashboard {
   absences_by_month: MonthAbsence[]
   absence_limits: AbsenceLimits
   thresholds: Thresholds
+  alert_counts: AlertCounts
 }
 
 // --- Bảng điểm môn ---
@@ -192,6 +194,8 @@ export interface StudentProfileFull extends ProfileBase {
     retake_subjects: { subject_id: number; name: string; reason: string }[]
   } | null
   attention_reasons: string[]
+  // Cảnh báo sớm hiện hành (null: chưa chạy cảnh báo).
+  alert: ProfileAlert | null
 }
 
 // GVBM nhận hồ sơ không có các khoá phụ huynh, chuyên cần, rèn luyện, xếp loại (không phải khoá rỗng).
