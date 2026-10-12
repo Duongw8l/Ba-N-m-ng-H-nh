@@ -11,6 +11,7 @@ from app.core.config import get_settings
 
 pytestmark = pytest.mark.db
 
+# 15 bảng của DESIGN mục 5; bảng settings và audit_logs (Giai đoạn 2) tính riêng.
 BUSINESS_TABLES = {
     "users",
     "school_years",
@@ -28,6 +29,7 @@ BUSINESS_TABLES = {
     "regulation_chunks",
     "ai_logs",
 }
+EXTRA_TABLES = {"settings", "audit_logs"}
 EXPECTED_SETTING_KEYS = {
     "coef_midterm",
     "coef_final",
@@ -58,10 +60,12 @@ VIEW_COLUMNS = [
 ]
 
 
-def test_upgrade_head_creates_15_business_tables_plus_settings(db_conn: Connection) -> None:
+def test_upgrade_head_creates_15_business_tables_plus_settings_and_audit_logs(
+    db_conn: Connection,
+) -> None:
     tables = set(inspect(db_conn).get_table_names())
 
-    assert tables == BUSINESS_TABLES | {"settings", "alembic_version"}
+    assert tables == BUSINESS_TABLES | EXTRA_TABLES | {"alembic_version"}
     assert len(BUSINESS_TABLES) == 15
 
 
@@ -126,7 +130,7 @@ def test_downgrade_to_base_then_upgrade_again_is_clean(
     upgrade_db(engine)
     with engine.connect() as connection:
         assert set(inspect(connection).get_table_names()) == (
-            BUSINESS_TABLES | {"settings", "alembic_version"}
+            BUSINESS_TABLES | EXTRA_TABLES | {"alembic_version"}
         )
         assert "v_subject_average" in inspect(connection).get_view_names()
         settings_count = connection.execute(text("SELECT count(*) FROM settings")).scalar_one()

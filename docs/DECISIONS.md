@@ -206,3 +206,47 @@ Quyết định đã chốt chỉ đổi bằng cách ghi thêm một mục mớ
 **D-038 · Gói `data.seed` và phạm vi lint, test** (Khi làm)
 - Seed ở `data/seed/` là gói `data.seed`; `run.py` chỉ sửa `sys.path` (bỏ thư mục `data/seed` để tên file trong đó không che module khác, thêm `backend/` và thư mục gốc repo). `pyproject.toml`: `pytest.pythonpath` và ruff `src` thêm `..` để test import được `data.seed` và isort xếp đúng nhóm.
 - `make lint` kiểm cả `../data` với `--config pyproject.toml` (data/ không có cấu hình ruff riêng). Tên file trong `data/seed/` tránh trùng thư viện chuẩn (`school_calendar.py`, không phải `calendar.py`).
+
+## Giai đoạn 2
+
+**D-039 · Admin không xem dữ liệu học sinh** (Đã duyệt; bạn chốt khi hỏi lại theo PROMPTS Giai đoạn 2)
+- DESIGN mục 2 chỉ giao cho Admin việc cấu hình (năm học, lớp, phân công, tài khoản, văn bản quy định) và không nói Admin xem điểm hay danh sách lớp. Nên Admin bị 403 ở mọi endpoint dữ liệu học sinh, kể cả danh sách lớp; `/me/assignments` của Admin trả danh sách rỗng.
+- Khi làm các màn hình quản trị (phân công, tài khoản) ở giai đoạn sau, quyền của Admin được mở đúng chỗ cần, kèm test; không mở rộng `authorize()` cho dữ liệu học sinh.
+
+**D-040 · Hợp đồng của `authorize()`** (Đã duyệt)
+- `app/core/authorize.py`: `authorize(session, user, *, class_id=None, subject_id=None, grade_level=None) -> Access`. Có thêm tham số `session` so với chữ ký trong PROMPTS vì phải tra phân công. Trả `Access(role, class_id, is_homeroom, subject_ids, can_view_guardian)` (`subject_ids=None` là mọi môn). Không đạt thì ném `AuthorizationError` (không phải `HTTPException`) để 7 tool của LLM ở Giai đoạn 8 gọi lại được mà không cần HTTP; `main.py` chuyển nó thành HTTP 403 với thông điệp chung, không nói lý do.
+- Quy tắc: Admin luôn bị từ chối; BGH toàn trường và thấy phụ huynh; GVCN thấy mọi môn và phụ huynh của lớp mình chủ nhiệm; GVBM chỉ đúng cặp lớp-môn có trong `teaching_assignments` và không thấy phụ huynh; `grade_level` chỉ BGH. Quyền cộng dồn được tính **riêng cho từng lớp**: người chủ nhiệm 10A1 và dạy Toán ở 10A2 thấy mọi môn và phụ huynh ở 10A1, còn ở 10A2 chỉ thấy Toán và không thấy phụ huynh.
+- Giáo viên truy cập lớp không tồn tại nhận 403 (không lộ lớp nào có thật); BGH nhận 404 từ endpoint. `subject_id` không kèm `class_id`, hoặc truyền cả `class_id` lẫn `grade_level`, hoặc không truyền phạm vi nào là lỗi lập trình (`ValueError`), không bao giờ âm thầm cho phép hay từ chối.
+- Vai trò lạ hoặc không xác định thì từ chối (đóng theo mặc định). Không lọc theo năm học: mỗi lớp thuộc một năm và phân công gắn với lớp.
+- `core/authorize.py` import model của `auth/` và `classes/` (core đáng lẽ ở tầng thấp nhất) vì CLAUDE.md đặt hàm này trong `core/`. Không có vòng import.
+- Test ma trận (`tests/core/test_authorize.py`, `tests/classes/test_class_students.py`) đã được thử bằng cách cố ý làm hỏng `authorize()` (cho GVBM thấy phụ huynh, bỏ kiểm tra phân công, cho Admin xem, bỏ kiểm tra môn): cả bốn cách đều làm test đỏ.
+
+**D-041 · Đăng nhập và JWT** (Đã duyệt)
+- `POST /auth/login` nhận JSON `{email, password}` (không dùng form OAuth2 để khỏi thêm `python-multipart`; trong Swagger bấm Authorize rồi dán token, scheme `HTTPBearer`). Trả `{access_token, token_type, expires_in, user}`.
+- Token do PyJWT (`PyJWT==2.15.1`) ký HS256, chỉ chứa `sub` (id người dùng), `iat`, `exp`; giải mã luôn chỉ định `algorithms=["HS256"]` (chặn `alg: none`) và bắt buộc có `exp`, `sub`. **Vai trò không nằm trong token**: mỗi request nạp lại người dùng từ DB nên đổi vai trò hay xoá tài khoản có hiệu lực ngay (test có cả hai ca). Chưa có `is_active`, không thêm cột.
+- `JWT_EXPIRE_MINUTES` mặc định 120 (5..1440); chưa có refresh token hay thu hồi token nên giữ vừa phải. `JWT_SECRET` phải dài từ 32 ký tự, kiểm khi khởi động (bản mẫu trong `.env.example` có 36 ký tự).
+- Sai email và sai mật khẩu cùng nhận 401 "Email hoặc mật khẩu không đúng."; khi không có email đó vẫn chạy một lần `verify_password` với hash giả để thời gian phản hồi không lộ email nào tồn tại. Email so khớp không phân biệt hoa thường và cắt khoảng trắng hai đầu. Mật khẩu dài quá 72 byte nhận 401 (không phải 500).
+- **Chưa làm (để Giai đoạn 11):** giới hạn số lần đăng nhập sai (khoá tạm, làm chậm), đổi mật khẩu, thu hồi token, nhật ký các lần bị từ chối.
+
+**D-042 · Ba endpoint không qua `authorize()`** (Đã duyệt; mở rộng ngoại lệ D-001)
+- `GET /health` (D-001), `POST /auth/login` (chưa có phiên) và `GET /me/assignments` (chỉ trả dữ liệu của chính người gọi, nên không có phạm vi lớp/môn nào để kiểm; vẫn bắt buộc đăng nhập). Mọi endpoint còn lại đi qua `authorize()` và gọi nó **trước** khi đọc dữ liệu.
+
+**D-043 · Nhật ký truy cập `audit_logs`** (Đã duyệt)
+- Bảng mới (migration thứ 4), ngoài 15 bảng của DESIGN và `settings`, theo yêu cầu của PROMPTS Giai đoạn 2: `id`, `user_id` (khoá ngoại `users`), `action` (`view_class_students`; dự phòng `view_student_profile` cho màn Hồ sơ học sinh ở Giai đoạn 5), `class_id` (số nguyên, không khoá ngoại để nhật ký còn lại khi lớp bị xoá), `details` JSONB, `created_at`.
+- Mỗi lần danh sách lớp trả 200 ghi **một** dòng (cả danh sách một lần mở, không phải 40 dòng) với số học sinh và cờ có trả phụ huynh hay không. Ghi và commit **trước khi** trả dữ liệu: ghi lỗi thì request lỗi, không trả dữ liệu mà không có nhật ký.
+- Truy cập bị từ chối (403) và lớp không tồn tại (404) chưa ghi: ghi trong cùng phiên sẽ bị rollback cùng request, cần phiên riêng (Giai đoạn 11). `make seed` xoá luôn bảng này qua `TRUNCATE` vì người dùng được tạo lại.
+
+**D-044 · Hình dạng dữ liệu của hai endpoint** (Đã duyệt; chi tiết khi làm)
+- `GET /me/assignments`: `{user, homeroom_classes, teaching, grades}`. `user` nằm trong đó nên front-end chỉ cần một lần gọi sau khi tải lại trang (không thêm `/me` ngoài DESIGN). `grades` là các khối có lớp, chỉ BGH có. Chưa lọc theo năm học (hiện chỉ có một năm); khi có nhiều năm thì trang chủ chỉ nên hiện năm hiện hành.
+- `GET /classes/{class_id}/students`: `id`, `student_code`, `full_name`, sắp theo mã. GVCN của lớp và BGH nhận thêm `guardian_name`, `guardian_phone`. Hai schema Pydantic **riêng và không kế thừa nhau** (`StudentOut`, `StudentWithGuardianOut`): người không được xem nhận danh sách không có cả khoá lẫn giá trị `guardian_*`, không phải khoá rỗng. Không trả `date_of_birth` (không cần cho danh sách). "Kết quả tổng hợp" của DESIGN chờ Giai đoạn 3.
+
+**D-045 · Front-end đăng nhập** (Đã duyệt; chi tiết khi làm)
+- Token ở `sessionStorage` (`auth/tokenStore.ts` là nơi duy nhất đụng tới nó): sống qua tải lại trang, mất khi đóng tab, mỗi tab một phiên nên mở hai tab đăng nhập hai vai trò khác nhau để demo. Đổi sang `localStorage` chỉ sửa một file. Token không nằm trong URL.
+- `api/client.ts` tự gắn `Authorization: Bearer`; gặp 401 trên yêu cầu có token thì đăng xuất (xoá token và bộ nhớ đệm TanStack Query để người sau không thấy dữ liệu của người trước) rồi `RequireAuth` đưa về `/login`. Đăng nhập sai (401 của chính `/auth/login`) không bị coi là hết phiên.
+- Trang chủ giờ cần đăng nhập, nên phần "Trạng thái hệ thống" (Máy chủ, Cơ sở dữ liệu; kiểm tra của Giai đoạn 0) chuyển sang trang `/login` (component `SystemStatus`), vẫn công khai. Trang chủ theo vai trò: GVBM bảng lớp-môn; GVCN thẻ lớp chủ nhiệm (cộng bảng lớp-môn nếu có dạy); BGH ba thẻ khối; Admin thông báo chưa có chức năng. Nhãn "chủ nhiệm / bộ môn" suy ra từ phân công, không phải từ `role`.
+- Chưa có Vitest hay Playwright (D-004): front-end chỉ kiểm bằng `eslint`, `tsc`, `vite build` và gọi API thật qua proxy; chưa kiểm bằng trình duyệt.
+
+**D-046 · Hạ tầng test cho API có DB** (Đã duyệt; thay phần vị trí fixture của D-034)
+- Fixture DB chuyển từ `tests/db/conftest.py` lên `tests/conftest.py` để `tests/auth/`, `tests/classes/`, `tests/core/` (thư mục `tests/` phản chiếu `app/`) dùng chung; fixture chỉ chạy khi test yêu cầu. Thêm `db_session` (Session trên transaction ngoài với `join_transaction_mode="create_savepoint"`: app commit nhật ký thì chỉ nhả savepoint, hết test vẫn rollback sạch), `api_client` (ghi đè `get_db`), `auth_headers(email)` (tạo JWT trực tiếp để ma trận phân quyền khỏi tốn ~0,25 giây bcrypt mỗi ca; đăng nhập bằng bcrypt thật chỉ kiểm ở `tests/auth/test_login.py`), `class_id_of(tên lớp)`.
+- Test dùng tài khoản seed mặc định: `gv.dia.10` (GVBM một lớp, đúng khối sai lớp ở 10A2 và 10A3), `gv.van.10` (GVBM ba lớp), `gvcn.10a2` (GVCN thuần), `gv.toan.10` (cộng dồn), `bgh1`, `admin`. Đổi cấu trúc tài khoản seed phải sửa test này.
+- `JWT_SECRET` giả trong conftest đổi thành chuỗi dài hơn 32 ký tự.

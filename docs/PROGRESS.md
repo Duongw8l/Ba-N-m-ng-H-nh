@@ -1,14 +1,14 @@
 # Tiến độ
 
-Cập nhật lần cuối: 2026-10-12 (Giai đoạn 1). Tên và thứ tự giai đoạn lấy từ bộ prompt [PROMPTS.md](PROMPTS.md).
+Cập nhật lần cuối: 2026-10-12 (Giai đoạn 2). Tên và thứ tự giai đoạn lấy từ bộ prompt [PROMPTS.md](PROMPTS.md).
 
 ## Bảng 12 giai đoạn
 
 | Giai đoạn | Nội dung | Trạng thái |
 | --- | --- | --- |
 | 0 | Khởi tạo dự án | Xong (còn chờ kiểm: CI trên GitHub, cần đẩy lên GitHub, xem bên dưới) |
-| 1 | Cơ sở dữ liệu + dữ liệu giả lập | Xong, chưa commit (còn chờ kiểm: CI trên GitHub, xem bên dưới) |
-| 2 | Xác thực và phân quyền | Chưa làm |
+| 1 | Cơ sở dữ liệu + dữ liệu giả lập | Xong, đã commit `cab087d` (còn chờ kiểm: CI trên GitHub, xem bên dưới) |
+| 2 | Xác thực và phân quyền | Xong, chưa commit (chưa kiểm giao diện trên trình duyệt, CI trên GitHub; xem bên dưới) |
 | 3 | Analytics theo Thông tư 22 | Chưa làm |
 | 4 | Import Excel/CSV | Chưa làm |
 | 5 | Dashboard và giao diện chính | Chưa làm |
@@ -52,7 +52,7 @@ Cập nhật lần cuối: 2026-10-12 (Giai đoạn 1). Tên và thứ tự giai
 
 1. `cp .env.example .env` (PowerShell: `Copy-Item .env.example .env`).
 2. `make up`: cả 3 dịch vụ lên và khoẻ (`docker compose ps`).
-3. Mở <http://localhost:5173>: "Máy chủ: ok", "Cơ sở dữ liệu: ok". Hoặc `curl http://localhost:8000/api/v1/health` trả `{"status":"ok","db":true}`.
+3. Mở <http://localhost:5173> (từ Giai đoạn 2 trang chủ cần đăng nhập và hiện trạng thái này ở <http://localhost:5173/login>): "Máy chủ: ok", "Cơ sở dữ liệu: ok". Hoặc `curl http://localhost:8000/api/v1/health` trả `{"status":"ok","db":true}`.
 4. `docker compose stop db`, chờ tối đa 15 giây (trang tự làm mới khi tab đang hiển thị): "Cơ sở dữ liệu: lỗi", còn backend vẫn `healthy`. `docker compose start db`: trở lại "ok".
 5. Ngoài Docker, trong venv đã kích hoạt: `make install`, rồi `make lint` và `make test` đều qua.
 6. `make db` rồi `make migrate`: chạy không lỗi (ở Giai đoạn 0 chỉ tạo bảng `alembic_version` rỗng; từ Giai đoạn 1 tạo đủ bảng nghiệp vụ, xem bên dưới).
@@ -96,4 +96,42 @@ Cập nhật lần cuối: 2026-10-12 (Giai đoạn 1). Tên và thứ tự giai
 3. `make seed`: xem bảng tóm tắt (360 học sinh, 18 nghỉ từ 30 buổi, 29 có đầu điểm dưới 3,5, đủ học sinh biên). Chạy lần hai cho kết quả y hệt.
 4. `make lint`, `make test` (cần DB đang chạy). Thử `docker compose stop db` rồi `make test` để thấy thông báo thiếu DB.
 5. Thử đăng nhập bằng tài khoản mẫu ở Giai đoạn 2 (bảng tài khoản dev trong README).
-6. `make up`, mở <http://localhost:5173>: vẫn "Máy chủ: ok" và "Cơ sở dữ liệu: ok".
+6. `make up`, mở <http://localhost:5173/login>: vẫn "Máy chủ: ok" và "Cơ sở dữ liệu: ok".
+
+## Giai đoạn 2: Xác thực và phân quyền
+
+### Đã làm
+
+- **Đăng nhập** (D-041): `POST /api/v1/auth/login` trả JWT (PyJWT, HS256, 120 phút, cấu hình bằng `JWT_EXPIRE_MINUTES`); mật khẩu kiểm bằng bcrypt của Giai đoạn 1; `get_current_user` nạp lại người dùng từ DB mỗi request (vai trò không nằm trong token). `JWT_SECRET` phải từ 32 ký tự.
+- **`authorize()`** (D-039, D-040): `app/core/authorize.py`, một hàm cho mọi endpoint (và về sau mọi tool của LLM). Admin không xem dữ liệu học sinh; BGH toàn trường và thấy phụ huynh; GVCN lớp mình chủ nhiệm, mọi môn, thấy phụ huynh; GVBM đúng cặp lớp-môn, không thấy phụ huynh; quyền cộng dồn tính riêng từng lớp. Sai thì 403 với thông điệp chung.
+- **Endpoint** (D-044): `GET /me/assignments` (lớp chủ nhiệm, lớp-môn được phân công, các khối của BGH) và `GET /classes/{id}/students` (GVBM nhận danh sách không có khoá `guardian_*`).
+- **Nhật ký truy cập** (D-043): bảng `audit_logs` (migration thứ 4); mỗi lần danh sách lớp trả 200 ghi một dòng trước khi trả dữ liệu.
+- **Front-end** (D-045): trang `/login` (kèm trạng thái máy chủ và DB), route bảo vệ, token ở `sessionStorage`, đăng xuất, tự về `/login` khi hết phiên, trang chủ khác nhau theo vai trò.
+- **Test** (D-046): 161 test (thêm 67): ma trận 4 vai trò × đúng/sai lớp, đúng/sai môn, có/không xem phụ huynh, cộng dồn, lớp không tồn tại; 401 cho thiếu/sai/hết hạn token và tài khoản đã xoá; đổi vai trò có hiệu lực ngay; đăng nhập bằng bcrypt thật; token (hết hạn, sai khoá, bị sửa, `alg: none`, thiếu claim); nhật ký chỉ ghi khi 200. Đã thử cố ý làm hỏng `authorize()` để chắc test bắt được lỗi.
+
+### Chưa làm (thuộc các giai đoạn sau)
+
+- Giới hạn số lần đăng nhập sai, đổi mật khẩu, thu hồi token, nhật ký các lần bị từ chối: Giai đoạn 11 (D-041, D-043).
+- `pseudonymize()` (Giai đoạn 8), kết quả tổng hợp trong danh sách lớp (Giai đoạn 3), màn Hồ sơ học sinh và nhật ký theo từng em (Giai đoạn 5), màn hình quản trị của Admin (phân công, tài khoản).
+- Lọc theo năm học ở `/me/assignments` khi có nhiều năm học (D-044).
+
+### Đã kiểm chứng và còn chờ kiểm chứng
+
+| Mục | Trạng thái |
+| --- | --- |
+| `alembic upgrade head` (migration thứ 4), `alembic check` trên máy và trong container backend | Đã chạy, đúng |
+| `make lint` (ruff, eslint, tsc) và `make test` (161 test) | Đã chạy, qua |
+| `vite build` | Đã chạy, qua |
+| `make up`: build lại image (thêm PyJWT), 3 dịch vụ `healthy` | Đã chạy, đúng |
+| API thật qua cổng 8000 với 5 tài khoản (admin, bgh1, gvcn.10a2, gv.dia.10, gv.toan.10): đăng nhập, `/me/assignments`, danh sách lớp 10A1/10A2/11A2 | Đã chạy, đúng ma trận (200 có/không phụ huynh, 403); nhật ký chỉ ghi các lần 200 |
+| Đăng nhập và `/me/assignments` qua proxy Vite cổng 5173; Vite biên dịch cả 17 module front-end; OpenAPI có scheme `HTTPBearer` | Đã chạy, đúng |
+| **Giao diện trên trình duyệt** (form đăng nhập, trang chủ từng vai trò, đăng xuất, hết phiên) | **Chưa kiểm**: phiên làm việc không có công cụ trình duyệt và chưa có Vitest/Playwright. Cần bạn mở thử |
+| CI GitHub Actions | **Chưa kiểm**: cần đẩy lên GitHub |
+
+### Cách kiểm tra
+
+1. `make db`, `make migrate` (có migration `audit_logs`), `make seed`. Nếu `.env` có `JWT_SECRET` ngắn hơn 32 ký tự, ứng dụng không khởi động: đặt chuỗi dài hơn.
+2. `make test`, `make lint`.
+3. API: mở Swagger <http://localhost:8000/api/docs>, gọi `POST /auth/login` với `bgh1@example.com` và mật khẩu dev trong README, bấm Authorize dán `access_token`, thử `GET /me/assignments` và `GET /classes/1/students`. Thử lại với `gv.dia.10@example.com`: lớp 1 (10A1) được, lớp 2 (10A2) bị 403.
+4. Giao diện: `make up`, mở <http://localhost:5173>, đăng nhập lần lượt `admin@`, `bgh1@`, `gvcn.10a2@`, `gv.dia.10@`, `gv.toan.10@` (`@example.com`): mỗi vai trò thấy trang chủ khác nhau. Thử Đăng xuất, và mở hai tab với hai vai trò.
+5. Xem nhật ký: `docker compose exec db psql -U classroom -d classroom -c "select * from audit_logs"`.

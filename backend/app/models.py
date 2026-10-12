@@ -4,7 +4,7 @@ Mỗi module khai báo model của mình; file này là nơi duy nhất liệt k
 """
 
 from app.assistant.models import AiLog
-from app.auth.models import User
+from app.auth.models import AuditLog, User
 from app.classes.academic import Assessment, Attendance, ConductResult, ExamRegistration
 from app.classes.models import (
     ClassStudent,
@@ -24,6 +24,7 @@ __all__ = [
     "AiLog",
     "Assessment",
     "Attendance",
+    "AuditLog",
     "Base",
     "ClassStudent",
     "ConductResult",

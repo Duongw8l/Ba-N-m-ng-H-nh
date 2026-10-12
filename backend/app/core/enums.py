@@ -79,3 +79,8 @@ class ReportType(StrEnum):
 class ReportStatus(StrEnum):
     DRAFT = "draft"  # mọi bản AI sinh ra bắt đầu ở đây (nguyên tắc 6)
     APPROVED = "approved"
+
+
+class AuditAction(StrEnum):
+    VIEW_CLASS_STUDENTS = "view_class_students"  # mở danh sách học sinh của một lớp
+    VIEW_STUDENT_PROFILE = "view_student_profile"  # mở hồ sơ một học sinh (màn hình ở Giai đoạn 5)

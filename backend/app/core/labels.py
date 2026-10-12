@@ -10,6 +10,7 @@ from app.core.enums import (
     AssessmentKind,
     AssessmentType,
     AttendanceStatus,
+    AuditAction,
     CommentResult,
     ConductLevel,
     ConductPeriod,
@@ -80,6 +81,10 @@ LABELS_VI: dict[type[StrEnum], dict[StrEnum, str]] = {
     ReportStatus: {
         ReportStatus.DRAFT: "Bản nháp",
         ReportStatus.APPROVED: "Đã duyệt",
+    },
+    AuditAction: {
+        AuditAction.VIEW_CLASS_STUDENTS: "Xem danh sách học sinh của lớp",
+        AuditAction.VIEW_STUDENT_PROFILE: "Xem hồ sơ học sinh",
     },
 }
 

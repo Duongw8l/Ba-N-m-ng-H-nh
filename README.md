@@ -16,7 +16,9 @@ cp .env.example .env     # PowerShell: Copy-Item .env.example .env
 make up
 ```
 
-Mở <http://localhost:5173>: trang chủ hiện "Máy chủ: ok" và "Cơ sở dữ liệu: ok". Swagger: <http://localhost:8000/api/docs>. Tắt bằng `make down` (dữ liệu DB vẫn nằm trong volume).
+Mở <http://localhost:5173/login>: trang đăng nhập hiện "Máy chủ: ok" và "Cơ sở dữ liệu: ok" (trang chủ `/` cần đăng nhập). Swagger: <http://localhost:8000/api/docs>. Tắt bằng `make down` (dữ liệu DB vẫn nằm trong volume).
+
+Muốn đăng nhập cần có dữ liệu mẫu: `make migrate` rồi `make seed` (xem mục "Dữ liệu giả lập và tài khoản dev"). `JWT_SECRET` trong `.env` phải dài từ 32 ký tự.
 
 `.env` chứa giá trị mẫu cho môi trường phát triển và không bao giờ được commit. Khoá API của LLM (nếu dùng) chỉ điền vào `.env`.
 
@@ -67,6 +69,8 @@ Mật khẩu dev dùng chung cho mọi tài khoản (chỉ dành cho môi trư�
 | GVCN (chỉ chủ nhiệm) | `gvcn.10a2@example.com`, `gvcn.10a3@example.com`, ... `gvcn.12a3@example.com` | một người cho mỗi lớp từ A2 |
 | GVBM | `gv.<môn>.<khối>@example.com`, ví dụ `gv.van.11@example.com`, `gv.ly.12@example.com` | một giáo viên cho mỗi cặp môn-khối, dạy mọi lớp của khối có học môn đó |
 | Vừa GVCN vừa GVBM | `gv.toan.10@example.com`, `gv.toan.11@example.com`, `gv.toan.12@example.com` | chủ nhiệm lớp A1 của khối và dạy Toán cả khối (để thử quyền cộng dồn) |
+
+Thử API: mở Swagger, gọi `POST /api/v1/auth/login` với email và mật khẩu ở trên, bấm **Authorize** và dán `access_token`, rồi thử `GET /api/v1/me/assignments` và `GET /api/v1/classes/{id}/students`. Admin bị 403 ở danh sách lớp; GVBM chỉ vào được lớp mình dạy và không thấy thông tin phụ huynh; GVCN và BGH thấy thông tin phụ huynh. Mỗi lần mở danh sách lớp được ghi vào bảng `audit_logs`.
 
 Mã môn trong email: `van` `toan` `anh` `su` `gdtc` `gdqp` `hdtn` `gddp` `dia` `gdktpl` `ly` `hoa` `sinh` `cn` `tin` `nhac` `mt`.
 
