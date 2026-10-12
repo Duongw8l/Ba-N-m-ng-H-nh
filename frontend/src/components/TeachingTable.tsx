@@ -29,7 +29,14 @@ export function TeachingTable({ items }: { items: TeachingItem[] }) {
             <tr key={`${item.class_id}-${item.subject_id}`}>
               <td className="py-2">{item.class_name}</td>
               <td className="py-2">{item.subject_name}</td>
-              <td className="py-2 text-right">
+              <td className="space-x-4 py-2 text-right">
+                <Link
+                  to={`/classes/${item.class_id}/subjects/${item.subject_id}`}
+                  aria-label={`Bảng điểm ${item.subject_name} lớp ${item.class_name}`}
+                  className="font-medium text-blue-700 hover:underline"
+                >
+                  Bảng điểm
+                </Link>
                 <Link
                   to={`/classes/${item.class_id}/import?kind=assessments&subject=${item.subject_id}`}
                   aria-label={`Nhập điểm ${item.subject_name} lớp ${item.class_name}`}

@@ -63,3 +63,26 @@ def absences_by_period(
         PeriodAbsence(period, excused, unexcused, excused + unexcused)
         for period, (excused, unexcused) in sorted(buckets.items())
     ]
+
+
+def _months_between(first: date, last: date) -> list[str]:
+    """Các tháng "YYYY-MM" từ tháng của `first` tới tháng của `last`, gồm cả hai đầu."""
+    months: list[str] = []
+    year, month = first.year, first.month
+    while (year, month) <= (last.year, last.month):
+        months.append(f"{year:04d}-{month:02d}")
+        year, month = (year + 1, 1) if month == 12 else (year, month + 1)
+    return months
+
+
+def absences_by_month_in_range(
+    rows: Iterable[tuple[date, AttendanceStatus]], first: date, last: date
+) -> list[PeriodAbsence]:
+    """Số buổi nghỉ từng tháng của khoảng [first, last], tháng không ai nghỉ ghi 0 (để vẽ biểu đồ).
+
+    Tháng nằm ngoài khoảng mà vẫn có buổi nghỉ thì được thêm vào, nên tổng các tháng luôn bằng tổng
+    số buổi nghỉ của `rows`.
+    """
+    present = {item.period: item for item in absences_by_period(rows, "month")}
+    months = sorted({*_months_between(first, last), *present})
+    return [present.get(month, PeriodAbsence(month, 0, 0, 0)) for month in months]

@@ -80,6 +80,22 @@ Mã môn trong email: `van` `toan` `anh` `su` `gdtc` `gdqp` `hdtn` `gddp` `dia` 
 
 Học sinh dùng cho kịch bản demo và test biên: `HS1102001` (11A2, em An nghỉ 38 buổi), `HS1102002` (11A2, môn Toán dưới 3,5), `HS1201001` đến `HS1201003` (12A1, nghỉ 44, 45, 46 buổi), `HS1201004` đến `HS1201006` (12A1, mọi đầu điểm Toán đúng 3,4 / 3,5 / 5,0). Mã học sinh có dạng `HS` + khối + lớp (2 chữ số) + số thứ tự (3 chữ số).
 
+## Các màn hình
+
+Giao diện tiếng Việt, số kiểu `6,5`, dùng được ở 1366px. Mọi con số do API tính (front-end không tự tính điểm). Kỳ xem (học kỳ I, II, cả năm) nằm trong `?semester=` của URL.
+
+| Địa chỉ | Ai dùng | Nội dung |
+| --- | --- | --- |
+| `/` | Mọi vai trò | Trang chủ theo vai trò: GVBM thấy lớp-môn đang dạy ("Bảng điểm", "Nhập điểm"); GVCN thấy thẻ lớp chủ nhiệm ("Dashboard lớp", nhập điểm danh, rèn luyện); BGH thấy các khối |
+| `/classes/{id}` | GVCN của lớp, BGH | Dashboard lớp: sĩ số, các mức học tập, nghỉ nhiều, bảng ĐTB các môn, học sinh cần quan tâm, nghỉ theo tháng, điều kiện lên lớp (cả năm) |
+| `/classes/{id}/subjects/{subject_id}` | GVBM đúng môn, GVCN, BGH | Bảng điểm môn: lưới đầu điểm, ĐTB, ô thiếu đầu điểm tô nổi, phân bố điểm |
+| `/classes/{id}/students/{student_id}` | GVCN, BGH (đầy đủ); GVBM (chỉ môn mình dạy) | Hồ sơ học sinh: điểm từng môn, học tập, rèn luyện, chuyên cần, phụ huynh (chỉ khi API trả về) |
+| `/grades/{level}` | BGH | So sánh các lớp trong khối, học kỳ I cạnh học kỳ II |
+| `/classes/{id}/import` | GVBM, GVCN | Nhập dữ liệu từ tệp (mục bên dưới) |
+| `/assistant`, `/reports` | Mọi vai trò | Khung Trợ lý AI và Nhận xét & báo cáo (nối API ở Giai đoạn 8 và 9) |
+
+Id lớp và học sinh xem ở mục tài khoản dev (lớp 11A2 có id 5, môn Toán có id 2). Hồ sơ học sinh qua API: `GET /api/v1/classes/{id}/students/{student_id}/profile?semester=1|2|year`; GVBM nhận hồ sơ chỉ có các môn mình dạy.
+
 ## Nhập điểm, điểm danh, rèn luyện từ tệp
 
 Giai đoạn 4: giáo viên nhập tệp `.xlsx` hoặc `.csv` (UTF-8) xuất từ sổ điểm điện tử. Luồng luôn là **tải tệp, xem trước (chưa ghi gì), xác nhận mới ghi**; còn dòng lỗi thì không ghi gì cả. Giao diện: <http://localhost:5173/classes/5/import> (id lớp 11A2), hoặc bấm "Nhập điểm" ở bảng lớp-môn, "Nhập điểm danh" / "Nhập rèn luyện" ở thẻ lớp chủ nhiệm trên trang chủ.

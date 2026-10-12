@@ -138,7 +138,7 @@ def _validate(
 ) -> list[RowResult]:
     students = repo.students_by_code(session, request.class_id)
     if request.kind is ImportKind.ATTENDANCE:
-        start, end = repo.school_year_range(session, request.class_id)
+        start, end = analytics_repo.school_year_range(session, request.class_id)
         return validation.validate_attendance(
             table,
             mapping,

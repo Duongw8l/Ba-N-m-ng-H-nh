@@ -1,6 +1,7 @@
 """Truy vấn dữ liệu cho Analytics. Chỉ đọc; quyền đã được authorize() kiểm trước khi gọi."""
 
 from dataclasses import dataclass
+from datetime import date
 from decimal import Decimal
 
 from sqlalchemy import func, select
@@ -9,7 +10,14 @@ from sqlalchemy.orm import Session
 from app.analytics.attendance import AttendanceSummary, make_summary
 from app.analytics.views import v_subject_average
 from app.classes.academic import Assessment, Attendance, ConductResult
-from app.classes.models import ClassStudent, SchoolClass, Student, Subject, TeachingAssignment
+from app.classes.models import (
+    ClassStudent,
+    SchoolClass,
+    SchoolYear,
+    Student,
+    Subject,
+    TeachingAssignment,
+)
 from app.core.enums import (
     AssessmentKind,
     AssessmentType,
@@ -164,6 +172,59 @@ def absence_by_student(session: Session, class_id: int) -> dict[int, AttendanceS
         .group_by(Attendance.class_student_id)
     ).all()
     return {r[0]: make_summary(r[1], r[2], r[3]) for r in rows}
+
+
+def student_guardian(session: Session, student_id: int) -> tuple[str | None, str | None]:
+    """Tên và số điện thoại phụ huynh. Chỉ gọi khi người xem được phép (GVCN, BGH)."""
+    row = session.execute(
+        select(Student.guardian_name, Student.guardian_phone).where(Student.id == student_id)
+    ).one()
+    return row[0], row[1]
+
+
+def school_year_range(session: Session, class_id: int) -> tuple[date, date]:
+    """Ngày đầu và ngày cuối của năm học của lớp."""
+    start, end = session.execute(
+        select(SchoolYear.start_date, SchoolYear.end_date)
+        .join(SchoolClass, SchoolClass.school_year_id == SchoolYear.id)
+        .where(SchoolClass.id == class_id)
+    ).one()
+    return start, end
+
+
+def attendance_days(
+    session: Session, class_id: int, class_student_id: int | None = None
+) -> list[tuple[date, AttendanceStatus]]:
+    """Ngày và trạng thái điểm danh của cả lớp, hoặc của một học sinh khi có `class_student_id`."""
+    query = (
+        select(Attendance.date, Attendance.status)
+        .join(ClassStudent, ClassStudent.id == Attendance.class_student_id)
+        .where(ClassStudent.class_id == class_id)
+    )
+    if class_student_id is not None:
+        query = query.where(Attendance.class_student_id == class_student_id)
+    return [(row[0], row[1]) for row in session.execute(query).all()]
+
+
+def raw_student_scores(session: Session, class_student_id: int) -> dict[int, list[RawScore]]:
+    """Từng đầu điểm của một học sinh, gom theo môn (cả hai học kỳ)."""
+    rows = session.execute(
+        select(
+            Assessment.subject_id,
+            Assessment.class_student_id,
+            Assessment.semester,
+            Assessment.kind,
+            Assessment.seq,
+            Assessment.score,
+            Assessment.comment_result,
+        )
+        .where(Assessment.class_student_id == class_student_id)
+        .order_by(Assessment.subject_id, Assessment.semester, Assessment.kind, Assessment.seq)
+    ).all()
+    grouped: dict[int, list[RawScore]] = {}
+    for subject_id, *rest in rows:
+        grouped.setdefault(subject_id, []).append(RawScore(*rest))
+    return grouped
 
 
 def raw_subject_scores(session: Session, class_id: int, subject_id: int) -> list[RawScore]:

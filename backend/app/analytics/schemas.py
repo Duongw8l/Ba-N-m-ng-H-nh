@@ -52,6 +52,31 @@ class PromotionCountsOut(BaseModel):
     unknown: int
 
 
+class MonthAbsenceOut(BaseModel):
+    """Số buổi nghỉ trong một tháng (đi muộn không tính là nghỉ, D-028)."""
+
+    month: str  # YYYY-MM
+    excused: int
+    unexcused: int
+    total: int
+
+
+class AbsenceLimitsOut(BaseModel):
+    """Ngưỡng nghỉ lấy từ bảng settings, để giao diện vẽ vạch mà không ghi cứng số."""
+
+    notice: int  # từ mức này bắt đầu nhắc (30)
+    maximum: int  # nghỉ quá mức này thì không đủ điều kiện lên lớp (45)
+
+
+class ThresholdsOut(BaseModel):
+    """Ngưỡng điểm lấy từ bảng settings, để giao diện ghi chú đúng mà không ghi cứng số."""
+
+    fail: Score  # dưới mức này là quá thấp (3,5)
+    passing: Score  # mức đạt (5,0)
+    fair: Score  # 6,5
+    good: Score  # 8,0
+
+
 class DashboardOut(BaseModel):
     class_info: ClassRefOut
     period: Period
@@ -66,6 +91,107 @@ class DashboardOut(BaseModel):
     subjects: list[SubjectStatOut]
     attention: list[AttentionOut]
     promotion: PromotionCountsOut | None  # chỉ khi xem cả năm
+    # Tổng số buổi nghỉ của cả lớp theo từng tháng của năm học (tháng không ai nghỉ ghi 0).
+    absences_by_month: list[MonthAbsenceOut]
+    absence_limits: AbsenceLimitsOut
+    thresholds: ThresholdsOut
+
+
+# --- Hồ sơ học sinh -----------------------------------------------------------------------------
+# Hai schema riêng, không kế thừa nhau (D-044, D-066): GVBM nhận hồ sơ chỉ có các môn mình dạy,
+# không có khoá chuyên cần, rèn luyện, phụ huynh, chứ không phải các khoá rỗng.
+
+
+class ProfileStudentOut(BaseModel):
+    id: int
+    student_code: str
+    full_name: str
+
+
+class ProfileSemesterOut(BaseModel):
+    semester: int
+    tx: list[Score]  # các đầu điểm thường xuyên đã có
+    tx_missing: int
+    midterm: Score | None
+    final: Score | None
+    average: Score | None  # ĐTBmhk (tạm tính nếu complete = false); môn nhận xét: None
+    comment_result: CommentResult | None
+    complete: bool
+
+
+class ProfileSubjectOut(BaseModel):
+    subject_id: int
+    name: str
+    assessment_type: AssessmentType
+    periods_per_year: int
+    regular_required: int
+    semesters: list[ProfileSemesterOut]  # học kỳ I rồi học kỳ II
+    year_average: Score | None  # ĐTBmcn, khi đủ hai học kỳ
+    year_comment_result: CommentResult | None  # môn nhận xét: kết quả cả năm (lấy theo học kỳ II)
+
+
+class ProfileLearningOut(BaseModel):
+    level: str | None  # good, fair, pass, fail; None: chưa đủ dữ liệu
+    base_level: str | None  # mức trước khi điều chỉnh
+    adjusted: bool
+    incomplete_subjects: list[str]  # tên môn
+    below_fail_subjects: list[str]  # môn điểm số dưới 3,5
+    below_pass_subjects: list[str]  # môn điểm số dưới 5,0
+    failed_comment_subjects: list[str]  # môn nhận xét Chưa đạt
+
+
+class ProfileConductOut(BaseModel):
+    level: str | None
+    derived: bool  # cả năm được suy ra từ học kỳ II
+
+
+class ProfileAttendanceOut(BaseModel):
+    excused: int
+    unexcused: int
+    late: int
+    absent_total: int  # nghỉ có phép + không phép, cả năm học
+    limits: AbsenceLimitsOut
+    by_month: list[MonthAbsenceOut]
+
+
+class RetakeSubjectOut(BaseModel):
+    subject_id: int
+    name: str
+    reason: str
+
+
+class ProfilePromotionOut(BaseModel):
+    eligible: bool | None  # None: chưa đủ dữ liệu để kết luận
+    reasons: list[str]
+    retake_subjects: list[RetakeSubjectOut]
+
+
+class StudentProfileFullOut(BaseModel):
+    """Hồ sơ đầy đủ cho GVCN của lớp và BGH."""
+
+    scope: Literal["full"] = "full"
+    class_info: ClassRefOut
+    period: Period
+    student: ProfileStudentOut
+    guardian_name: str | None
+    guardian_phone: str | None
+    subjects: list[ProfileSubjectOut]
+    learning: ProfileLearningOut
+    conduct: ProfileConductOut
+    attendance: ProfileAttendanceOut
+    promotion: ProfilePromotionOut | None  # chỉ khi xem cả năm
+    attention_reasons: list[str]  # cùng quy tắc với dashboard lớp
+    thresholds: ThresholdsOut
+
+
+class StudentProfileSubjectsOut(BaseModel):
+    """Hồ sơ cho GVBM: chỉ các môn mình dạy ở lớp đó."""
+
+    scope: Literal["subjects"] = "subjects"
+    class_info: ClassRefOut
+    student: ProfileStudentOut
+    subjects: list[ProfileSubjectOut]
+    thresholds: ThresholdsOut
 
 
 # --- Bảng điểm một môn ------------------------------------------------------------------------
@@ -77,13 +203,6 @@ class SubjectOut(BaseModel):
     assessment_type: AssessmentType
     periods_per_year: int
     regular_required: int  # số đầu điểm thường xuyên mỗi học kỳ theo số tiết
-
-
-class ThresholdsOut(BaseModel):
-    fail: Score
-    passing: Score
-    fair: Score
-    good: Score
 
 
 class ScoreRowOut(BaseModel):

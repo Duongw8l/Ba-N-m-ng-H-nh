@@ -6,17 +6,19 @@ chỉ gom dữ liệu, gọi hàm, đếm và định dạng.
 
 from collections import Counter, defaultdict
 from dataclasses import dataclass
+from datetime import date
 from decimal import Decimal
 
 from sqlalchemy.orm import Session
 
 from app.analytics import repository as repo
-from app.analytics.attendance import AttendanceSummary, make_summary
+from app.analytics.attendance import AttendanceSummary, absences_by_month_in_range, make_summary
 from app.analytics.conduct import PeriodConduct, conduct_for_period, year_comment_result
 from app.analytics.config import AnalyticsConfig
 from app.analytics.learning import LearningResult, SubjectResult, learning_result
 from app.analytics.promotion import PromotionResult, promotion_status
 from app.analytics.schemas import (
+    AbsenceLimitsOut,
     AttentionOut,
     ClassMeanOut,
     ClassOverviewOut,
@@ -25,9 +27,20 @@ from app.analytics.schemas import (
     DashboardOut,
     DistributionOut,
     GradeOverviewOut,
+    MonthAbsenceOut,
     Period,
+    ProfileAttendanceOut,
+    ProfileConductOut,
+    ProfileLearningOut,
+    ProfilePromotionOut,
+    ProfileSemesterOut,
+    ProfileStudentOut,
+    ProfileSubjectOut,
     PromotionCountsOut,
+    RetakeSubjectOut,
     ScoreRowOut,
+    StudentProfileFullOut,
+    StudentProfileSubjectsOut,
     SubjectOut,
     SubjectScoresOut,
     SubjectStatOut,
@@ -42,6 +55,7 @@ from app.analytics.scores import (
 from app.core.enums import (
     AssessmentKind,
     AssessmentType,
+    AttendanceStatus,
     CommentResult,
     ConductPeriod,
     LearningLevel,
@@ -233,19 +247,25 @@ def _absence_counts(results: ClassResults, config: AnalyticsConfig) -> tuple[int
     return notice, over
 
 
+def _attention_reasons(s: StudentResult, config: AnalyticsConfig) -> list[str]:
+    """Lý do một học sinh cần quan tâm (dùng chung cho dashboard lớp và hồ sơ học sinh)."""
+    reasons: list[str] = []
+    if s.absence.absent_total > config.max_absent_sessions:
+        reasons.append("absent_over_limit")
+    elif s.absence.absent_total >= config.absent_warning_notice:
+        reasons.append("absent_notice")
+    if s.learning.below_fail_subjects:
+        reasons.append("subject_below_fail")
+    if s.learning.level is LearningLevel.FAIL:
+        reasons.append("level_fail")
+    return reasons
+
+
 def _attention(results: ClassResults, config: AnalyticsConfig) -> list[AttentionOut]:
     """Học sinh cần quan tâm, đọc từ kết quả Analytics. Chưa phải cảnh báo sớm (Giai đoạn 6)."""
     attention: list[AttentionOut] = []
     for s in results.students:
-        reasons: list[str] = []
-        if s.absence.absent_total > config.max_absent_sessions:
-            reasons.append("absent_over_limit")
-        elif s.absence.absent_total >= config.absent_warning_notice:
-            reasons.append("absent_notice")
-        if s.learning.below_fail_subjects:
-            reasons.append("subject_below_fail")
-        if s.learning.level is LearningLevel.FAIL:
-            reasons.append("level_fail")
+        reasons = _attention_reasons(s, config)
         if reasons:
             attention.append(
                 AttentionOut(
@@ -292,7 +312,40 @@ def build_dashboard(
         subjects=subject_stats(results, config),
         attention=_attention(results, config),
         promotion=promotion,
+        absences_by_month=_absences_by_month(
+            repo.attendance_days(session, class_info.id),
+            *repo.school_year_range(session, class_info.id),
+        ),
+        absence_limits=_absence_limits(config),
+        thresholds=_thresholds(config),
     )
+
+
+def _absences_by_month(
+    rows: list[tuple[date, AttendanceStatus]], first: date, last: date
+) -> list[MonthAbsenceOut]:
+    return [
+        MonthAbsenceOut(
+            month=item.period,
+            excused=item.excused,
+            unexcused=item.unexcused,
+            total=item.absent_total,
+        )
+        for item in absences_by_month_in_range(rows, first, last)
+    ]
+
+
+def _thresholds(config: AnalyticsConfig) -> ThresholdsOut:
+    return ThresholdsOut(
+        fail=config.score_threshold_fail,
+        passing=config.score_threshold_pass,
+        fair=config.score_threshold_fair,
+        good=config.score_threshold_good,
+    )
+
+
+def _absence_limits(config: AnalyticsConfig) -> AbsenceLimitsOut:
+    return AbsenceLimitsOut(notice=config.absent_warning_notice, maximum=config.max_absent_sessions)
 
 
 # --- Tổng quan khối -----------------------------------------------------------------------------
@@ -372,6 +425,14 @@ def _group_raw(raw: list[repo.RawScore]) -> dict[tuple[int, int], _SemesterRaw]:
     return grouped
 
 
+def _evaluate_raw(
+    raw: _SemesterRaw, periods_per_year: int, config: AnalyticsConfig
+) -> SemesterScore:
+    return evaluate_semester(
+        sum(raw.tx, Decimal(0)), len(raw.tx), raw.midterm, raw.final, periods_per_year, config
+    )
+
+
 def _bucket(value: Decimal, config: AnalyticsConfig) -> str:
     if value < config.score_threshold_fail:
         return "below_fail"
@@ -398,14 +459,7 @@ def build_subject_scores(
 
     def evaluate(student: repo.StudentInfo, sem: int) -> SemesterScore:
         raw = grouped.get((student.class_student_id, sem), _SemesterRaw(tx=[]))
-        return evaluate_semester(
-            sum(raw.tx, Decimal(0)),
-            len(raw.tx),
-            raw.midterm,
-            raw.final,
-            subject.periods_per_year,
-            config,
-        )
+        return _evaluate_raw(raw, subject.periods_per_year, config)
 
     rows: list[ScoreRowOut] = []
     selected_averages: list[Decimal] = []
@@ -453,12 +507,7 @@ def build_subject_scores(
             regular_required=required,
         ),
         semester=semester,
-        thresholds=ThresholdsOut(
-            fail=config.score_threshold_fail,
-            passing=config.score_threshold_pass,
-            fair=config.score_threshold_fair,
-            good=config.score_threshold_good,
-        ),
+        thresholds=_thresholds(config),
         student_count=len(rows),
         mean=_mean(selected_averages),
         distribution=DistributionOut(
@@ -471,4 +520,150 @@ def build_subject_scores(
         incomplete_count=sum(1 for r in rows if not r.complete),
         comment_fail_count=sum(1 for r in rows if r.comment_result is CommentResult.FAIL),
         rows=rows,
+    )
+
+
+# --- Hồ sơ học sinh -------------------------------------------------------------------------------
+
+
+def _profile_subject(
+    subject: repo.SubjectInfo,
+    class_student_id: int,
+    raw: list[repo.RawScore],
+    config: AnalyticsConfig,
+) -> ProfileSubjectOut:
+    """Đầu điểm và ĐTB hai học kỳ của một môn, cùng hàm tính với bảng điểm môn."""
+    grouped = _group_raw(raw)
+    is_score = subject.assessment_type is AssessmentType.SCORE
+    required = config.required_regular(subject.periods_per_year)
+    semesters: list[ProfileSemesterOut] = []
+    evaluated: dict[int, SemesterScore] = {}
+    comments: dict[int, CommentResult | None] = {}
+    for semester in (1, 2):
+        part = grouped.get((class_student_id, semester), _SemesterRaw(tx=[]))
+        score = _evaluate_raw(part, subject.periods_per_year, config)
+        evaluated[semester] = score
+        comments[semester] = part.comment
+        semesters.append(
+            ProfileSemesterOut(
+                semester=semester,
+                tx=list(part.tx) if is_score else [],
+                tx_missing=max(0, required - len(part.tx)) if is_score else 0,
+                midterm=part.midterm if is_score else None,
+                final=part.final if is_score else None,
+                average=score.average if is_score else None,
+                comment_result=None if is_score else part.comment,
+                complete=score.complete if is_score else part.comment is not None,
+            )
+        )
+    return ProfileSubjectOut(
+        subject_id=subject.id,
+        name=subject.name,
+        assessment_type=subject.assessment_type,
+        periods_per_year=subject.periods_per_year,
+        regular_required=required,
+        semesters=semesters,
+        year_average=(
+            year_average(evaluated[1].average, evaluated[2].average, config) if is_score else None
+        ),
+        year_comment_result=None if is_score else year_comment_result(comments[2]),
+    )
+
+
+def build_student_profile(
+    session: Session,
+    class_info: repo.ClassInfo,
+    student_id: int,
+    period: Period,
+    config: AnalyticsConfig,
+    *,
+    subject_ids: frozenset[int] | None,
+) -> StudentProfileFullOut | StudentProfileSubjectsOut | None:
+    """Hồ sơ một học sinh; None nếu em không thuộc lớp.
+
+    `subject_ids` là các môn người xem được phép xem (None: mọi môn, tức GVCN và BGH). Người chỉ xem
+    một số môn (GVBM) nhận hồ sơ chỉ có các môn đó, không có xếp loại, rèn luyện, chuyên cần, phụ
+    huynh. Học tập, rèn luyện, nghỉ, lên lớp lấy từ `build_class_results` (cùng nguồn với dashboard
+    lớp nên hai màn hình không bao giờ lệch nhau).
+    """
+    student = next(
+        (s for s in repo.class_students(session, class_info.id) if s.student_id == student_id),
+        None,
+    )
+    if student is None:
+        return None
+    subjects = repo.class_subjects(session, class_info.id)
+    if subject_ids is not None:
+        subjects = [s for s in subjects if s.id in subject_ids]
+    raw_by_subject = repo.raw_student_scores(session, student.class_student_id)
+    profile_subjects = [
+        _profile_subject(s, student.class_student_id, raw_by_subject.get(s.id, []), config)
+        for s in subjects
+    ]
+    identity = ProfileStudentOut(
+        id=student.student_id, student_code=student.student_code, full_name=student.full_name
+    )
+    if subject_ids is not None:
+        return StudentProfileSubjectsOut(
+            class_info=_class_ref(class_info),
+            student=identity,
+            subjects=profile_subjects,
+            thresholds=_thresholds(config),
+        )
+
+    results = build_class_results(session, class_info, period, config)
+    result = next(r for r in results.students if r.student.student_id == student_id)
+    names = {s.id: s.name for s in results.subjects}
+    learning = result.learning
+    promotion = result.promotion
+    first_day, last_day = repo.school_year_range(session, class_info.id)
+    guardian_name, guardian_phone = repo.student_guardian(session, student_id)
+    return StudentProfileFullOut(
+        class_info=_class_ref(class_info),
+        period=period,
+        student=identity,
+        guardian_name=guardian_name,
+        guardian_phone=guardian_phone,
+        subjects=profile_subjects,
+        learning=ProfileLearningOut(
+            level=None if learning.level is None else learning.level.value,
+            base_level=None if learning.base_level is None else learning.base_level.value,
+            adjusted=learning.adjusted,
+            incomplete_subjects=[names[i] for i in learning.incomplete_subjects],
+            below_fail_subjects=[names[i] for i in learning.below_fail_subjects],
+            below_pass_subjects=[names[i] for i in learning.below_pass_subjects],
+            failed_comment_subjects=[names[i] for i in learning.failed_comment_subjects],
+        ),
+        conduct=ProfileConductOut(
+            level=None if result.conduct.level is None else result.conduct.level.value,
+            derived=result.conduct.derived,
+        ),
+        attendance=ProfileAttendanceOut(
+            excused=result.absence.excused,
+            unexcused=result.absence.unexcused,
+            late=result.absence.late,
+            absent_total=result.absence.absent_total,
+            limits=_absence_limits(config),
+            by_month=_absences_by_month(
+                repo.attendance_days(session, class_info.id, student.class_student_id),
+                first_day,
+                last_day,
+            ),
+        ),
+        promotion=(
+            None
+            if promotion is None
+            else ProfilePromotionOut(
+                eligible=promotion.eligible,
+                reasons=[reason.value for reason in promotion.reasons],
+                retake_subjects=[
+                    RetakeSubjectOut(
+                        subject_id=item.subject_id, name=item.name, reason=item.reason.value
+                    )
+                    for item in promotion.retake_subjects
+                ],
+            )
+        ),
+        attention_reasons=_attention_reasons(result, config),
+        thresholds=_thresholds(config),
     )

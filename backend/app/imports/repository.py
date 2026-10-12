@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.classes.academic import Assessment, Attendance, ConductResult
-from app.classes.models import ClassStudent, SchoolClass, SchoolYear, Student
+from app.classes.models import ClassStudent, Student
 from app.core.enums import (
     AssessmentKind,
     AttendanceStatus,
@@ -28,15 +28,6 @@ def students_by_code(session: Session, class_id: int) -> dict[str, StudentRef]:
     return {
         code.upper(): StudentRef(class_student_id, name) for code, class_student_id, name in rows
     }
-
-
-def school_year_range(session: Session, class_id: int) -> tuple[date, date]:
-    start, end = session.execute(
-        select(SchoolYear.start_date, SchoolYear.end_date)
-        .join(SchoolClass, SchoolClass.school_year_id == SchoolYear.id)
-        .where(SchoolClass.id == class_id)
-    ).one()
-    return start, end
 
 
 def existing_scores(

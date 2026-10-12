@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+
 export function GradeCards({ grades }: { grades: number[] }) {
   return (
     <section
@@ -11,7 +13,13 @@ export function GradeCards({ grades }: { grades: number[] }) {
         {grades.map((grade) => (
           <li key={grade} className="rounded-lg border border-slate-200 p-4">
             <span className="block text-xl font-semibold">Khối {grade}</span>
-            <span className="block text-sm text-slate-500">Số liệu khối sẽ có ở bản sau</span>
+            <Link
+              to={`/grades/${grade}`}
+              aria-label={`So sánh các lớp khối ${grade}`}
+              className="mt-2 inline-block text-sm font-medium text-blue-700 hover:underline"
+            >
+              So sánh các lớp
+            </Link>
           </li>
         ))}
       </ul>

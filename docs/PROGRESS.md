@@ -1,6 +1,6 @@
 # Tiến độ
 
-Cập nhật lần cuối: 2026-10-13 (Giai đoạn 4). Tên và thứ tự giai đoạn lấy từ bộ prompt [PROMPTS.md](PROMPTS.md).
+Cập nhật lần cuối: 2026-10-13 (Giai đoạn 5). Tên và thứ tự giai đoạn lấy từ bộ prompt [PROMPTS.md](PROMPTS.md).
 
 ## Bảng 12 giai đoạn
 
@@ -10,8 +10,8 @@ Cập nhật lần cuối: 2026-10-13 (Giai đoạn 4). Tên và thứ tự giai
 | 1 | Cơ sở dữ liệu + dữ liệu giả lập | Xong, đã commit `cab087d` (còn chờ kiểm: CI trên GitHub, xem bên dưới) |
 | 2 | Xác thực và phân quyền | Xong, đã commit `43900ac` (chưa kiểm giao diện trên trình duyệt, CI trên GitHub; xem bên dưới) |
 | 3 | Analytics theo Thông tư 22 | Xong, đã commit `15c8d97` (quy tắc lấy từ nguồn thứ cấp, **cần đối chiếu văn bản gốc**; xem bên dưới) |
-| 4 | Import Excel/CSV | Xong, chưa commit (chưa kiểm giao diện trên trình duyệt, chưa thử với sổ điểm thật; xem bên dưới) |
-| 5 | Dashboard và giao diện chính | Chưa làm |
+| 4 | Import Excel/CSV | Xong, đã commit `667bf88` (giao diện đã chạy thử trên Chrome ở Giai đoạn 5; chưa thử với sổ điểm thật; xem bên dưới) |
+| 5 | Dashboard và giao diện chính | Xong, chưa commit (hoãn Vitest/Playwright theo lựa chọn của bạn; xem bên dưới) |
 | 6 | Cảnh báo sớm (luật + ML) | Chưa làm |
 | 7 | RAG văn bản quy định | Chưa làm |
 | 8 | Trợ lý AI gọi hàm | Chưa làm |
@@ -197,7 +197,7 @@ Cập nhật lần cuối: 2026-10-13 (Giai đoạn 4). Tên và thứ tự giai
 | `make up` (dựng lại image vì thêm pandas, openpyxl, python-multipart), 3 dịch vụ `healthy`; Vite biên dịch cả 13 module mới/sửa và trả trang SPA cho `/classes/5/import` | Đã chạy, đúng |
 | API thật bằng `curl -F` (qua proxy Vite và cổng 8000) với 3 tệp mẫu: tệp đúng (3 dòng đổi, xác nhận ghi 3 ô, xác nhận lần hai không ghi lại), tệp lỗi (6 lỗi + 1 cảnh báo đúng dòng đúng cột, xác nhận 422), `gv.van.11` / BGH / GVCN không dạy Toán / `gv.toan.11` điểm danh 11A2 đều 403 | Đã chạy, đúng |
 | Kịch bản demo: seed `--hold-out 2027-03`, `gvcn.11a2` nhập tệp điểm danh: 920 dòng mới, em An nghỉ 34 → 38 buổi trên dashboard; đối chiếu `HS1102005` bằng SQL (ĐĐGtx 2 = 6,60) và `audit_logs` (2 dòng `import_confirm`) | Đã chạy, đúng |
-| **Giao diện trên trình duyệt** (kéo thả, chọn cột, bảng xem trước, nút xác nhận) | **Chưa kiểm**: không có công cụ trình duyệt, chưa có Vitest/Playwright (D-004). Mới kiểm bằng `eslint`, `tsc`, `vite build` và API thật. Cần bạn mở thử |
+| **Giao diện trên trình duyệt** (chọn cột, bảng xem trước, nút xác nhận) | Lúc làm Giai đoạn 4: chưa kiểm. **Đã chạy thử trên Chrome thật ở Giai đoạn 5** (chọn tệp, xem trước, khoá nút khi còn lỗi, chọn cột, xác nhận): đúng. Chưa thử thao tác kéo thả tệp |
 | **Định dạng sổ điểm điện tử thật** (VNEDU, SMAS…) | **Chưa thử**: không có tệp thật; định dạng tệp mẫu là suy đoán (D-057). Cần thử với một tệp xuất thật đã ẩn danh |
 | CI GitHub Actions | **Chưa kiểm**: cần đẩy lên GitHub. CI cài dependency bằng `make install` nên tự có thư viện mới (`pandas`, `openpyxl`, `python-multipart` trong `pyproject.toml`); test tệp mẫu đọc `data/samples/` đã commit |
 
@@ -208,3 +208,42 @@ Cập nhật lần cuối: 2026-10-13 (Giai đoạn 4). Tên và thứ tự giai
 3. Đăng nhập `gv.toan.11@example.com`, bấm "Nhập điểm" ở dòng Toán 11A2, học kỳ I, thử `diem-toan-11a2-hk1.xlsx` (3 dòng đổi) rồi `diem-toan-11a2-hk1-loi.xlsx` (lỗi, nút xác nhận bị khoá). Thử đổi tên cột trong tệp để xem bước chọn cột.
 4. Thử quyền: đăng nhập `gv.van.11@example.com` rồi mở `/classes/5/import` (không có quyền); `bgh1@` không có nút nhập nào.
 5. `make test`, `make lint`. Xem nhật ký: `select action, class_id, details from audit_logs where action = 'import_confirm'`. Chạy `make seed` không tham số để về dữ liệu đầy đủ.
+
+
+## Giai đoạn 5: Dashboard và giao diện chính
+
+### Đã làm
+
+- **Back-end, hai phần nhỏ** (D-066): dashboard lớp thêm `absences_by_month` (đủ mọi tháng của năm học, tháng không nghỉ ghi 0), `absence_limits`, `thresholds` từ `settings`; endpoint mới `GET /classes/{id}/students/{student_id}/profile` với hai schema riêng (GVCN, BGH đầy đủ; GVBM chỉ các môn mình dạy, không có khoá phụ huynh, chuyên cần, rèn luyện), ghi nhật ký `view_student_profile`.
+- **Khung giao diện** (D-067): `AppLayout` với thanh điều hướng theo vai trò, `?semester=` trong URL, các trang biểu đồ nạp theo yêu cầu, `QueryState` (đang tải, lỗi, 403, 404), trợ năng cơ bản.
+- **Bảy màn hình** (Recharts, tiếng Việt, số `6,5`, 1366px): trang chủ theo vai trò (có liên kết tới các màn hình mới); dashboard lớp `/classes/:id` (4 ô số liệu, mức học tập, rèn luyện, bảng ĐTB các môn, học sinh cần quan tâm, nghỉ theo tháng, điều kiện lên lớp khi xem cả năm); bảng điểm môn (lưới tx/giữa kỳ/cuối kỳ, ĐTB do server tính, ô thiếu tô nổi, phân bố điểm, lọc học sinh thiếu điểm); dashboard khối (so sánh các lớp, học kỳ I cạnh học kỳ II); hồ sơ học sinh; khung Trợ lý AI và Nhận xét & báo cáo (D-070).
+- **Test back-end**: 660 test (thêm 30): gom nghỉ theo tháng tính tay, dashboard (tổng các tháng khớp SQL), hồ sơ học sinh (ma trận 4 vai trò, GVBM không có khoá nào ngoài môn mình, phụ huynh chỉ GVCN và BGH, 404 học sinh lớp khác, nhật ký, hồ sơ khớp dashboard và bảng điểm cho cả ba kỳ). Đã thử "đột biến" thủ công 4 chỗ (bỏ hạn chế môn của GVBM, bỏ `authorize`, GVBM nhận hồ sơ đầy đủ, học sinh lạ trả về em khác): test đỏ cả 4.
+
+### Chưa làm (thuộc các giai đoạn sau, hoặc ngoài phạm vi)
+
+- **Vitest và Playwright** (D-069): hoãn theo lựa chọn của bạn, nên chưa đạt tiêu chí "một test Playwright" của PROMPTS. Khung chat Trợ lý AI nổi trên mọi màn hình, số cảnh báo thật, nút "Tạo nhận xét": Giai đoạn 6, 8, 9. Dashboard cấp trường, khối 12 phụ đạo (F10), xuất PDF/Excel (F11): ngoài phạm vi (D-070).
+
+### Đã kiểm chứng và còn chờ kiểm chứng
+
+| Mục | Trạng thái |
+| --- | --- |
+| `make lint` và `make test` (660 test) | Đã chạy, qua |
+| `make seed` không tham số trả DB về dữ liệu đầy đủ (63.000 dòng điểm danh) sau khi thử nhập | Đã chạy, đúng |
+| `make up` (dựng lại image vì thêm Recharts), 3 dịch vụ `healthy` | Đã chạy, đúng |
+| API thật bằng `curl`: profile của em An (`HS1102001`) trả 200 `full` cho GVCN 11A2 và BGH, 200 `subjects` cho `gv.toan.11` và `gv.van.11`, 403 cho GVBM khối khác và Admin, 404 cho học sinh lớp khác và học sinh không có; dashboard có 9 tháng, tổng 155 buổi nghỉ khớp SQL | Đã chạy, đúng |
+| **Trình duyệt thật** (Chrome 155, 1366×768, script tạm ngoài repo) với `gv.van.11`, `gvcn.11a2`, `bgh1`, `gv.toan.11`: đi hết các màn hình mỗi vai trò, trang không tràn ngang, không lỗi console (trừ một 403 cố ý), ảnh chụp đã xem | Đã chạy, đúng |
+| **Luồng Nhập dữ liệu của Giai đoạn 4 trên trình duyệt** (chọn tệp, xem trước, tệp lỗi khoá nút, chọn cột lạ, xác nhận) | Đã chạy, đúng; chưa thử kéo thả tệp |
+| Số trên giao diện khớp tính tay: em An nghỉ 38 buổi (25 có phép, 13 không phép); Toán HK1 của em An 6,7 = (7,0 + 7,1 + 7,5 + 7,4 + 2×6,5 + 3×6,1) / 9; `HS1102002` (Toán 3,0) nằm trong "cần quan tâm" | Đã đối chiếu, đúng |
+| Kiểm tự động giao diện chạy lại được (Vitest, Playwright) | **Chưa có** (D-069) |
+| Màn hình hẹp hơn 1366px, trình duyệt khác Chrome, trình đọc màn hình | **Chưa kiểm** |
+| Mọi quy tắc Thông tư 22 (giao diện chỉ hiển thị kết quả server) | **Cần bạn đối chiếu với văn bản gốc** (D-047 đến D-051) |
+| CI GitHub Actions | **Chưa kiểm**: cần đẩy lên GitHub |
+
+### Cách kiểm tra
+
+1. `make db`, `make migrate`, `make seed`, `make up` (dựng lại image vì có Recharts), mở <http://localhost:5173>.
+2. Đăng nhập `gvcn.11a2@example.com` (mật khẩu dev trong README): thẻ lớp 11A2 → "Dashboard lớp". Đổi "Kỳ xem" sang "Cả năm" (URL đổi theo `?semester=year`). Bấm "Trần Minh An" ở "Học sinh cần quan tâm": hồ sơ có 38 buổi nghỉ, thông tin phụ huynh, biểu đồ nghỉ theo tháng. Bấm tên một môn ở bảng ĐTB để mở bảng điểm môn.
+3. Đăng nhập `gv.van.11@example.com`: bảng lớp-môn → "Bảng điểm"; bấm tên học sinh: hồ sơ chỉ có điểm Ngữ văn. Mở thẳng `/classes/5` sẽ báo không có quyền.
+4. Đăng nhập `bgh1@example.com`: "Khối 11" trên thanh điều hướng → so sánh các lớp, đổi kỳ, chọn môn ở phần học kỳ I so với II; bấm tên lớp để vào dashboard lớp.
+5. Thử `/assistant` và `/reports` (khung giao diện). Resize cửa sổ về 1366px để xem bố cục.
+6. `make test`, `make lint`. Swagger: `GET /classes/{id}/students/{student_id}/profile`.

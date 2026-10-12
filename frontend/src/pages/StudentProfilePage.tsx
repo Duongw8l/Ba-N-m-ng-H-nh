@@ -1,0 +1,348 @@
+import { Link, useParams } from 'react-router-dom'
+import type {
+  ProfileSemester,
+  ProfileSubject,
+  StudentProfile,
+  StudentProfileFull,
+  Thresholds,
+} from '../api/analytics'
+import { AbsenceMeter } from '../components/AbsenceMeter'
+import { AbsenceChart } from '../components/charts/AbsenceChart'
+import { PageTitle, Panel } from '../components/Panel'
+import { PeriodSelect } from '../components/PeriodSelect'
+import { QueryState } from '../components/QueryState'
+import { StatCard, StatGrid } from '../components/StatCard'
+import { useAssignments } from '../hooks/useAssignments'
+import { usePeriod, useStudentProfile } from '../hooks/useAnalytics'
+import { formatScore } from '../lib/format'
+import {
+  ATTENTION_LABELS,
+  COMMENT_LABELS,
+  PERIOD_LABELS,
+  PROMOTION_REASON_LABELS,
+  RETAKE_REASON_LABELS,
+  levelLabel,
+} from '../lib/labels'
+
+const PERIODS = ['1', '2', 'year'] as const
+
+function averageTone(value: number | null, thresholds: Thresholds): string {
+  if (value === null) return ''
+  if (value < thresholds.fail) return 'font-semibold text-red-700'
+  if (value < thresholds.passing) return 'font-medium text-amber-700'
+  return 'font-medium'
+}
+
+function SemesterCell({
+  subject,
+  semester,
+  thresholds,
+}: {
+  subject: ProfileSubject
+  semester: ProfileSemester
+  thresholds: Thresholds
+}) {
+  if (subject.assessment_type === 'comment') {
+    return semester.comment_result ? (
+      <span className={semester.comment_result === 'fail' ? 'font-medium text-red-700' : ''}>
+        {COMMENT_LABELS[semester.comment_result]}
+      </span>
+    ) : (
+      <span className="text-red-800">chưa có</span>
+    )
+  }
+  const missing = semester.tx_missing + (semester.midterm === null ? 1 : 0) + (semester.final === null ? 1 : 0)
+  return (
+    <div>
+      <span className={`tabular-nums ${averageTone(semester.average, thresholds)}`}>
+        {formatScore(semester.average)}
+        {semester.average !== null && !semester.complete && <sup aria-label="tạm tính">*</sup>}
+      </span>
+      <span className="mt-0.5 block text-xs text-slate-500 tabular-nums">
+        TX: {semester.tx.length > 0 ? semester.tx.map((value) => formatScore(value)).join(' · ') : '—'}
+        {' | '}GK {formatScore(semester.midterm)} | CK {formatScore(semester.final)}
+      </span>
+      {missing > 0 && (
+        <span className="mt-0.5 block text-xs font-medium text-red-800">Thiếu {missing} đầu điểm</span>
+      )}
+    </div>
+  )
+}
+
+function SubjectsTable({
+  subjects,
+  thresholds,
+}: {
+  subjects: ProfileSubject[]
+  thresholds: Thresholds
+}) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-max text-left text-sm">
+        <thead className="border-b border-slate-200 text-slate-500">
+          <tr>
+            <th scope="col" className="py-2 pr-4 font-medium">
+              Môn
+            </th>
+            <th scope="col" className="px-3 py-2 font-medium">
+              Học kỳ I
+            </th>
+            <th scope="col" className="px-3 py-2 font-medium">
+              Học kỳ II
+            </th>
+            <th scope="col" className="px-3 py-2 font-medium">
+              Cả năm
+            </th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100 align-top">
+          {subjects.map((subject) => (
+            <tr key={subject.subject_id}>
+              <th scope="row" className="py-2 pr-4 font-normal">
+                {subject.name}
+                {subject.assessment_type === 'comment' && (
+                  <span className="ml-2 text-xs text-slate-500">(nhận xét)</span>
+                )}
+              </th>
+              {subject.semesters.map((semester) => (
+                <td key={semester.semester} className="px-3 py-2">
+                  <SemesterCell subject={subject} semester={semester} thresholds={thresholds} />
+                </td>
+              ))}
+              <td className="px-3 py-2">
+                {subject.assessment_type === 'comment' ? (
+                  subject.year_comment_result ? (
+                    COMMENT_LABELS[subject.year_comment_result]
+                  ) : (
+                    '—'
+                  )
+                ) : (
+                  <span className={`tabular-nums ${averageTone(subject.year_average, thresholds)}`}>
+                    {formatScore(subject.year_average)}
+                  </span>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function FullProfile({ profile }: { profile: StudentProfileFull }) {
+  const { learning, conduct, attendance, promotion } = profile
+  const eligibleText =
+    promotion === null
+      ? null
+      : promotion.eligible === true
+        ? 'Đủ điều kiện'
+        : promotion.eligible === false
+          ? 'Không đủ điều kiện'
+          : 'Chưa đủ dữ liệu'
+
+  return (
+    <>
+      <StatGrid>
+        <StatCard
+          label="Kết quả học tập"
+          value={levelLabel(learning.level, 'Chưa đủ dữ liệu')}
+          valueClassName={learning.level === 'fail' ? 'text-red-700' : 'text-slate-900'}
+          hint={
+            learning.adjusted
+              ? 'Đã điều chỉnh mức theo quy định'
+              : learning.incomplete_subjects.length > 0
+                ? `Thiếu dữ liệu ở ${learning.incomplete_subjects.length} môn`
+                : undefined
+          }
+        />
+        <StatCard
+          label="Rèn luyện"
+          value={levelLabel(conduct.level)}
+          valueClassName={conduct.level === 'fail' ? 'text-red-700' : 'text-slate-900'}
+          hint={conduct.derived ? 'Cả năm: suy ra từ học kỳ II' : undefined}
+        />
+        <StatCard
+          label="Số buổi nghỉ"
+          value={attendance.absent_total}
+          hint={`Có phép ${attendance.excused}, không phép ${attendance.unexcused}, đi muộn ${attendance.late}`}
+        />
+        {eligibleText !== null ? (
+          <StatCard
+            label="Điều kiện lên lớp"
+            value={eligibleText}
+            valueClassName={
+              promotion?.eligible === false
+                ? 'text-red-700'
+                : promotion?.eligible === true
+                  ? 'text-green-700'
+                  : 'text-slate-900'
+            }
+            hint="Chỉ để tham khảo; hội đồng nhà trường quyết định"
+          />
+        ) : (
+          <StatCard label="Cảnh báo sớm" value="—" hint="Sẽ có ở Giai đoạn 6" />
+        )}
+      </StatGrid>
+
+      {(profile.attention_reasons.length > 0 ||
+        learning.below_fail_subjects.length > 0 ||
+        learning.failed_comment_subjects.length > 0) && (
+        <Panel id="can-quan-tam" title="Cần quan tâm">
+          <ul className="flex flex-wrap gap-2">
+            {profile.attention_reasons.map((reason) => (
+              <li
+                key={reason}
+                className="rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-900"
+              >
+                {ATTENTION_LABELS[reason] ?? reason}
+              </li>
+            ))}
+          </ul>
+          {learning.below_fail_subjects.length > 0 && (
+            <p className="mt-3 text-sm text-slate-700">
+              Môn điểm quá thấp: <strong>{learning.below_fail_subjects.join(', ')}</strong>
+            </p>
+          )}
+          {learning.failed_comment_subjects.length > 0 && (
+            <p className="mt-1 text-sm text-slate-700">
+              Môn nhận xét Chưa đạt: <strong>{learning.failed_comment_subjects.join(', ')}</strong>
+            </p>
+          )}
+        </Panel>
+      )}
+
+      <Panel
+        id="cac-mon"
+        title="Điểm các môn"
+        description="ĐTB do hệ thống tính theo Thông tư 22. Dấu * là điểm tạm tính vì còn thiếu đầu điểm."
+      >
+        <SubjectsTable subjects={profile.subjects} thresholds={profile.thresholds} />
+      </Panel>
+
+      <Panel id="chuyen-can" title="Chuyên cần">
+        <div className="grid gap-6 lg:grid-cols-2">
+          <div>
+            <p className="mb-2 text-sm font-medium text-slate-700">Cả năm học</p>
+            <AbsenceMeter total={attendance.absent_total} limits={attendance.limits} />
+          </div>
+          <div>
+            <p className="mb-2 text-sm font-medium text-slate-700">Theo tháng</p>
+            <AbsenceChart months={attendance.by_month} label="Số buổi nghỉ của học sinh theo tháng" />
+          </div>
+        </div>
+      </Panel>
+
+      {promotion && (
+        <Panel id="len-lop" title="Điều kiện lên lớp">
+          <p className="text-sm font-medium">{eligibleText}</p>
+          {promotion.reasons.length > 0 && (
+            <ul className="mt-2 list-inside list-disc text-sm text-slate-700">
+              {promotion.reasons.map((reason) => (
+                <li key={reason}>{PROMOTION_REASON_LABELS[reason] ?? reason}</li>
+              ))}
+            </ul>
+          )}
+          {promotion.retake_subjects.length > 0 && (
+            <>
+              <p className="mt-3 text-sm font-medium">Môn có thể phải kiểm tra lại</p>
+              <ul className="mt-1 list-inside list-disc text-sm text-slate-700">
+                {promotion.retake_subjects.map((item) => (
+                  <li key={item.subject_id}>
+                    {item.name}: {RETAKE_REASON_LABELS[item.reason] ?? item.reason}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </Panel>
+      )}
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Panel id="phu-huynh" title="Thông tin phụ huynh">
+          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
+            <dt className="text-slate-500">Họ tên</dt>
+            <dd>{profile.guardian_name ?? '—'}</dd>
+            <dt className="text-slate-500">Số điện thoại</dt>
+            <dd className="tabular-nums">{profile.guardian_phone ?? '—'}</dd>
+          </dl>
+        </Panel>
+        <Panel id="canh-bao-som" title="Cảnh báo sớm">
+          <p className="text-sm text-slate-600">
+            Nguy cơ và lý do cảnh báo của học sinh sẽ hiện ở đây khi có Giai đoạn 6.
+          </p>
+        </Panel>
+      </div>
+    </>
+  )
+}
+
+function ProfileContent({ profile }: { profile: StudentProfile }) {
+  if (profile.scope === 'full') return <FullProfile profile={profile} />
+  return (
+    <>
+      <p className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600 shadow-sm">
+        Bạn chỉ xem được điểm các môn mình dạy ở lớp này.
+      </p>
+      <Panel id="cac-mon" title="Điểm các môn bạn dạy">
+        <SubjectsTable subjects={profile.subjects} thresholds={profile.thresholds} />
+      </Panel>
+    </>
+  )
+}
+
+// Hồ sơ một học sinh: GVCN và BGH thấy đầy đủ (kể cả chuyên cần, rèn luyện, phụ huynh); GVBM chỉ thấy
+// điểm các môn mình dạy. Phạm vi do back-end quyết định, trang chỉ hiển thị những gì API trả.
+export default function StudentProfilePage() {
+  const params = useParams()
+  const classId = Number(params.classId)
+  const studentId = Number(params.studentId)
+  const [period, setPeriod] = usePeriod(PERIODS, '1')
+  const profile = useStudentProfile(classId, studentId, period)
+  const assignments = useAssignments()
+  const data = profile.data
+  const canOpenDashboard =
+    assignments.data !== undefined &&
+    (assignments.data.user.role === 'principal' ||
+      assignments.data.homeroom_classes.some((item) => item.id === classId))
+
+  return (
+    <>
+      <PageTitle
+        title={data ? data.student.full_name : 'Hồ sơ học sinh'}
+        subtitle={
+          data
+            ? `Mã ${data.student.student_code} · lớp ${data.class_info.name}${
+                data.scope === 'full' ? ` · ${PERIOD_LABELS[period]}` : ''
+              }`
+            : undefined
+        }
+        actions={
+          <>
+            {/* GVBM chỉ có điểm theo từng học kỳ nên không có ô chọn kỳ. */}
+            {data?.scope !== 'subjects' && (
+              <PeriodSelect value={period} options={PERIODS} onChange={setPeriod} />
+            )}
+            {canOpenDashboard && (
+              <Link
+                to={`/classes/${classId}`}
+                className="text-sm font-medium text-blue-700 hover:underline"
+              >
+                ← Dashboard lớp
+              </Link>
+            )}
+            <button
+              type="button"
+              disabled
+              title="Tạo nhận xét có ở Giai đoạn 9"
+              className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium opacity-60"
+            >
+              Tạo nhận xét
+            </button>
+          </>
+        }
+      />
+      <QueryState query={profile}>{(result) => <ProfileContent profile={result} />}</QueryState>
+    </>
+  )
+}

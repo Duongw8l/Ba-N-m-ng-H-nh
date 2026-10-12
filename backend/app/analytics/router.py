@@ -11,7 +11,14 @@ from fastapi import APIRouter, HTTPException, Query, status
 from app.analytics import repository as repo
 from app.analytics import service
 from app.analytics.config import load_config
-from app.analytics.schemas import DashboardOut, GradeOverviewOut, Period, SubjectScoresOut
+from app.analytics.schemas import (
+    DashboardOut,
+    GradeOverviewOut,
+    Period,
+    StudentProfileFullOut,
+    StudentProfileSubjectsOut,
+    SubjectScoresOut,
+)
 from app.auth.audit import record_access
 from app.auth.deps import CurrentUser
 from app.core.authorize import authorize
@@ -89,6 +96,43 @@ def subject_scores(
         },
     )
     return scores
+
+
+@router.get(
+    "/classes/{class_id}/students/{student_id}/profile",
+    response_model=StudentProfileFullOut | StudentProfileSubjectsOut,
+    summary="Hồ sơ học sinh (GVCN và BGH đầy đủ; GVBM chỉ các môn mình dạy)",
+)
+def student_profile(
+    class_id: int,
+    student_id: int,
+    user: CurrentUser,
+    session: DbSession,
+    semester: PeriodQuery = "1",
+) -> StudentProfileFullOut | StudentProfileSubjectsOut:
+    access = authorize(session, user, class_id=class_id)
+    class_info = repo.get_class(session, class_id)
+    if class_info is None:
+        raise _not_found("Không có lớp này.")
+
+    profile = service.build_student_profile(
+        session,
+        class_info,
+        student_id,
+        semester,
+        load_config(session),
+        subject_ids=access.subject_ids,
+    )
+    if profile is None:
+        raise _not_found("Không có học sinh này trong lớp.")
+    record_access(
+        session,
+        user,
+        AuditAction.VIEW_STUDENT_PROFILE,
+        class_id=class_id,
+        details={"student_id": student_id, "semester": semester, "scope": profile.scope},
+    )
+    return profile
 
 
 @router.get(
