@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 import { SchoolAlertsPanel } from '../components/alerts/SchoolAlertsPanel'
 import { GradeCards } from '../components/GradeCards'
 import { HomeroomClasses } from '../components/HomeroomClasses'
@@ -36,10 +37,21 @@ export default function HomePage() {
             {data.teaching.length > 0 && <TeachingTable items={data.teaching} />}
 
             {role === 'admin' && (
-              <Notice>
-                Tài khoản quản trị: các chức năng cấu hình (năm học, lớp, phân công, tài khoản, văn
-                bản quy định) sẽ có ở bản sau. Quản trị viên không xem điểm hay danh sách học sinh.
-              </Notice>
+              <>
+                <Notice>
+                  Tài khoản quản trị: các chức năng cấu hình khác (năm học, lớp, phân công, tài
+                  khoản) sẽ có ở bản sau. Quản trị viên không xem điểm hay danh sách học sinh.
+                </Notice>
+                <Notice>
+                  <Link
+                    to="/admin/regulations"
+                    className="font-medium text-blue-700 hover:underline"
+                  >
+                    Quản lý văn bản quy định
+                  </Link>{' '}
+                  (Thông tư 22, quy chế thi, nội quy...) mà Trợ lý AI được phép trích dẫn.
+                </Notice>
+              </>
             )}
             {role === 'teacher' && nothingAssigned && (
               <Notice>Bạn chưa được phân công lớp hay môn nào. Hãy liên hệ giáo vụ.</Notice>

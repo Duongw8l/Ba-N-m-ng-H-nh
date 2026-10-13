@@ -104,6 +104,12 @@ def authorize(
     return access
 
 
+def authorize_admin(user: User) -> None:
+    """Việc quản trị hệ thống (văn bản quy định cho RAG...): chỉ Admin (D-077)."""
+    if user.role is not UserRole.ADMIN:
+        raise AuthorizationError
+
+
 def authorize_school(user: User) -> None:
     """Dữ liệu cấp toàn trường (ví dụ cảnh báo mức Cao của mọi lớp): chỉ BGH (D-072)."""
     if user.role is not UserRole.PRINCIPAL:

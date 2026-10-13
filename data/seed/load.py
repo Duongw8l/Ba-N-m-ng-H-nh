@@ -25,7 +25,7 @@ from data.seed.people import DEV_PASSWORD
 from data.seed.scenarios import HEAVY_ABSENCE_MIN, LOW_SCORE_BELOW
 
 # Bảng không bị xoá khi seed.
-KEPT_TABLES = frozenset({"settings", "regulation_chunks"})
+KEPT_TABLES = frozenset({"settings", "regulation_documents", "regulation_chunks"})
 INSERT_CHUNK = 5000
 
 

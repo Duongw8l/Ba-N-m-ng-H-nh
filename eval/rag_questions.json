@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "about": "Khung 10 câu để đánh giá RAG văn bản quy định (Giai đoạn 7, D-083): 8 câu trong phạm vi và 2 câu ngoài phạm vi, hỏi về VĂN BẢN MẪU GIẢ data/regulations/van-ban-mau-gia.txt. DESIGN mục 9 yêu cầu 30 câu về Thông tư 22, quy chế thi, nội quy cộng 5 câu ngoài phạm vi: nhóm bổ sung khi đã nạp văn bản thật. Mỗi câu trong phạm vi có 'articles' (điều chấp nhận được: Hit@4 tính đúng khi một trong 4 đoạn đầu thuộc các điều này) và 'clause' (khoản mong đợi, chỉ để in thêm, không tính vào Hit@4). Các câu này KHÔNG dùng để chọn ngưỡng rag_min_similarity (ngưỡng đo trên bộ câu khác, xem D-082).",
+  "document": "Quy chế mẫu của Trường THPT Mẫu (VĂN BẢN GIẢ)",
+  "in_scope": [
+    {
+      "id": "R01",
+      "question": "Muốn xin cho con nghỉ học thì phụ huynh phải làm gì?",
+      "articles": ["Điều 3", "Điều 2"],
+      "clause": "Khoản 1"
+    },
+    {
+      "id": "R02",
+      "question": "Nghỉ tổng cộng bao nhiêu buổi thì nhà trường mời phụ huynh lên trao đổi?",
+      "articles": ["Điều 3"],
+      "clause": "Khoản 2"
+    },
+    {
+      "id": "R03",
+      "question": "Bài kiểm tra tuần làm trong thời gian bao lâu?",
+      "articles": ["Điều 4"],
+      "clause": "Khoản 1"
+    },
+    {
+      "id": "R04",
+      "question": "Học sinh vào lớp sau khi trống đã đánh thì có bị tính là nghỉ không?",
+      "articles": ["Điều 2"],
+      "clause": "Khoản 2"
+    },
+    {
+      "id": "R05",
+      "question": "Điện thoại bị giáo viên thu giữ thì bàn giao cho ai?",
+      "articles": ["Điều 5"],
+      "clause": "Khoản 2"
+    },
+    {
+      "id": "R06",
+      "question": "Vi phạm quy định về điện thoại mấy lần thì bị hạ xếp loại rèn luyện?",
+      "articles": ["Điều 5"],
+      "clause": "Khoản 3"
+    },
+    {
+      "id": "R07",
+      "question": "Ai được tuyên dương trước toàn trường vào lễ tổng kết?",
+      "articles": ["Điều 7"],
+      "clause": null
+    },
+    {
+      "id": "R08",
+      "question": "Khi ở trường học sinh phải đeo thẻ gì và mất thẻ thì sao?",
+      "articles": ["Điều 6"],
+      "clause": "Khoản 2"
+    }
+  ],
+  "out_of_scope": [
+    {
+      "id": "N01",
+      "question": "Học sinh bị kỷ luật buộc thôi học trong những trường hợp nào?"
+    },
+    {
+      "id": "N02",
+      "question": "Căng tin của trường mở cửa lúc mấy giờ?"
+    }
+  ]
+}

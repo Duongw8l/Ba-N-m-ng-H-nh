@@ -17,6 +17,7 @@ ENV_FILE = Path(__file__).resolve().parents[3] / ".env"
 
 # Khoá ký JWT ngắn dễ bị dò; HS256 nên dùng khoá dài từ 32 ký tự (256 bit).
 JWT_SECRET_MIN_LENGTH = 32
+DEFAULT_EMBEDDING_MODEL = "BAAI/bge-m3"
 
 
 class Settings(BaseSettings):
@@ -35,11 +36,17 @@ class Settings(BaseSettings):
     llm_api_key: SecretStr = SecretStr("")
     llm_model: str = ""
     ollama_url: str = "http://localhost:11434"
-    embedding_model: str = ""
+    # Để trống (kể cả EMBEDDING_MODEL= trong .env) thì dùng bge-m3 (D-076).
+    embedding_model: str = DEFAULT_EMBEDDING_MODEL
     # Số chiều vector của regulation_chunks.embedding. Migration đọc giá trị này lúc chạy và cố định
     # vào cột; đổi về sau cần migration mới (ALTER COLUMN ... TYPE vector(N)) và tính lại vector.
     # 1024 là số chiều của bge-m3 và multilingual-e5-large. Trần 2000 là giới hạn chỉ mục pgvector.
     embedding_dim: int = Field(default=1024, ge=1, le=2000)
+
+    @field_validator("embedding_model")
+    @classmethod
+    def _blank_embedding_model_means_default(cls, value: str) -> str:
+        return value.strip() or DEFAULT_EMBEDDING_MODEL
 
     @field_validator("jwt_secret")
     @classmethod

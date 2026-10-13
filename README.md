@@ -47,16 +47,19 @@ make dev-fe              # terminal 2: giao diện tại http://localhost:5173
 | `make samples` | Sinh lại 3 tệp mẫu nhập dữ liệu trong `data/samples/` (cần DB đã migrate) |
 | `make warn` | Chạy cảnh báo sớm cho cả trường (`make seed` đã tự chạy; chỉ thêm dòng mới khi nội dung đổi) |
 | `make train` | Huấn luyện lại mô hình cảnh báo sớm (2 đến 3 phút, dùng database tạm), ghi `backend/ml/models/` và `backend/ml/REPORT.md` |
+| `make regulations` | Nạp văn bản quy định trong `data/regulations/` (tách Điều/Khoản, tính vector); văn bản đã nạp thì bỏ qua |
+| `make rag-model` | Tải sẵn mô hình embedding bge-m3 (khoảng 2,3 GB, chỉ lần đầu) |
+| `make eval-rag` | Đo RAG bằng mô hình thật: Hit@4 và tỉ lệ từ chối đúng (`eval/rag_questions.json`) |
 | `make dev-be` / `make dev-fe` | Chạy back-end (uvicorn) / front-end (Vite) với tự nạp lại |
 | `make test` | pytest. Gồm test cần PostgreSQL thật nên phải `make db` trước; chỉ chạy test không cần DB: `cd backend && python -m pytest -m "not db"` |
-| `make lint` | ruff check, ruff format --check (cả `backend/` và `data/`), eslint, tsc |
+| `make lint` | ruff check, ruff format --check (cả `backend/`, `data/` và `eval/`), eslint, tsc |
 | `make eval` | Chưa triển khai (in thông báo, thoát mã 0) |
 
 ## Dữ liệu giả lập và tài khoản dev
 
 `make seed` tạo 1 trường, năm học 2026-2027 (đủ hai học kỳ, mô phỏng một năm đã hoàn tất), khối 10/11/12 mỗi khối 3 lớp, mỗi lớp 40 học sinh (360 học sinh), 17 môn theo Chương trình GDPT 2018 và tài khoản mẫu. Toàn bộ là dữ liệu giả: tên ghép ngẫu nhiên, email `@example.com`, số điện thoại phụ huynh bắt đầu bằng `0000` (không hợp lệ).
 
-**Cảnh báo:** `make seed` xoá **mọi** dữ liệu trường học trong DB (điểm, điểm danh, học sinh, lớp, tài khoản, nhật ký AI...) rồi nạp lại; chỉ giữ bảng `settings` và `regulation_chunks`. Từ chối chạy khi `APP_ENV=production`. Chạy lại với cùng tham số cho đúng cùng dữ liệu.
+**Cảnh báo:** `make seed` xoá **mọi** dữ liệu trường học trong DB (điểm, điểm danh, học sinh, lớp, tài khoản, nhật ký AI...) rồi nạp lại; chỉ giữ bảng `settings`, `regulation_documents` và `regulation_chunks` (văn bản quy định đã nạp, tính lại vector tốn công). Từ chối chạy khi `APP_ENV=production`. Chạy lại với cùng tham số cho đúng cùng dữ liệu.
 
 ```bash
 make seed                                                   # mặc định: --seed 2026, 3 lớp/khối, sĩ số 40
@@ -95,6 +98,7 @@ Giao diện tiếng Việt, số kiểu `6,5`, dùng được ở 1366px. Mọi 
 | `/grades/{level}` | BGH | So sánh các lớp trong khối, học kỳ I cạnh học kỳ II |
 | `/classes/{id}/import` | GVBM, GVCN | Nhập dữ liệu từ tệp (mục bên dưới) |
 | `/assistant`, `/reports` | Mọi vai trò | Khung Trợ lý AI và Nhận xét & báo cáo (nối API ở Giai đoạn 8 và 9) |
+| `/admin/regulations` | Admin | Quản lý văn bản quy định: danh sách, tải lên, đánh dấu hết hiệu lực / bật lại, thử tìm (mục "Văn bản quy định") |
 
 Id lớp và học sinh xem ở mục tài khoản dev (lớp 11A2 có id 5, môn Toán có id 2). Hồ sơ học sinh qua API: `GET /api/v1/classes/{id}/students/{student_id}/profile?semester=1|2|year`; GVBM nhận hồ sơ chỉ có các môn mình dạy.
 

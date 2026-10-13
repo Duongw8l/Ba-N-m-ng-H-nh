@@ -226,15 +226,58 @@ def test_vector_column_rejects_wrong_dimension(
         )
     ).scalar_one()
     right = "[" + ",".join(["0.5"] * dimension) + "]"
+    document_id = db_conn.execute(
+        text(
+            "INSERT INTO regulation_documents (name, file_name) VALUES ('a', 'a.txt') RETURNING id"
+        )
+    ).scalar_one()
     db_conn.execute(
         text(
-            "INSERT INTO regulation_chunks (document_name, content, embedding) "
-            "VALUES ('a', 'b', :v)"
+            "INSERT INTO regulation_chunks (document_id, document_name, content, embedding) "
+            "VALUES (:d, 'a', 'b', :v)"
         ),
-        {"v": right},
+        {"d": document_id, "v": right},
     )
 
     expect_rejected(
-        "INSERT INTO regulation_chunks (document_name, content, embedding) "
-        "VALUES ('a', 'b', '[1,2,3]')"
+        "INSERT INTO regulation_chunks (document_id, document_name, content, embedding) "
+        f"VALUES ({document_id}, 'a', 'b', '[1,2,3]')"
+    )
+
+
+def test_deleting_a_regulation_document_deletes_its_chunks(db_conn: Connection) -> None:
+    document_id = db_conn.execute(
+        text(
+            "INSERT INTO regulation_documents (name, file_name) VALUES ('b', 'b.txt') RETURNING id"
+        )
+    ).scalar_one()
+    db_conn.execute(
+        text(
+            "INSERT INTO regulation_chunks (document_id, document_name, content) "
+            "VALUES (:d, 'b', 'x')"
+        ),
+        {"d": document_id},
+    )
+
+    db_conn.execute(text("DELETE FROM regulation_documents WHERE id = :d"), {"d": document_id})
+
+    remaining = db_conn.execute(
+        text("SELECT count(*) FROM regulation_chunks WHERE document_id = :d"), {"d": document_id}
+    ).scalar_one()
+    assert remaining == 0
+
+
+def test_two_active_documents_with_the_same_name_are_rejected(
+    db_conn: Connection, expect_rejected: Callable[..., None]
+) -> None:
+    db_conn.execute(
+        text("INSERT INTO regulation_documents (name, file_name) VALUES ('c', 'c.txt')")
+    )
+
+    expect_rejected("INSERT INTO regulation_documents (name, file_name) VALUES ('c', 'c2.txt')")
+
+    # Bản cũ đã hết hiệu lực thì được nạp bản mới cùng tên.
+    db_conn.execute(text("UPDATE regulation_documents SET status = 'expired' WHERE name = 'c'"))
+    db_conn.execute(
+        text("INSERT INTO regulation_documents (name, file_name) VALUES ('c', 'c2.txt')")
     )

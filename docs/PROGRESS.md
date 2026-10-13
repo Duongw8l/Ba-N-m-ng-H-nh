@@ -1,6 +1,6 @@
 # Tiến độ
 
-Cập nhật lần cuối: 2026-10-13 (Giai đoạn 6). Tên và thứ tự giai đoạn lấy từ bộ prompt [PROMPTS.md](PROMPTS.md).
+Cập nhật lần cuối: 2026-10-13 (Giai đoạn 7). Tên và thứ tự giai đoạn lấy từ bộ prompt [PROMPTS.md](PROMPTS.md).
 
 ## Bảng 12 giai đoạn
 
@@ -12,8 +12,8 @@ Cập nhật lần cuối: 2026-10-13 (Giai đoạn 6). Tên và thứ tự giai
 | 3 | Analytics theo Thông tư 22 | Xong, đã commit `15c8d97` (quy tắc lấy từ nguồn thứ cấp, **cần đối chiếu văn bản gốc**; xem bên dưới) |
 | 4 | Import Excel/CSV | Xong, đã commit `667bf88` (giao diện đã chạy thử trên Chrome ở Giai đoạn 5; chưa thử với sổ điểm thật; xem bên dưới) |
 | 5 | Dashboard và giao diện chính | Xong, đã commit `36b2882` (hoãn Vitest/Playwright theo lựa chọn của bạn; xem bên dưới) |
-| 6 | Cảnh báo sớm (luật + ML) | Xong, chưa commit (dữ liệu huấn luyện là giả lập; xem bên dưới) |
-| 7 | RAG văn bản quy định | Chưa làm |
+| 6 | Cảnh báo sớm (luật + ML) | Xong, đã commit `f5a021f` (dữ liệu huấn luyện là giả lập; xem bên dưới) |
+| 7 | RAG văn bản quy định | Xong, chưa commit (ngưỡng tìm kiếm chưa tách chắc hai nhóm câu hỏi, Hit@4 6/8 trên bộ kiểm; chưa thử với văn bản thật; xem bên dưới) |
 | 8 | Trợ lý AI gọi hàm | Chưa làm |
 | 9 | Nhận xét và báo cáo | Chưa làm |
 | 10 | Đánh giá AI | Chưa làm |
@@ -289,3 +289,45 @@ Cập nhật lần cuối: 2026-10-13 (Giai đoạn 6). Tên và thứ tự giai
 3. Kịch bản demo: `make seed SEED_ARGS="--hold-out 2027-03"`, vào dashboard lớp 11A2 (em An "nghỉ 34 buổi"), nhập `data/samples/diem-danh-11a2-2027-03.csv` ở trang Nhập dữ liệu, mở lại dashboard (em An "nghỉ 38 buổi", cảnh báo đã cập nhật). Chạy `make seed` không tham số để về dữ liệu đầy đủ.
 4. Đăng nhập `bgh1@example.com`: panel "mức cao, toàn trường" ở trang chủ; vào dashboard một lớp: chỉ xem, không có nút ghi nhận. `gv.van.11@example.com` mở `/classes/5` hay gọi `/classes/5/alerts` bị 403.
 5. `make train` để huấn luyện lại (ghi `backend/ml/REPORT.md` và mô hình), rồi `make warn` để tính lại cảnh báo; `make test`, `make lint`.
+
+
+## Giai đoạn 7: RAG văn bản quy định
+
+### Đã làm
+
+- **Nạp văn bản** (`backend/app/rag/`; D-076 đến D-081): Admin tải `.pdf`, `.docx` hoặc `.txt` → đọc chữ (bỏ số trang, đầu/chân trang lặp lại) → **tách theo Điều/Khoản** (mỗi khoản một đoạn kèm tiêu đề điều, chỉ khoản quá dài mới tách tiếp, metadata `article`/`clause`) → tính vector bằng **bge-m3 trên CPU** → ghi văn bản, đoạn và nhật ký trong một transaction. Mỗi tên chỉ có một bản còn hiệu lực; Admin đánh dấu hết hiệu lực hoặc bật lại.
+- **Tìm kiếm** (D-080, D-082): `search_regulation(query, k=4)` tìm theo cosine trong pgvector (chỉ mục HNSW), **chỉ trong văn bản còn hiệu lực** (lọc ngay trong SQL); độ tương đồng cao nhất dưới `settings.rag_min_similarity` (0,56) thì trả "Không tìm thấy trong văn bản quy định" và không trả đoạn nào.
+- **API** (D-077, ngoài bảng DESIGN mục 7): `GET` và `POST /admin/regulations`, `PATCH /admin/regulations/{id}` (chỉ Admin, hàm mới `authorize_admin`), `GET /regulations/search` (mọi người dùng đăng nhập). **Migration thứ 8**: bảng `regulation_documents`, `document_id` và chỉ mục HNSW cho `regulation_chunks`, khoá `rag_min_similarity`, hai hành động nhật ký. `make seed` giữ cả hai bảng văn bản.
+- **Dòng lệnh**: `make regulations` (nạp `data/regulations/`, chạy lại an toàn), `make rag-model` (tải sẵn mô hình), `make eval-rag` (đo Hit@4 và tỉ lệ từ chối đúng bằng mô hình thật, D-083). Văn bản mẫu **GIẢ** `data/regulations/van-ban-mau-gia.txt` (8 điều, 18 đoạn); `.gitignore` chỉ cho commit văn bản mẫu giả, văn bản thật của bạn mặc định không bị commit.
+- **Giao diện** (D-084): trang `/admin/regulations` cho Admin (danh sách, tải lên, hết hiệu lực / bật lại có xác nhận, "Thử tìm").
+- **Hạ tầng**: thêm `sentence-transformers`, `torch` (bản CPU), `pypdf`, `python-docx`; volume `hf_cache` giữ mô hình (~2,3 GB) giữa các lần dựng image; `EMBEDDING_MODEL` mặc định `BAAI/bge-m3`.
+- **Test**: 908 test qua, 1 bỏ qua (thêm 149): tách Điều/Khoản trên văn bản mẫu và các ca biên (khoản liên tiếp, điểm, điều dài, phụ lục, "Nơi nhận"), đọc PDF/DOCX/TXT tự dựng và các tệp lỗi, tìm kiếm (ngưỡng đọc từ `settings`, hết hiệu lực không bị trích, chỉ bản còn hiệu lực được trả khi bản cũ cùng tên đã hết hiệu lực), API (ma trận vai trò trên mọi endpoint quản trị, 409/413/422, lỗi giữa chừng không để lại gì, nhật ký). Test dùng bộ nhúng giả nên không tải mô hình; test duy nhất cần mô hình thật được bỏ qua mặc định và đã chạy riêng bằng `RUN_EMBEDDING_TESTS=1`: 8/8 qua. Đã thử "đột biến" thủ công 4 chỗ (bỏ lọc hiệu lực, bỏ ngưỡng, đổi `>=` thành `>`, bỏ `authorize_admin`): test đỏ cả 4.
+
+### Chưa làm (thuộc các giai đoạn sau, hoặc ngoài phạm vi)
+
+- Gọi `search_regulation` từ trợ lý và trích dẫn kiểu "theo Điều 12 Thông tư 22/2021" trong câu trả lời: Giai đoạn 8. Đo "% trả lời đúng" (cần LLM) và bộ câu đủ 30 + 5: Giai đoạn 10. Giới hạn dung lượng tải lên ở reverse proxy: Giai đoạn 11. OCR cho PDF quét ảnh (D-079). Xoá hẳn văn bản (chỉ có đánh dấu hết hiệu lực).
+
+### Đã kiểm chứng và còn chờ kiểm chứng
+
+| Mục | Trạng thái |
+| --- | --- |
+| `alembic upgrade head` (migration thứ 8), `alembic check` ("No new upgrade operations detected") | Đã chạy, đúng |
+| `make lint` và `make test` (908 test qua, 1 bỏ qua) | Đã chạy, qua |
+| `make regulations` rồi `make eval-rag` với **bge-m3 thật**: Hit@4 **6/8 = 75%**, từ chối đúng **1/2 = 50%**; mục tiêu DESIGN 80% | Đã chạy, **chưa đạt**. R04 (0,555) và R07 (0,520) bị từ chối nhầm vì dưới ngưỡng 0,56; N01 "buộc thôi học" (0,568) trả nhầm Điều 3 về nghỉ học. Không ngưỡng nào tách được cả ba (D-082), và mẫu chỉ 8 + 2 câu nên chưa kết luận được gì về chất lượng chung |
+| `make up`: 3 dịch vụ `healthy`, mô hình nạp từ volume `hf_cache` trong container | Đã chạy, đúng |
+| API thật bằng Python/UTF-8: 401 không token; Admin 200; GVBM và BGH đều 403 ở list, PATCH, POST; GVBM tìm được (câu "Điện thoại bị giáo viên thu giữ..." → Điều 5 Khoản 2, 0,680; câu căng tin → "không tìm thấy", 0,4455) | Đã chạy, đúng. **Lưu ý**: `curl` của Git Bash trên Windows làm hỏng dấu tiếng Việt trong tham số, cho độ tương đồng sai (0,37) — chỉ là lỗi công cụ, API đúng khi gửi UTF-8 |
+| Trình duyệt thật (Chrome, 1366×768): trang Admin, tải lên một văn bản thử, báo trùng tên, hết hiệu lực làm câu hỏi không còn được trích, bật lại thì được trích; GVBM không có liên kết và bị chặn khi mở thẳng; không lỗi console | Đã chạy, đúng; văn bản thử đã xoá. Chưa thử kéo thả tệp, PDF/DOCX qua giao diện |
+| **Văn bản thật** (Thông tư 22/2021, quy chế thi, nội quy) | **Chưa thử**: bạn tự đặt vào `data/regulations/` (PROMPTS). Quy tắc tách (D-078) và ngưỡng (D-082) chỉ đo trên văn bản mẫu giả; cần chạy `make regulations`, `make eval-rag` và hiệu chỉnh lại |
+| **PDF/DOCX thật** | **Chưa thử**: test dùng tệp tự dựng; PDF thật có thể ngắt dòng, đánh số kiểu khác (D-078, D-079) |
+| Bộ 30 câu tạm đã chọn ngưỡng 0,56 | **Không được lưu lại**, chưa tái lập được (D-082); bộ `eval/rag_questions.json` chỉ là khung 10 câu |
+| Quy tắc Thông tư 22 trong `analytics/` | Vẫn **cần bạn đối chiếu văn bản gốc** (D-047 đến D-051) |
+| CI GitHub Actions | **Chưa kiểm**: cần đẩy lên GitHub; CI cài `torch` bản CPU qua `make install` nên bước cài sẽ lâu hơn |
+
+### Cách kiểm tra
+
+1. `make db`, `make migrate` (migration thứ 8), `make rag-model` (lần đầu tải ~2,3 GB), `make regulations`.
+2. `make eval-rag`: xem độ tương đồng từng câu, Hit@4 và tỉ lệ từ chối. Thử ngưỡng khác: `make eval-rag RAG_ARGS="--threshold 0.5"`.
+3. `make up`, đăng nhập `admin@example.com` (mật khẩu dev trong README), bấm "Văn bản quy định": thử tải `data/regulations/van-ban-mau-gia.txt` với tên đã có (bị báo trùng), thử tải tệp mới, bấm "Đánh dấu hết hiệu lực" rồi dùng ô "Thử tìm" để thấy văn bản đó không còn được trích, rồi "Bật lại". Đăng nhập `gv.toan.11@example.com`: không có mục này, mở `/admin/regulations` chỉ thấy lời báo không có quyền.
+4. Swagger: `GET /api/v1/regulations/search?q=...` bằng token của bất kỳ vai trò nào; `GET /api/v1/admin/regulations` chỉ Admin (các vai trò khác 403).
+5. Văn bản thật: chép vào `data/regulations/`, thêm tên hiển thị vào `manifest.json`, `make regulations`, rồi `make eval-rag` và hiệu chỉnh `rag_min_similarity` trong bảng `settings` (xem D-082).
+6. `make test`, `make lint`. Test mô hình thật: `RUN_EMBEDDING_TESTS=1` rồi `cd backend && python -m pytest tests/rag/test_embedding.py`.

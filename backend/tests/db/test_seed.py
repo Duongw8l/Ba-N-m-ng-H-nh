@@ -83,8 +83,8 @@ def test_row_counts_match_the_default_parameters(db_conn: Connection) -> None:
     assert counts["exam_registrations"] == 480
     # Các bảng do giai đoạn sau sinh thì để trống.
     assert (counts["risk_alerts"], counts["reports"], counts["ai_logs"]) == (0, 0, 0)
-    assert counts["regulation_chunks"] == 0
-    assert counts["settings"] == 13
+    assert (counts["regulation_documents"], counts["regulation_chunks"]) == (0, 0)
+    assert counts["settings"] == 14
 
 
 def test_every_student_subject_pair_has_all_scores_by_hand_table(db_conn: Connection) -> None:
@@ -398,17 +398,25 @@ def test_seed_requires_migrations_first(fresh_database: Callable[[], Engine]) ->
         seed_database(engine, SMALL)
 
 
-def test_seed_keeps_settings_and_regulation_chunks(
+def test_seed_keeps_settings_and_regulation_documents_with_their_chunks(
     fresh_database: Callable[[], Engine], upgrade_db: Callable[[Engine], None]
 ) -> None:
     engine = fresh_database()
     upgrade_db(engine)
     with engine.begin() as conn:
         conn.execute(text("UPDATE settings SET value = '50' WHERE key = 'max_absent_sessions'"))
+        document_id = conn.execute(
+            text(
+                "INSERT INTO regulation_documents (name, file_name, uploaded_by) "
+                "VALUES ('Thông tư 22', 'tt22.txt', 1) RETURNING id"
+            )
+        ).scalar_one()
         conn.execute(
             text(
-                "INSERT INTO regulation_chunks (document_name, content) VALUES ('Thông tư 22', 'x')"
-            )
+                "INSERT INTO regulation_chunks (document_id, document_name, content) "
+                "VALUES (:d, 'Thông tư 22', 'x')"
+            ),
+            {"d": document_id},
         )
 
     seed_database(engine, SMALL)
@@ -420,6 +428,7 @@ def test_seed_keeps_settings_and_regulation_chunks(
             ).scalar_one()
             == 50
         )
+        assert scalar(conn, "SELECT count(*) FROM regulation_documents") == 1
         assert scalar(conn, "SELECT count(*) FROM regulation_chunks") == 1
 
 

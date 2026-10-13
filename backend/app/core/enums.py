@@ -63,6 +63,11 @@ class RiskLevel(StrEnum):
     LOW = "low"
 
 
+class RegulationStatus(StrEnum):
+    ACTIVE = "active"  # còn hiệu lực: RAG được trích
+    EXPIRED = "expired"  # hết hiệu lực: RAG không bao giờ trích
+
+
 class TeacherStatus(StrEnum):
     NEW = "new"
     CONTACTED = "contacted"  # đã trao đổi với học sinh / phụ huynh
@@ -95,6 +100,8 @@ class AuditAction(StrEnum):
     VIEW_CLASS_ALERTS = "view_class_alerts"  # danh sách cảnh báo sớm của một lớp (Giai đoạn 6)
     VIEW_SCHOOL_ALERTS = "view_school_alerts"  # cảnh báo mức Cao toàn trường (BGH)
     UPDATE_ALERT = "update_alert"  # GVCN ghi nhận "đã trao đổi" hoặc "báo nhầm"
+    UPLOAD_REGULATION = "upload_regulation"  # Admin tải văn bản quy định lên (Giai đoạn 7)
+    UPDATE_REGULATION = "update_regulation"  # Admin đánh dấu hết hiệu lực hoặc bật lại
 
 
 class ImportKind(StrEnum):

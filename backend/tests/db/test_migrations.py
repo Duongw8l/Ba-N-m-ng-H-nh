@@ -12,7 +12,7 @@ from app.core.config import get_settings
 pytestmark = pytest.mark.db
 
 # 15 bảng của DESIGN mục 5; settings, audit_logs (Giai đoạn 2), import_jobs và import_mappings
-# (Giai đoạn 4) tính riêng.
+# (Giai đoạn 4), regulation_documents (Giai đoạn 7) tính riêng.
 BUSINESS_TABLES = {
     "users",
     "school_years",
@@ -30,7 +30,7 @@ BUSINESS_TABLES = {
     "regulation_chunks",
     "ai_logs",
 }
-EXTRA_TABLES = {"settings", "audit_logs", "import_jobs", "import_mappings"}
+EXTRA_TABLES = {"settings", "audit_logs", "import_jobs", "import_mappings", "regulation_documents"}
 EXPECTED_SETTING_KEYS = {
     "coef_midterm",
     "coef_final",
@@ -45,6 +45,7 @@ EXPECTED_SETTING_KEYS = {
     "level_min_subjects",
     "regular_assessment_count",
     "level_single_subject_adjustment",
+    "rag_min_similarity",
 }
 VIEW_COLUMNS = [
     "class_student_id",
@@ -88,6 +89,30 @@ def test_embedding_column_dimension_follows_configuration(db_conn: Connection) -
     assert column_type == f"vector({get_settings().embedding_dim})"
 
 
+def test_embedding_column_has_hnsw_cosine_index(db_conn: Connection) -> None:
+    definition = db_conn.execute(
+        text(
+            "SELECT indexdef FROM pg_indexes "
+            "WHERE tablename = 'regulation_chunks' AND indexname = 'ix_regulation_chunks_embedding'"
+        )
+    ).scalar_one()
+
+    assert "USING hnsw" in definition
+    assert "vector_cosine_ops" in definition
+
+
+def test_only_one_active_document_per_name(db_conn: Connection) -> None:
+    definition = db_conn.execute(
+        text(
+            "SELECT indexdef FROM pg_indexes "
+            "WHERE indexname = 'uq_regulation_documents_active_name'"
+        )
+    ).scalar_one()
+
+    assert "UNIQUE" in definition
+    assert "active" in definition
+
+
 def test_default_settings_are_loaded_by_migration(db_conn: Connection) -> None:
     rows = db_conn.execute(text("SELECT key, value FROM settings")).all()
     values = {key: value for key, value in rows}
@@ -104,6 +129,7 @@ def test_default_settings_are_loaded_by_migration(db_conn: Connection) -> None:
     assert Decimal(str(values["score_threshold_good"])) == Decimal("8.0")
     assert values["level_min_subjects"] == 6
     assert values["level_single_subject_adjustment"] is True
+    assert 0 < Decimal(str(values["rag_min_similarity"])) < 1
     assert values["regular_assessment_count"] == [
         {"max_periods": 35, "count": 2},
         {"max_periods": 70, "count": 3},

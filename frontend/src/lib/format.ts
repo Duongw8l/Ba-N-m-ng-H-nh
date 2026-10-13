@@ -30,6 +30,18 @@ export function formatMonthShort(month: string): string {
   return `T${Number(month.split('-')[1])}`
 }
 
+// Độ tương đồng của đoạn văn bản quy định với câu hỏi (0 đến 1) thành "0,71". Back-end tính.
+const SIMILARITY = new Intl.NumberFormat('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+export function formatSimilarity(value: number): string {
+  return SIMILARITY.format(value)
+}
+
+// Ngày giờ ISO của API thành ngày kiểu Việt Nam "13/10/2026".
+export function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('vi-VN')
+}
+
 // Xác suất của mô hình (0 đến 1) thành "97%".
 export function formatProbability(value: number): string {
   return `${Math.round(value * 100)}%`

@@ -21,6 +21,13 @@ data/*
 *.xlsx
 !data/seed/**
 !data/samples/**
+# Văn bản quy định (RAG): chỉ văn bản mẫu GIẢ, README và manifest được commit; văn bản thật của
+# trường/Bộ để trong data/regulations/ nhưng mặc định không bị commit (xem data/regulations/README.md).
+!data/regulations/
+data/regulations/*
+!data/regulations/README.md
+!data/regulations/manifest.json
+!data/regulations/van-ban-mau-gia.txt
 !eval/**
 !backend/tests/fixtures/**
 

@@ -5,10 +5,19 @@ interface FilePickerProps {
   file: File | null
   onPick: (file: File) => void
   disabled?: boolean
+  // Mặc định cho nhập dữ liệu lớp học; trang văn bản quy định dùng loại tệp khác.
+  accept?: string
+  hint?: string
 }
 
 // Vùng kéo thả tệp (sự kiện kéo thả có sẵn của trình duyệt) kèm nút chọn tệp.
-export function FilePicker({ file, onPick, disabled = false }: FilePickerProps) {
+export function FilePicker({
+  file,
+  onPick,
+  disabled = false,
+  accept = '.xlsx,.csv',
+  hint = 'Chỉ nhận .xlsx hoặc .csv (UTF-8), tối đa 5 MB',
+}: FilePickerProps) {
   const [dragging, setDragging] = useState(false)
 
   function onDrop(event: DragEvent<HTMLLabelElement>) {
@@ -42,11 +51,11 @@ export function FilePicker({ file, onPick, disabled = false }: FilePickerProps) 
       <span className="text-sm text-slate-500">
         {file
           ? `${(file.size / 1024).toLocaleString('vi-VN', { maximumFractionDigits: 1 })} KB · bấm để chọn tệp khác`
-          : 'Chỉ nhận .xlsx hoặc .csv (UTF-8), tối đa 5 MB'}
+          : hint}
       </span>
       <input
         type="file"
-        accept=".xlsx,.csv"
+        accept={accept}
         disabled={disabled}
         onChange={onChange}
         className="sr-only"

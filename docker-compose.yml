@@ -29,10 +29,14 @@ services:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       # Bind mount từ Windows không phát sự kiện file, nên cần polling để --reload hoạt động.
       WATCHFILES_FORCE_POLLING: "true"
+      # Mô hình embedding (bge-m3, khoảng 2,3 GB) tải một lần vào volume này, không tải lại mỗi lần
+      # dựng lại image (Giai đoạn 7).
+      HF_HOME: /models/hf
     ports:
       - "8000:8000"
     volumes:
       - ./backend:/app
+      - hf_cache:/models/hf
     depends_on:
       db:
         condition: service_healthy
@@ -74,3 +78,4 @@ services:
 
 volumes:
   db_data:
+  hf_cache:

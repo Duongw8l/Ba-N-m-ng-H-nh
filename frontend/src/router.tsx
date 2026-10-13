@@ -41,6 +41,11 @@ export const router = createBrowserRouter([
           },
           { path: '/assistant', element: <AssistantPage /> },
           { path: '/reports', element: <ReportsPage /> },
+          // Chỉ Admin (trang tự kiểm vai trò, back-end kiểm lại ở mọi yêu cầu).
+          {
+            path: '/admin/regulations',
+            lazy: async () => ({ Component: (await import('./pages/RegulationsPage')).default }),
+          },
         ],
       },
     ],

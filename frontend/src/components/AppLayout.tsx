@@ -37,6 +37,9 @@ export function AppLayout() {
     { to: '/assistant', label: 'Trợ lý AI' },
     { to: '/reports', label: 'Nhận xét & báo cáo' },
   )
+  if (data?.user.role === 'admin') {
+    items.push({ to: '/admin/regulations', label: 'Văn bản quy định' })
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
