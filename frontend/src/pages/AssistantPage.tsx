@@ -13,7 +13,7 @@ export default function AssistantPage() {
       <QueryState query={assignments}>
         {(data) =>
           data.user.role === 'admin' ? (
-            <p className="rounded-xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm">
+            <p className="card p-6 text-slate-600">
               Quản trị viên không xem dữ liệu học sinh nên không dùng Trợ lý AI. Quản lý văn bản
               quy định ở mục Văn bản quy định.
             </p>

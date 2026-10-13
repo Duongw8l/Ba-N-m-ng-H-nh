@@ -61,8 +61,8 @@ function ScoreGrid({ scores, rows }: { scores: SubjectScores; rows: ScoreRow[] }
   const txIndexes = Array.from({ length: txColumns }, (_, index) => index)
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-max text-left text-sm">
-        <thead className="border-b border-slate-200 bg-slate-50 text-slate-600">
+      <table className="data-table min-w-max">
+        <thead>
           <tr>
             <th scope="col" className="px-2 py-2 font-medium">
               STT
@@ -101,7 +101,7 @@ function ScoreGrid({ scores, rows }: { scores: SubjectScores; rows: ScoreRow[] }
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody>
           {rows.map((row, position) => (
             <tr key={row.student_id} className={row.complete ? '' : 'bg-red-50'}>
               <td className="px-2 py-1.5 text-slate-500">{position + 1}</td>
@@ -109,7 +109,7 @@ function ScoreGrid({ scores, rows }: { scores: SubjectScores; rows: ScoreRow[] }
               <th scope="row" className="px-2 py-1.5 font-normal">
                 <Link
                   to={`/classes/${classId}/students/${row.student_id}`}
-                  className="text-blue-700 hover:underline"
+                  className="link"
                 >
                   {row.full_name}
                 </Link>
@@ -143,8 +143,8 @@ function ScoreGrid({ scores, rows }: { scores: SubjectScores; rows: ScoreRow[] }
 function CommentGrid({ scores, rows }: { scores: SubjectScores; rows: ScoreRow[] }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-max text-left text-sm">
-        <thead className="border-b border-slate-200 bg-slate-50 text-slate-600">
+      <table className="data-table min-w-max">
+        <thead>
           <tr>
             <th scope="col" className="px-2 py-2 font-medium">
               STT
@@ -160,7 +160,7 @@ function CommentGrid({ scores, rows }: { scores: SubjectScores; rows: ScoreRow[]
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody>
           {rows.map((row, position) => (
             <tr key={row.student_id} className={row.complete ? '' : 'bg-red-50'}>
               <td className="px-2 py-1.5 text-slate-500">{position + 1}</td>
@@ -168,7 +168,7 @@ function CommentGrid({ scores, rows }: { scores: SubjectScores; rows: ScoreRow[]
               <th scope="row" className="px-2 py-1.5 font-normal">
                 <Link
                   to={`/classes/${scores.class_info.id}/students/${row.student_id}`}
-                  className="text-blue-700 hover:underline"
+                  className="link"
                 >
                   {row.full_name}
                 </Link>
@@ -196,23 +196,23 @@ function Distribution({ scores }: { scores: SubjectScores }) {
     <DistributionChart
       label="Số học sinh theo khoảng điểm trung bình"
       data={[
-        { name: `Dưới ${formatScore(t.fail)}`, value: d.below_fail, color: '#dc2626' },
+        { name: `Dưới ${formatScore(t.fail)}`, value: d.below_fail, color: 'var(--chart-fail)' },
         {
           name: `${formatScore(t.fail)} đến dưới ${formatScore(t.passing)}`,
           value: d.fail_to_pass,
-          color: '#f97316',
+          color: 'var(--chart-orange)',
         },
         {
           name: `${formatScore(t.passing)} đến dưới ${formatScore(t.fair)}`,
           value: d.pass_to_fair,
-          color: '#d97706',
+          color: 'var(--chart-pass)',
         },
         {
           name: `${formatScore(t.fair)} đến dưới ${formatScore(t.good)}`,
           value: d.fair_to_good,
-          color: '#0284c7',
+          color: 'var(--chart-fair)',
         },
-        { name: `Từ ${formatScore(t.good)}`, value: d.at_least_good, color: '#15803d' },
+        { name: `Từ ${formatScore(t.good)}`, value: d.at_least_good, color: 'var(--chart-good)' },
       ]}
     />
   )
@@ -247,10 +247,10 @@ function ScoresContent({ scores, canImport }: { scores: SubjectScores; canImport
           }
         />
         {canImport && (
-          <div className="flex items-center rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex items-center card p-4">
             <Link
               to={`/classes/${scores.class_info.id}/import?kind=assessments&subject=${scores.subject.id}`}
-              className="font-medium text-blue-700 hover:underline"
+              className="font-medium link"
             >
               Nhập điểm từ tệp
             </Link>
@@ -325,7 +325,7 @@ export default function SubjectScoresPage() {
             {canOpenDashboard && (
               <Link
                 to={`/classes/${classId}`}
-                className="text-sm font-medium text-blue-700 hover:underline"
+                className="link text-sm"
               >
                 Dashboard lớp
               </Link>

@@ -43,13 +43,13 @@ export default function ImportPage() {
             <PageTitle
               title="Nhập dữ liệu từ tệp"
               actions={
-                <Link to="/" className="text-sm font-medium text-blue-700 hover:underline">
+                <Link to="/" className="link text-sm">
                   ← Trang chủ
                 </Link>
               }
             />
             {initialKind === undefined ? (
-              <p className="rounded-xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm">
+              <p className="card p-6 text-slate-600">
                 Bạn không có quyền nhập dữ liệu cho lớp này. Điểm chỉ do giáo viên được phân công
                 đúng lớp-môn nhập; điểm danh và rèn luyện do giáo viên chủ nhiệm nhập.
               </p>

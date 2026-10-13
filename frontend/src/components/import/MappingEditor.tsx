@@ -48,7 +48,7 @@ export function MappingEditor({
   return (
     <details
       open={missing}
-      className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+      className="card p-4"
     >
       <summary className="cursor-pointer font-medium">
         Cột của tệp
@@ -61,7 +61,7 @@ export function MappingEditor({
 
       <div className="mt-4 space-y-4">
         {missing && (
-          <p role="alert" className="rounded-md bg-red-50 p-3 text-sm text-red-700">
+          <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-800 ring-1 ring-red-200">
             Chưa nhận ra cột: {preview.missing_required.join(', ')}. Hãy chọn cột tương ứng của
             tệp bên dưới rồi bấm “Áp dụng”.
           </p>
@@ -79,7 +79,7 @@ export function MappingEditor({
               value=""
               disabled={pending}
               onChange={(event) => event.target.value && onUseTemplate(event.target.value)}
-              className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-base sm:max-w-xs"
+              className="input mt-1 sm:max-w-xs"
             >
               <option value="">— chọn mẫu —</option>
               {templates.map((template) => (
@@ -101,7 +101,7 @@ export function MappingEditor({
                 onChange={(event) =>
                   setMapping((current) => ({ ...current, [field.name]: event.target.value }))
                 }
-                className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-base"
+                className="input mt-1"
               >
                 <option value={NONE}>— không dùng —</option>
                 {preview.detected_columns.map((column) => (
@@ -123,7 +123,7 @@ export function MappingEditor({
               max={50}
               value={headerRow}
               onChange={(event) => setHeaderRow(event.target.value)}
-              className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-base"
+              className="input mt-1"
             />
           </label>
           <label className="block text-sm font-medium text-slate-700">
@@ -134,7 +134,7 @@ export function MappingEditor({
               value={saveAs}
               onChange={(event) => setSaveAs(event.target.value)}
               placeholder="Ví dụ: Sổ điểm trường"
-              className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-base"
+              className="input mt-1"
             />
           </label>
         </div>
@@ -143,7 +143,7 @@ export function MappingEditor({
           type="button"
           onClick={apply}
           disabled={pending}
-          className="rounded-md bg-blue-700 px-4 py-2 font-medium text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
+          className="btn-primary"
         >
           {pending ? 'Đang kiểm tra…' : 'Áp dụng'}
         </button>

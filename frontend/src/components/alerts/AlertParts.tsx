@@ -5,18 +5,14 @@ import { ApiError } from '../../api/client'
 
 export function RiskBadge({ level }: { level: RiskLevel }) {
   return (
-    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${RISK_STYLES[level]}`}>
-      {RISK_LABELS[level]}
-    </span>
+    <span className={RISK_STYLES[level]}>{RISK_LABELS[level]}</span>
   )
 }
 
 export function StatusBadge({ status }: { status: TeacherStatus }) {
   if (status === 'new') return <span className="text-xs text-slate-500">Chưa xử lý</span>
   return (
-    <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-800">
-      {TEACHER_STATUS_LABELS[status]}
-    </span>
+    <span className="badge-info">{TEACHER_STATUS_LABELS[status]}</span>
   )
 }
 
@@ -68,9 +64,9 @@ export function AlertActions({ alertId, status }: AlertActionsProps) {
                 status: status === choice.value ? 'new' : choice.value,
               })
             }
-            className={`rounded-md border px-2.5 py-1 text-xs font-medium disabled:opacity-60 ${
+            className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors disabled:opacity-60 ${
               status === choice.value
-                ? 'border-blue-700 bg-blue-700 text-white'
+                ? 'border-brand-700 bg-brand-700 text-white'
                 : 'border-slate-300 hover:bg-slate-100'
             }`}
           >

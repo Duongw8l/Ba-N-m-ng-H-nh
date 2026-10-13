@@ -9,13 +9,15 @@ import type {
 import { ProfileAlertPanel } from '../components/alerts/ProfileAlertPanel'
 import { AbsenceMeter } from '../components/AbsenceMeter'
 import { AbsenceChart } from '../components/charts/AbsenceChart'
-import { PageTitle, Panel } from '../components/Panel'
+import { Icon } from '../components/Icon'
+import { Panel } from '../components/Panel'
 import { PeriodSelect } from '../components/PeriodSelect'
 import { QueryState } from '../components/QueryState'
 import { StatCard, StatGrid } from '../components/StatCard'
 import { useAssignments } from '../hooks/useAssignments'
 import { usePeriod, useStudentProfile } from '../hooks/useAnalytics'
 import { formatScore } from '../lib/format'
+import { initialsOf } from '../lib/initials'
 import {
   COMMENT_LABELS,
   PERIOD_LABELS,
@@ -79,8 +81,8 @@ function SubjectsTable({
 }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-max text-left text-sm">
-        <thead className="border-b border-slate-200 text-slate-500">
+      <table className="data-table min-w-max">
+        <thead>
           <tr>
             <th scope="col" className="py-2 pr-4 font-medium">
               Môn
@@ -255,7 +257,7 @@ function ProfileContent({ profile, canRecord }: { profile: StudentProfile; canRe
   if (profile.scope === 'full') return <FullProfile profile={profile} canRecord={canRecord} />
   return (
     <>
-      <p className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600 shadow-sm">
+      <p className="card p-4 text-sm text-slate-600">
         Bạn chỉ xem được điểm các môn mình dạy ở lớp này.
       </p>
       <Panel id="cac-mon" title="Điểm các môn bạn dạy">
@@ -283,40 +285,48 @@ export default function StudentProfilePage() {
 
   return (
     <>
-      <PageTitle
-        title={data ? data.student.full_name : 'Hồ sơ học sinh'}
-        subtitle={
-          data
-            ? `Mã ${data.student.student_code} · lớp ${data.class_info.name}${
-                data.scope === 'full' ? ` · ${PERIOD_LABELS[period]}` : ''
-              }`
-            : undefined
-        }
-        actions={
-          <>
-            {/* GVBM chỉ có điểm theo từng học kỳ nên không có ô chọn kỳ. */}
-            {data?.scope !== 'subjects' && (
-              <PeriodSelect value={period} options={PERIODS} onChange={setPeriod} />
+      <header className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4">
+        <div className="flex min-w-0 items-center gap-4">
+          <span
+            aria-hidden="true"
+            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-brand-400 to-brand-700 text-xl font-semibold text-white shadow-sm"
+          >
+            {data ? initialsOf(data.student.full_name) : <Icon name="user" className="h-7 w-7" />}
+          </span>
+          <div className="min-w-0">
+            <h1 className="truncate text-2xl font-semibold tracking-tight">
+              {data ? data.student.full_name : 'Hồ sơ học sinh'}
+            </h1>
+            {data && (
+              <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500">
+                <span>
+                  Mã {data.student.student_code} · lớp {data.class_info.name}
+                  {data.scope === 'full' ? ` · ${PERIOD_LABELS[period]}` : ''}
+                </span>
+              </p>
             )}
-            {canOpenDashboard && (
-              <Link
-                to={`/classes/${classId}`}
-                className="text-sm font-medium text-blue-700 hover:underline"
-              >
-                ← Dashboard lớp
-              </Link>
-            )}
-            <button
-              type="button"
-              disabled
-              title="Tạo nhận xét có ở Giai đoạn 9"
-              className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium opacity-60"
-            >
-              Tạo nhận xét
-            </button>
-          </>
-        }
-      />
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          {/* GVBM chỉ có điểm theo từng học kỳ nên không có ô chọn kỳ. */}
+          {data?.scope !== 'subjects' && (
+            <PeriodSelect value={period} options={PERIODS} onChange={setPeriod} />
+          )}
+          {canOpenDashboard && (
+            <Link to={`/classes/${classId}`} className="link text-sm">
+              ← Dashboard lớp
+            </Link>
+          )}
+          <button
+            type="button"
+            disabled
+            title="Tạo nhận xét có ở Giai đoạn 9"
+            className="btn-secondary btn-sm"
+          >
+            Tạo nhận xét
+          </button>
+        </div>
+      </header>
       <QueryState query={profile}>
         {(result) => <ProfileContent profile={result} canRecord={isHomeroom} />}
       </QueryState>

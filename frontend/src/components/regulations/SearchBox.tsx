@@ -35,26 +35,26 @@ export function SearchBox() {
             maxLength={500}
             onChange={(event) => setQuestion(event.target.value)}
             placeholder="Ví dụ: Nghỉ bao nhiêu buổi thì bị mời phụ huynh?"
-            className="mt-1 block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-base"
+            className="input mt-1"
           />
         </div>
         <button
           type="submit"
           disabled={question.trim() === '' || search.isPending}
-          className="rounded-md bg-blue-700 px-4 py-2 font-medium text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
+          className="btn-primary"
         >
           {search.isPending ? 'Đang tìm…' : 'Thử tìm'}
         </button>
       </form>
 
       {search.isError && (
-        <p role="alert" className="rounded-md bg-red-50 p-3 text-sm text-red-800">
+        <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-800 ring-1 ring-red-200">
           {errorText(search.error)}
         </p>
       )}
 
       {result && !result.found && (
-        <div role="status" className="rounded-md bg-amber-50 p-3 text-sm text-amber-900">
+        <div role="status" className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200">
           <p className="font-medium">{result.message}</p>
           {result.best_similarity !== null && (
             <p className="mt-1">
@@ -70,7 +70,7 @@ export function SearchBox() {
           {result.hits.map((hit, index) => (
             <li
               key={`${hit.document_id}-${hit.article}-${hit.clause}-${index}`}
-              className="rounded-lg border border-slate-200 p-4"
+              className="card p-4"
             >
               <p className="text-sm font-medium">
                 {hit.document_name}

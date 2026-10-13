@@ -14,14 +14,15 @@ export const LEVEL_LABELS: Record<string, string> = {
   missing: 'Chưa có dữ liệu',
 }
 
-// Màu biểu đồ; luôn đi kèm nhãn chữ và số nên không chỉ dựa vào màu.
+// Màu biểu đồ lấy từ biến CSS (index.css) nên tự đổi theo chế độ sáng/tối; luôn đi kèm nhãn chữ và số
+// nên không chỉ dựa vào màu.
 export const LEVEL_COLORS: Record<string, string> = {
-  good: '#15803d',
-  fair: '#0284c7',
-  pass: '#d97706',
-  fail: '#dc2626',
-  incomplete: '#94a3b8',
-  missing: '#cbd5e1',
+  good: 'var(--chart-good)',
+  fair: 'var(--chart-fair)',
+  pass: 'var(--chart-pass)',
+  fail: 'var(--chart-fail)',
+  incomplete: 'var(--chart-neutral)',
+  missing: 'var(--chart-muted)',
 }
 
 export const PERIOD_LABELS: Record<Period, string> = {
@@ -65,10 +66,11 @@ export const RISK_LABELS: Record<RiskLevel, string> = {
   low: 'Mức thấp',
 }
 
+// Lớp nhãn (huy hiệu) trong index.css.
 export const RISK_STYLES: Record<RiskLevel, string> = {
-  high: 'bg-red-100 text-red-800',
-  medium: 'bg-amber-100 text-amber-900',
-  low: 'bg-slate-100 text-slate-700',
+  high: 'badge-high',
+  medium: 'badge-medium',
+  low: 'badge-low',
 }
 
 export const TEACHER_STATUS_LABELS: Record<TeacherStatus, string> = {

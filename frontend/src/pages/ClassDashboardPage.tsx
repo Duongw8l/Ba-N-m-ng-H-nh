@@ -21,8 +21,8 @@ function SubjectTable({ dashboard }: { dashboard: Dashboard }) {
   const { thresholds } = dashboard
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-max text-left text-sm">
-        <thead className="border-b border-slate-200 text-slate-500">
+      <table className="data-table min-w-max">
+        <thead>
           <tr>
             <th scope="col" className="py-2 pr-4 font-medium">
               Môn
@@ -44,13 +44,13 @@ function SubjectTable({ dashboard }: { dashboard: Dashboard }) {
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody>
           {dashboard.subjects.map((subject) => (
             <tr key={subject.subject_id}>
               <th scope="row" className="py-2 pr-4 font-normal">
                 <Link
                   to={`/classes/${dashboard.class_info.id}/subjects/${subject.subject_id}`}
-                  className="text-blue-700 hover:underline"
+                  className="link"
                 >
                   {subject.name}
                 </Link>
@@ -101,9 +101,10 @@ function DashboardContent({ dashboard, canRecord }: { dashboard: Dashboard; canR
           label="Sĩ số"
           value={formatInt(dashboard.student_count)}
           hint={`Khối ${dashboard.class_info.grade_level}`}
+          icon="users"
         />
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <dt className="text-sm text-slate-500">Các mức học tập</dt>
+        <div className="card p-4 sm:p-5">
+          <dt className="text-sm font-medium text-slate-500">Các mức học tập</dt>
           <dd className="mt-2">
             <LevelBar
               counts={dashboard.learning_levels}
@@ -117,12 +118,16 @@ function DashboardContent({ dashboard, canRecord }: { dashboard: Dashboard; canR
           value={formatInt(dashboard.absent_notice_students)}
           valueClassName={dashboard.absent_notice_students > 0 ? 'text-amber-700' : 'text-slate-900'}
           hint={`Nghỉ quá ${limits.maximum} buổi: ${dashboard.absent_over_limit_students}`}
+          icon="calendar"
+          tone={dashboard.absent_notice_students > 0 ? 'warn' : 'neutral'}
         />
         <StatCard
           label="Cảnh báo sớm: mức cao"
           value={formatInt(dashboard.alert_counts.high)}
           valueClassName={dashboard.alert_counts.high > 0 ? 'text-red-700' : 'text-slate-900'}
           hint={`Mức trung bình: ${dashboard.alert_counts.medium}`}
+          icon="bell"
+          tone={dashboard.alert_counts.high > 0 ? 'danger' : 'neutral'}
         />
       </StatGrid>
 
@@ -162,6 +167,8 @@ function DashboardContent({ dashboard, canRecord }: { dashboard: Dashboard; canR
               label="Đủ điều kiện"
               value={dashboard.promotion.eligible}
               valueClassName="text-green-700"
+              icon="check"
+              tone="good"
             />
             <StatCard
               label="Không đủ điều kiện"
@@ -211,7 +218,7 @@ export default function ClassDashboardPage() {
             {isHomeroom && (
               <Link
                 to={`/classes/${classId}/import`}
-                className="text-sm font-medium text-blue-700 hover:underline"
+                className="link text-sm"
               >
                 Nhập dữ liệu
               </Link>

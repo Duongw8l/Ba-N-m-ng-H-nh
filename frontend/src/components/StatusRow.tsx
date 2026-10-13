@@ -14,17 +14,17 @@ const STATE_TEXT: Record<StatusState, string> = {
 
 const DOT_CLASS: Record<StatusState, string> = {
   loading: 'bg-slate-400 animate-pulse',
-  ok: 'bg-emerald-500',
-  error: 'bg-red-500',
-  unknown: 'bg-amber-500',
+  ok: 'bg-emerald-500 shadow-[0_0_0_3px_rgb(16_185_129/0.2)]',
+  error: 'bg-red-500 shadow-[0_0_0_3px_rgb(239_68_68/0.2)]',
+  unknown: 'bg-amber-500 shadow-[0_0_0_3px_rgb(245_158_11/0.2)]',
 }
 
 export function StatusRow({ label, state }: StatusRowProps) {
   return (
-    <li className="flex items-center justify-between py-3">
+    <li className="flex items-center justify-between py-2.5">
       <span className="text-slate-600">{label}</span>
       <span className="flex items-center gap-2 font-medium" data-state={state}>
-        <span aria-hidden="true" className={`h-2.5 w-2.5 rounded-full ${DOT_CLASS[state]}`} />
+        <span aria-hidden="true" className={`h-2 w-2 rounded-full ${DOT_CLASS[state]}`} />
         {STATE_TEXT[state]}
       </span>
     </li>

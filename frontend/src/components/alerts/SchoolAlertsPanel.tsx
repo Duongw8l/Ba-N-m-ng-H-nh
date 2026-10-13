@@ -10,7 +10,7 @@ export function SchoolAlertsPanel() {
   return (
     <section
       aria-labelledby="canh-bao-cao"
-      className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
+      className="card p-6"
     >
       <h2 id="canh-bao-cao" className="text-lg font-medium">
         Học sinh cần hỗ trợ ngay (mức cao, toàn trường)
@@ -26,8 +26,8 @@ export function SchoolAlertsPanel() {
               <p className="text-sm text-slate-600">Hiện không có cảnh báo mức cao.</p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-max text-left text-sm">
-                  <thead className="border-b border-slate-200 text-slate-500">
+                <table className="data-table min-w-max">
+                  <thead>
                     <tr>
                       <th scope="col" className="py-2 pr-4 font-medium">
                         Lớp
@@ -49,7 +49,7 @@ export function SchoolAlertsPanel() {
                         <th scope="row" className="py-2 pr-4 text-left font-normal">
                           <Link
                             to={`/classes/${alert.class_id}`}
-                            className="text-blue-700 hover:underline"
+                            className="link"
                           >
                             {alert.class_name}
                           </Link>
@@ -57,7 +57,7 @@ export function SchoolAlertsPanel() {
                         <td className="px-3 py-2">
                           <Link
                             to={`/classes/${alert.class_id}/students/${alert.student.id}`}
-                            className="text-blue-700 hover:underline"
+                            className="link"
                           >
                             {alert.student.full_name}
                           </Link>

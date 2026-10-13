@@ -1,92 +1,139 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Outlet } from 'react-router-dom'
 import { useAuth } from '../auth/context'
 import { describeRole } from '../auth/roles'
 import { useAssignments } from '../hooks/useAssignments'
+import { useMediaQuery } from '../hooks/useMediaQuery'
 import { AssistantProvider } from './assistant/AssistantProvider'
 import { ChatDock } from './assistant/ChatDock'
+import { Sidebar } from './layout/Sidebar'
+import type { NavGroup } from './layout/Sidebar'
+import { Topbar } from './layout/Topbar'
+import { useBreadcrumbs } from './layout/useBreadcrumbs'
 
-interface NavItem {
-  to: string
-  label: string
-  end?: boolean
+const SIDEBAR_KEY = 'thda.sidebar'
+
+function readCompact(): boolean {
+  try {
+    return localStorage.getItem(SIDEBAR_KEY) === 'compact'
+  } catch {
+    return false
+  }
 }
 
-function linkClass({ isActive }: { isActive: boolean }): string {
-  return `rounded-md px-3 py-1.5 font-medium ${
-    isActive ? 'bg-blue-50 text-blue-800' : 'text-slate-700 hover:bg-slate-100'
-  }`
-}
-
-// Khung chung của mọi trang cần đăng nhập: thanh điều hướng theo vai trò (lớp chủ nhiệm, các khối của
-// BGH), Trợ lý AI, Nhận xét & báo cáo, người dùng và đăng xuất. Lớp-môn đang dạy vào từ trang chủ vì
-// số lượng lớn.
+// Khung chung của mọi trang cần đăng nhập: thanh bên trái (theo vai trò, thu gọn được; màn hình hẹp
+// là ngăn kéo), thanh trên (đường dẫn, chế độ giao diện, người dùng), nội dung và khung chat nổi.
 export function AppLayout() {
   const { logout } = useAuth()
   const assignments = useAssignments()
   const data = assignments.data
+  const isDesktop = useMediaQuery('(min-width: 1024px)')
+  const [compact, setCompact] = useState(readCompact)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const crumbs = useBreadcrumbs(data)
+  const role = data?.user.role
 
-  const items: NavItem[] = [{ to: '/', label: 'Trang chủ', end: true }]
-  if (data) {
-    items.push(
-      ...data.homeroom_classes.map((item) => ({
+  const groups: NavGroup[] = [
+    { title: 'Tổng quan', items: [{ to: '/', label: 'Trang chủ', icon: 'home', end: true }] },
+  ]
+  if (data && data.homeroom_classes.length > 0) {
+    groups.push({
+      title: 'Lớp của tôi',
+      items: data.homeroom_classes.map((item) => ({
         to: `/classes/${item.id}`,
         label: `Lớp ${item.name}`,
+        icon: 'users' as const,
       })),
-      ...data.grades.map((grade) => ({ to: `/grades/${grade}`, label: `Khối ${grade}` })),
-    )
+    })
   }
-  items.push(
-    { to: '/assistant', label: 'Trợ lý AI' },
-    { to: '/reports', label: 'Nhận xét & báo cáo' },
-  )
-  if (data?.user.role === 'admin') {
-    items.push({ to: '/admin/regulations', label: 'Văn bản quy định' })
+  if (data && data.grades.length > 0) {
+    groups.push({
+      title: 'Khối',
+      items: data.grades.map((grade) => ({
+        to: `/grades/${grade}`,
+        label: `Khối ${grade}`,
+        icon: 'layers' as const,
+      })),
+    })
   }
+  groups.push({
+    title: 'Công cụ',
+    items: [
+      ...(role === 'admin'
+        ? []
+        : [{ to: '/assistant', label: 'Trợ lý AI', icon: 'sparkles' as const }]),
+      { to: '/reports', label: 'Nhận xét & báo cáo', icon: 'file' as const },
+    ],
+  })
+  if (role === 'admin') {
+    groups.push({
+      title: 'Quản trị',
+      items: [{ to: '/admin/regulations', label: 'Văn bản quy định', icon: 'book' }],
+    })
+  }
+
+  function toggleCompact() {
+    setCompact((current) => {
+      const next = !current
+      try {
+        localStorage.setItem(SIDEBAR_KEY, next ? 'compact' : 'expanded')
+      } catch {
+        // Không lưu được thì chỉ áp dụng cho phiên này.
+      }
+      return next
+    })
+  }
+
+  // Ngăn kéo (màn hình hẹp): Esc đóng, và khoá cuộn nền khi đang mở.
+  const drawerShown = drawerOpen && !isDesktop
+  useEffect(() => {
+    if (!drawerShown) return
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setDrawerOpen(false)
+    }
+    document.addEventListener('keydown', onKey)
+    const previous = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.body.style.overflow = previous
+    }
+  }, [drawerShown])
 
   return (
     <AssistantProvider>
-      <div className="min-h-screen bg-slate-50 text-slate-900">
+      <div className="min-h-screen lg:flex">
         <a
           href="#noi-dung"
-          className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:rounded-md focus:bg-white focus:px-3 focus:py-2"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-[60] focus:rounded-lg focus:bg-surface focus:px-3 focus:py-2 focus:shadow-pop"
         >
           Bỏ qua điều hướng
         </a>
-        <header className="border-b border-slate-200 bg-white">
-          <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-3">
-            <span className="font-semibold">Trợ lý AI quản lý lớp học</span>
-            <nav aria-label="Điều hướng chính">
-              <ul className="flex flex-wrap gap-1 text-sm">
-                {items.map((item) => (
-                  <li key={item.to}>
-                    <NavLink to={item.to} end={item.end} className={linkClass}>
-                      {item.label}
-                    </NavLink>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-            <div className="flex items-center gap-4 text-sm">
-              {data && (
-                <span className="text-right">
-                  <span className="block font-medium">{data.user.full_name}</span>
-                  <span className="block text-slate-500">{describeRole(data)}</span>
-                </span>
-              )}
-              <button
-                type="button"
-                onClick={logout}
-                className="rounded-md border border-slate-300 px-3 py-1.5 font-medium hover:bg-slate-100"
-              >
-                Đăng xuất
-              </button>
-            </div>
-          </div>
-        </header>
-        <main id="noi-dung" tabIndex={-1} className="mx-auto max-w-6xl space-y-6 px-4 py-6">
-          <Outlet />
-        </main>
-        {data && data.user.role !== 'admin' && <ChatDock />}
+        <Sidebar
+          groups={groups}
+          compact={compact}
+          onToggleCompact={toggleCompact}
+          isDesktop={isDesktop}
+          drawerOpen={drawerShown}
+          onCloseDrawer={() => setDrawerOpen(false)}
+        />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <Topbar
+            crumbs={crumbs}
+            user={data?.user}
+            roleLabel={data ? describeRole(data) : ''}
+            onOpenMenu={() => setDrawerOpen(true)}
+            onLogout={logout}
+          />
+          <main
+            id="noi-dung"
+            tabIndex={-1}
+            className="mx-auto w-full max-w-7xl flex-1 space-y-6 px-4 py-6 outline-none sm:px-6 lg:px-8"
+          >
+            <Outlet />
+          </main>
+        </div>
+        {data && role !== 'admin' && <ChatDock />}
       </div>
     </AssistantProvider>
   )

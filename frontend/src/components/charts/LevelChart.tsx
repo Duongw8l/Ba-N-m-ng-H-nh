@@ -1,5 +1,6 @@
 import { Bar, BarChart, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { LEVEL_COLORS, LEVEL_LABELS } from '../../lib/labels'
+import { axisTick, labelFill, tooltipProps } from './theme'
 
 interface LevelChartProps {
   counts: Record<string, number>
@@ -12,17 +13,17 @@ interface LevelChartProps {
 export function LevelChart({ counts, keys, label }: LevelChartProps) {
   const data = keys.map((key) => ({ key, name: LEVEL_LABELS[key] ?? key, value: counts[key] ?? 0 }))
   return (
-    <figure aria-label={label} className="h-56 w-full">
+    <figure aria-label={label} className="h-56 w-full min-w-0 overflow-hidden">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 20, right: 8, left: -16, bottom: 0 }}>
-          <XAxis dataKey="name" tick={{ fontSize: 12 }} interval={0} />
-          <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-          <Tooltip formatter={(value) => [`${value} học sinh`, '']} separator="" />
+          <XAxis dataKey="name" tick={axisTick()} interval={0} />
+          <YAxis allowDecimals={false} tick={axisTick()} />
+          <Tooltip {...tooltipProps} formatter={(value) => [`${value} học sinh`, '']} separator="" />
           <Bar dataKey="value" isAnimationActive={false} radius={[4, 4, 0, 0]}>
             {data.map((item) => (
-              <Cell key={item.key} fill={LEVEL_COLORS[item.key] ?? '#64748b'} />
+              <Cell key={item.key} fill={LEVEL_COLORS[item.key] ?? 'var(--chart-neutral)'} />
             ))}
-            <LabelList dataKey="value" position="top" className="text-xs" />
+            <LabelList dataKey="value" position="top" fill={labelFill} fontSize={12} />
           </Bar>
         </BarChart>
       </ResponsiveContainer>

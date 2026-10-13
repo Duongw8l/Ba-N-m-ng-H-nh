@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { ChangeEvent, DragEvent } from 'react'
+import { Icon } from '../Icon'
 
 interface FilePickerProps {
   file: File | null
@@ -41,10 +42,13 @@ export function FilePicker({
       }}
       onDragLeave={() => setDragging(false)}
       onDrop={onDrop}
-      className={`flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed px-4 py-8 text-center ${
-        dragging ? 'border-blue-600 bg-blue-50' : 'border-slate-300 bg-white hover:bg-slate-50'
+      className={`flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed px-4 py-10 text-center transition-colors ${
+        dragging ? 'border-brand-600 bg-tint' : 'border-slate-300 bg-slate-50/60 hover:border-brand-400 hover:bg-tint'
       } ${disabled ? 'cursor-not-allowed opacity-60' : ''}`}
     >
+      <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-tint text-brand-700 dark:text-brand-300">
+        <Icon name={file ? 'file' : 'upload'} className="h-6 w-6" />
+      </span>
       <span className="font-medium text-slate-800">
         {file ? file.name : 'Kéo thả tệp vào đây hoặc bấm để chọn tệp'}
       </span>

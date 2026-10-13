@@ -12,7 +12,7 @@ export function AbsenceMeter({ total, limits }: AbsenceMeterProps) {
   const percent = (value: number) => `${Math.min(100, (value / scale) * 100)}%`
   const over = total > limits.maximum
   const warn = total >= limits.notice
-  const color = over ? 'bg-red-600' : warn ? 'bg-amber-500' : 'bg-blue-600'
+  const color = over ? 'bg-red-600' : warn ? 'bg-amber-500' : 'bg-brand-500'
   const status = over
     ? 'Đã quá số buổi nghỉ tối đa'
     : warn
@@ -28,17 +28,17 @@ export function AbsenceMeter({ total, limits }: AbsenceMeterProps) {
         aria-valuemax={scale}
         aria-valuenow={total}
         aria-valuetext={`${total} buổi, ${status}`}
-        className="relative h-3 w-full rounded-full bg-slate-100"
+        className="relative h-2.5 w-full rounded-full bg-slate-100"
       >
         <div className={`h-full rounded-full ${color}`} style={{ width: percent(total) }} />
         <span
           aria-hidden="true"
-          className="absolute top-[-3px] h-[18px] w-0.5 bg-amber-700"
+          className="absolute top-[-4px] h-[18px] w-0.5 rounded-full bg-amber-600"
           style={{ left: percent(limits.notice) }}
         />
         <span
           aria-hidden="true"
-          className="absolute top-[-3px] h-[18px] w-0.5 bg-red-700"
+          className="absolute top-[-4px] h-[18px] w-0.5 rounded-full bg-red-600"
           style={{ left: percent(limits.maximum) }}
         />
       </div>

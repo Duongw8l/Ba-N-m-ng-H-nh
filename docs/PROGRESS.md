@@ -1,21 +1,22 @@
 # Tiến độ
 
-Cập nhật lần cuối: 2026-10-13 (Giai đoạn 8). Tên và thứ tự giai đoạn lấy từ bộ prompt [PROMPTS.md](PROMPTS.md).
+Cập nhật lần cuối: 2026-10-13 (Giao diện v2). Tên và thứ tự giai đoạn lấy từ bộ prompt [PROMPTS.md](PROMPTS.md).
 
 ## Bảng 12 giai đoạn
 
 | Giai đoạn | Nội dung | Trạng thái |
 | --- | --- | --- |
-| 0 | Khởi tạo dự án | Xong (còn chờ kiểm: CI trên GitHub, cần đẩy lên GitHub, xem bên dưới) |
-| 1 | Cơ sở dữ liệu + dữ liệu giả lập | Xong, đã commit `cab087d` (còn chờ kiểm: CI trên GitHub, xem bên dưới) |
-| 2 | Xác thực và phân quyền | Xong, đã commit `43900ac` (chưa kiểm giao diện trên trình duyệt, CI trên GitHub; xem bên dưới) |
+| 0 | Khởi tạo dự án | Xong (CI trên GitHub đã xanh; xem bên dưới) |
+| 1 | Cơ sở dữ liệu + dữ liệu giả lập | Xong, đã commit `cab087d` (CI trên GitHub đã xanh; xem bên dưới) |
+| 2 | Xác thực và phân quyền | Xong, đã commit `43900ac` (giao diện đã kiểm trên Chrome từ Giai đoạn 5; xem bên dưới) |
 | 3 | Analytics theo Thông tư 22 | Xong, đã commit `15c8d97` (quy tắc lấy từ nguồn thứ cấp, **cần đối chiếu văn bản gốc**; xem bên dưới) |
 | 4 | Import Excel/CSV | Xong, đã commit `667bf88` (giao diện đã chạy thử trên Chrome ở Giai đoạn 5; chưa thử với sổ điểm thật; xem bên dưới) |
 | 5 | Dashboard và giao diện chính | Xong, đã commit `36b2882` (hoãn Vitest/Playwright theo lựa chọn của bạn; xem bên dưới) |
 | 6 | Cảnh báo sớm (luật + ML) | Xong, đã commit `f5a021f` (dữ liệu huấn luyện là giả lập; xem bên dưới) |
 | 7 | RAG văn bản quy định | Xong, đã commit `517998f` (ngưỡng tìm kiếm chưa tách chắc hai nhóm câu hỏi, Hit@4 6/8 trên bộ kiểm; chưa thử với văn bản thật; xem bên dưới) |
-| 8 | Trợ lý AI gọi hàm | Xong, chưa commit (chưa gọi LLM thật nên chưa có số đo; xem bên dưới) |
-| 9 | Nhận xét và báo cáo | Chưa làm |
+| 8 | Trợ lý AI gọi hàm | Xong, đã commit `9f911cf` (đo bằng Gemini gói miễn phí, mẫu 15 câu, chia nhiều mô hình; chưa thử Claude/Ollama; xem bên dưới) |
+| 9 | Nhận xét và báo cáo | Chưa làm (tạm dừng theo yêu cầu của bạn để làm Giao diện v2) |
+| — | Giao diện v2 (thiết kế lại toàn bộ giao diện) | Xong, chưa commit (chưa thử ngoài Chrome; xem mục cuối) |
 | 10 | Đánh giá AI | Chưa làm |
 | 11 | Bảo mật, triển khai, demo | Chưa làm |
 
@@ -46,7 +47,7 @@ Cập nhật lần cuối: 2026-10-13 (Giai đoạn 8). Tên và thứ tự giai
 | `alembic upgrade head` trên DB thật, từ máy host qua `127.0.0.1:5432` | Đã chạy, qua |
 | Tự nạp lại (hot reload) của backend và frontend trên bind mount Windows | Đã kiểm, đúng |
 | Chạy chính `make` (GNU make 4.4.1, shell cmd.exe): `up`, `down`, `db`, `migrate`, `seed`, `eval`, `install`, `lint`, `test`, `dev-be`, `dev-fe` | Đã chạy cả 11 mục tiêu, qua (phát hiện và sửa 1 lỗi font của `seed`/`eval`, xem D-020) |
-| CI GitHub Actions | **Chưa kiểm**: cần đẩy lên GitHub. Cú pháp YAML hợp lệ |
+| CI GitHub Actions | **Đã chạy, xanh** (đã đẩy lên GitHub; lần chạy đầu ở commit `9f911cf`, job "Lint và test (back-end, front-end)" khoảng 3 phút) |
 
 ### Cách kiểm tra
 
@@ -86,7 +87,7 @@ Cập nhật lần cuối: 2026-10-13 (Giai đoạn 8). Tên và thứ tự giai
 | `make lint` (ruff trên `backend/` và `data/`, eslint, tsc) và `make test` (94 test) | Đã chạy, qua |
 | Tắt container db rồi `make test`: dừng với thông báo "Chạy make db trước" | Đã chạy, đúng (7 giây) |
 | `make up`: build lại image backend (thêm bcrypt, pgvector), 3 dịch vụ `healthy`; `/api/v1/health` trả `{"status":"ok","db":true}` qua cổng 8000 và qua proxy Vite cổng 5173; `alembic current` trong container là head | Đã chạy, đúng. Trang chủ trong trình duyệt ("Máy chủ: ok", "Cơ sở dữ liệu: ok") chưa mở lại; tôi chỉ kiểm bằng gọi `/health` qua proxy |
-| CI GitHub Actions với service PostgreSQL | **Chưa kiểm**: cần đẩy lên GitHub. YAML hợp lệ; đường đi `TEST_DATABASE_URL` tường minh đã chạy thử trên máy |
+| CI GitHub Actions với service PostgreSQL | **Đã chạy, xanh** (đã đẩy lên GitHub; lần chạy đầu ở commit `9f911cf`, job "Lint và test (back-end, front-end)" khoảng 3 phút). Đường đi `TEST_DATABASE_URL` tường minh đã chạy thử trên máy |
 | Số tiết và tổ hợp môn (D-031), quy chế thi 4 môn (D-036) | **Cần bạn đối chiếu** với Thông tư 32/2018, 13/2022 và quy chế thi tốt nghiệp; nguồn tôi tra là thứ cấp |
 
 ### Cách kiểm tra
@@ -125,8 +126,8 @@ Cập nhật lần cuối: 2026-10-13 (Giai đoạn 8). Tên và thứ tự giai
 | `make up`: build lại image (thêm PyJWT), 3 dịch vụ `healthy` | Đã chạy, đúng |
 | API thật qua cổng 8000 với 5 tài khoản (admin, bgh1, gvcn.10a2, gv.dia.10, gv.toan.10): đăng nhập, `/me/assignments`, danh sách lớp 10A1/10A2/11A2 | Đã chạy, đúng ma trận (200 có/không phụ huynh, 403); nhật ký chỉ ghi các lần 200 |
 | Đăng nhập và `/me/assignments` qua proxy Vite cổng 5173; Vite biên dịch cả 17 module front-end; OpenAPI có scheme `HTTPBearer` | Đã chạy, đúng |
-| **Giao diện trên trình duyệt** (form đăng nhập, trang chủ từng vai trò, đăng xuất, hết phiên) | **Chưa kiểm**: phiên làm việc không có công cụ trình duyệt và chưa có Vitest/Playwright. Cần bạn mở thử |
-| CI GitHub Actions | **Chưa kiểm**: cần đẩy lên GitHub |
+| **Giao diện trên trình duyệt** (form đăng nhập, trang chủ từng vai trò, đăng xuất, hết phiên) | Lúc làm Giai đoạn 2: chưa kiểm. **Đã chạy thử trên Chrome thật** từ Giai đoạn 5 và lại ở Giao diện v2 (đăng nhập, đi hết màn hình của từng vai trò, đăng xuất); hết phiên chưa thử riêng |
+| CI GitHub Actions | **Đã chạy, xanh** (đã đẩy lên GitHub; lần chạy đầu ở commit `9f911cf`, job "Lint và test (back-end, front-end)" khoảng 3 phút) |
 
 ### Cách kiểm tra
 
@@ -199,7 +200,7 @@ Cập nhật lần cuối: 2026-10-13 (Giai đoạn 8). Tên và thứ tự giai
 | Kịch bản demo: seed `--hold-out 2027-03`, `gvcn.11a2` nhập tệp điểm danh: 920 dòng mới, em An nghỉ 34 → 38 buổi trên dashboard; đối chiếu `HS1102005` bằng SQL (ĐĐGtx 2 = 6,60) và `audit_logs` (2 dòng `import_confirm`) | Đã chạy, đúng |
 | **Giao diện trên trình duyệt** (chọn cột, bảng xem trước, nút xác nhận) | Lúc làm Giai đoạn 4: chưa kiểm. **Đã chạy thử trên Chrome thật ở Giai đoạn 5** (chọn tệp, xem trước, khoá nút khi còn lỗi, chọn cột, xác nhận): đúng. Chưa thử thao tác kéo thả tệp |
 | **Định dạng sổ điểm điện tử thật** (VNEDU, SMAS…) | **Chưa thử**: không có tệp thật; định dạng tệp mẫu là suy đoán (D-057). Cần thử với một tệp xuất thật đã ẩn danh |
-| CI GitHub Actions | **Chưa kiểm**: cần đẩy lên GitHub. CI cài dependency bằng `make install` nên tự có thư viện mới (`pandas`, `openpyxl`, `python-multipart` trong `pyproject.toml`); test tệp mẫu đọc `data/samples/` đã commit |
+| CI GitHub Actions | **Đã chạy, xanh** (đã đẩy lên GitHub; lần chạy đầu ở commit `9f911cf`, job "Lint và test (back-end, front-end)" khoảng 3 phút). CI cài dependency bằng `make install` nên tự có thư viện mới (`pandas`, `openpyxl`, `python-multipart` trong `pyproject.toml`); test tệp mẫu đọc `data/samples/` đã commit |
 
 ### Cách kiểm tra
 
@@ -235,9 +236,10 @@ Cập nhật lần cuối: 2026-10-13 (Giai đoạn 8). Tên và thứ tự giai
 | **Luồng Nhập dữ liệu của Giai đoạn 4 trên trình duyệt** (chọn tệp, xem trước, tệp lỗi khoá nút, chọn cột lạ, xác nhận) | Đã chạy, đúng; chưa thử kéo thả tệp |
 | Số trên giao diện khớp tính tay: em An nghỉ 38 buổi (25 có phép, 13 không phép); Toán HK1 của em An 6,7 = (7,0 + 7,1 + 7,5 + 7,4 + 2×6,5 + 3×6,1) / 9; `HS1102002` (Toán 3,0) nằm trong "cần quan tâm" | Đã đối chiếu, đúng |
 | Kiểm tự động giao diện chạy lại được (Vitest, Playwright) | **Chưa có** (D-069) |
-| Màn hình hẹp hơn 1366px, trình duyệt khác Chrome, trình đọc màn hình | **Chưa kiểm** |
+| Màn hình hẹp hơn 1366px | Lúc làm Giai đoạn 5: chưa kiểm. **Đã kiểm ở Giao diện v2** (820 và 390 px, xem mục cuối) |
+| Trình duyệt khác Chrome, trình đọc màn hình | **Chưa kiểm** |
 | Mọi quy tắc Thông tư 22 (giao diện chỉ hiển thị kết quả server) | **Cần bạn đối chiếu với văn bản gốc** (D-047 đến D-051) |
-| CI GitHub Actions | **Chưa kiểm**: cần đẩy lên GitHub |
+| CI GitHub Actions | **Đã chạy, xanh** (đã đẩy lên GitHub; lần chạy đầu ở commit `9f911cf`, job "Lint và test (back-end, front-end)" khoảng 3 phút) |
 
 ### Cách kiểm tra
 
@@ -280,7 +282,7 @@ Cập nhật lần cuối: 2026-10-13 (Giai đoạn 8). Tên và thứ tự giai
 | Trình duyệt thật (Chrome, 1366×768): ghi nhận "Báo nhầm" lưu qua tải lại trang, hồ sơ có cảnh báo, BGH thấy 39 cảnh báo mức Cao và không có nút ghi nhận, không lỗi console | Đã chạy, đúng |
 | **Mô hình trên dữ liệu thật** | **Chưa thử**: chỉ có dữ liệu giả lập; Recall cao chưa chứng minh dùng được với dữ liệu thật (D-072) |
 | Quy tắc Thông tư 22 | Vẫn **cần bạn đối chiếu văn bản gốc** (D-047 đến D-051); D-048 bạn đã chọn giữ |
-| CI GitHub Actions | **Chưa kiểm**: cần đẩy lên GitHub (CI cài `scikit-learn` qua `make install`) |
+| CI GitHub Actions | **Đã chạy, xanh** (đã đẩy lên GitHub; lần chạy đầu ở commit `9f911cf`, job "Lint và test (back-end, front-end)" khoảng 3 phút) (CI cài `scikit-learn` qua `make install`) |
 
 ### Cách kiểm tra
 
@@ -321,7 +323,7 @@ Cập nhật lần cuối: 2026-10-13 (Giai đoạn 8). Tên và thứ tự giai
 | **PDF/DOCX thật** | **Chưa thử**: test dùng tệp tự dựng; PDF thật có thể ngắt dòng, đánh số kiểu khác (D-078, D-079) |
 | Bộ 30 câu tạm đã chọn ngưỡng 0,56 | **Không được lưu lại**, chưa tái lập được (D-082); bộ `eval/rag_questions.json` chỉ là khung 10 câu |
 | Quy tắc Thông tư 22 trong `analytics/` | Vẫn **cần bạn đối chiếu văn bản gốc** (D-047 đến D-051) |
-| CI GitHub Actions | **Chưa kiểm**: cần đẩy lên GitHub; CI cài `torch` bản CPU qua `make install` nên bước cài sẽ lâu hơn |
+| CI GitHub Actions | **Đã chạy, xanh** (đã đẩy lên GitHub; lần chạy đầu ở commit `9f911cf`, job "Lint và test (back-end, front-end)" khoảng 3 phút); CI cài `torch` bản CPU qua `make install` |
 
 ### Cách kiểm tra
 
@@ -367,7 +369,7 @@ Cập nhật lần cuối: 2026-10-13 (Giai đoạn 8). Tên và thứ tự giai
 | Gemini Pro (`gemini-pro-latest`) | **Không dùng được** với khoá này: gói miễn phí hạn mức 0 |
 | Khớp tên gọi riêng ("em An") có nhận nhầm từ viết hoa đầu câu không; tên viết thường | **Chưa đo** với câu hỏi thật; hạn chế đã ghi ở D-086 |
 | Quy tắc Thông tư 22 | Vẫn **cần bạn đối chiếu văn bản gốc** (D-047 đến D-051) |
-| CI GitHub Actions | **Chưa kiểm**: cần đẩy lên GitHub; CI cài thêm `anthropic`, `ollama` qua `make install` |
+| CI GitHub Actions | **Đã chạy, xanh** (đã đẩy lên GitHub; lần chạy đầu ở commit `9f911cf`, job "Lint và test (back-end, front-end)" khoảng 3 phút); CI cài thêm `anthropic`, `ollama` qua `make install` |
 
 ### Cách kiểm tra
 
@@ -377,3 +379,40 @@ Cập nhật lần cuối: 2026-10-13 (Giai đoạn 8). Tên và thứ tự giai
 4. `make eval-assistant ASSISTANT_ARGS=--dry-run` xem đáp án kỳ vọng; `make eval-assistant` đo bằng LLM thật (ghi `ai_logs` vào database đang chạy).
 5. Xem nhật ký: `docker compose exec db psql -U classroom -d classroom -c "select id, model, rounds, left(question, 60), tools_called from ai_logs"` (không có họ tên học sinh).
 6. `make test`, `make lint`. Swagger: `POST /api/v1/assistant/chat`.
+
+
+## Giao diện v2: thiết kế lại toàn bộ giao diện
+
+Làm theo yêu cầu của bạn trong lúc Giai đoạn 9 tạm dừng. Chỉ đổi diện mạo và bố cục; **không đổi hành vi, API, quyền hay back-end** (D-095).
+
+### Đã làm
+
+- **Hệ thiết kế** (`frontend/src/index.css`): thang màu xanh ngọc `brand`, token `page`/`surface`/`link`/`tint`/`sidebar`, bóng đổ mềm, lớp dùng chung (`.card`, `.btn-*`, `.input`, `.badge-*`, `.data-table`, `.skeleton`), phông Inter Variable tự host, tôn trọng giảm chuyển động.
+- **Chế độ tối**: sáng / tối / theo hệ thống, nhớ lựa chọn, không nháy trắng khi tải lại; biểu đồ đổi màu theo chế độ (biến CSS `--chart-*`).
+- **Khung mới**: thanh bên trái nền xanh ngọc đậm chia nhóm theo vai trò, thu gọn được và nhớ lựa chọn; thanh trên có đường dẫn, nút đổi giao diện, menu người dùng; dưới 1024px thanh bên thành ngăn kéo. Có logo và favicon mới.
+- **Mọi màn hình**: Đăng nhập (chia đôi), Trang chủ ba vai trò, Dashboard lớp, Dashboard khối, Bảng điểm môn, Hồ sơ học sinh, Nhập dữ liệu (chỉ báo bước), Văn bản quy định, Trợ lý AI (khung nổi và trang riêng), Nhận xét & báo cáo, 404. Khung xương thay chữ "Đang tải…"; trạng thái rỗng có biểu tượng.
+- Phụ thuộc mới duy nhất: `@fontsource-variable/inter`.
+
+### Chưa làm (ngoài phạm vi)
+
+- Kiểm tự động giao diện (Vitest/Playwright) vẫn hoãn (D-069). Đa ngôn ngữ, minh hoạ phức tạp: không làm. Giai đoạn 9 trở đi vẫn như bảng đầu trang.
+
+### Đã kiểm chứng và còn chờ kiểm chứng
+
+| Mục | Trạng thái |
+| --- | --- |
+| `make lint` (ruff, eslint, tsc) và `make test` (1.103 test qua, 1 bỏ qua; back-end không đổi), `vite build` | Đã chạy, qua |
+| **Ma trận ảnh trên Chrome thật** (script tạm ngoài repo): GVBM, GVCN, BGH, Admin × sáng/tối × 1366×768, 820×1180, 390×844, tổng 82 ảnh, đi hết màn hình mỗi vai trò | Đã chạy: không tràn ngang, không lỗi console; tôi đã xem ảnh để soát chữ cắt, màu biểu đồ |
+| **Tương phản** chữ/nền tự động ở mọi trang, cả hai chế độ | Đã chạy: đạt WCAG AA (≥ 4,5:1 chữ thường, ≥ 3:1 chữ lớn); không đo chữ trên nền gradient |
+| Hành vi: chế độ sáng/tối/theo hệ thống nhớ sau tải lại và theo hệ điều hành, thanh bên thu gọn nhớ sau tải lại, menu người dùng + Esc, đăng xuất, ngăn kéo (inert, khoá cuộn, Esc, bấm mục, bấm lớp phủ), thanh bên đúng theo vai trò | Đã chạy, đúng |
+| Luồng cũ: văn bản quy định (Admin, GVBM bị chặn), Trợ lý AI (nút nổi, gợi ý, Nguồn, Đúng/Sai, giữ cuộc trò chuyện, cảnh báo số, 429, trang `/assistant`), nhập tệp (xem trước, khoá nút khi có lỗi) | Đã chạy, đúng (Trợ lý dùng máy chủ demo tạm với LLM giả) |
+| Trình duyệt khác Chrome (Firefox, Safari), trình đọc màn hình, điện thoại thật | **Chưa kiểm** (chỉ giả lập kích thước trong Chrome) |
+| Trục biểu đồ có nhãn dài trên điện thoại | **Còn chồng nhau**, chưa sửa |
+| Bảng "Học sinh cần hỗ trợ" trên điện thoại | Cuộn ngang trong khung (chủ ý, giữ đủ cột) |
+
+### Cách kiểm tra
+
+1. `docker compose up -d --build --renew-anon-volumes frontend` (dựng lại vì thêm phông Inter), hoặc `npm --prefix frontend install` rồi `make dev-fe`.
+2. Mở http://localhost:5173, đăng nhập `gvcn.11a2@example.com` / `ThdaDev#2026`; thử ba nút mặt trời / màn hình / mặt trăng ở thanh trên (sáng, theo hệ thống, tối), nút thu gọn thanh bên, thu hẹp cửa sổ dưới 1024px để thấy ngăn kéo (nút ba gạch).
+3. Đăng nhập lần lượt `bgh1@`, `gv.toan.11@`, `admin@` (cùng mật khẩu) để xem thanh bên theo từng vai trò.
+4. `make lint`, `make test`.

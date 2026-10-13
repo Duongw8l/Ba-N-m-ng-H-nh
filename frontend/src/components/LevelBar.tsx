@@ -13,7 +13,7 @@ export function LevelBar({ counts, keys, total }: LevelBarProps) {
   return (
     <div>
       <div
-        className="flex h-3 w-full overflow-hidden rounded-full bg-slate-100"
+        className="flex h-2.5 w-full gap-0.5 overflow-hidden rounded-full bg-slate-100"
         role="img"
         aria-label={keys.map((key) => `${LEVEL_LABELS[key]}: ${counts[key] ?? 0}`).join(', ')}
       >

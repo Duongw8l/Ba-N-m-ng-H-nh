@@ -3,7 +3,7 @@ import { formatValue } from './format'
 
 const ACTION_BADGES: Record<RowAction, { label: string; className: string }> = {
   new: { label: 'Mới', className: 'bg-green-100 text-green-800' },
-  changed: { label: 'Đổi', className: 'bg-blue-100 text-blue-800' },
+  changed: { label: 'Đổi', className: 'bg-tint text-tint-text' },
   unchanged: { label: 'Giữ nguyên', className: 'bg-slate-100 text-slate-600' },
 }
 
@@ -46,9 +46,9 @@ export function PreviewTable({ rows, fields }: PreviewTableProps) {
   const valueFields = fields.filter((field) => !IDENTITY_FIELDS.has(field.name))
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-      <table className="w-full min-w-max text-left text-sm">
-        <thead className="border-b border-slate-200 bg-slate-50 text-slate-600">
+    <div className="card overflow-x-auto">
+      <table className="data-table min-w-max">
+        <thead>
           <tr>
             <th scope="col" className="px-3 py-2 font-medium">
               Dòng
@@ -72,7 +72,7 @@ export function PreviewTable({ rows, fields }: PreviewTableProps) {
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody>
           {rows.map((row) => {
             const badColumns = new Set(row.messages.map((message) => message.column))
             return (
@@ -96,7 +96,7 @@ export function PreviewTable({ rows, fields }: PreviewTableProps) {
                           </span>{' '}
                           <span aria-hidden="true">→</span>{' '}
                           <span className="sr-only">đổi thành</span>
-                          <span className="font-medium text-blue-800">
+                          <span className="font-medium text-tint-text">
                             {formatValue(field.name, row.values[field.name])}
                           </span>
                         </>

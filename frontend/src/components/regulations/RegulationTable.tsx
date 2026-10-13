@@ -46,8 +46,8 @@ export function RegulationTable({ documents }: { documents: RegulationDocument[]
   return (
     <div className="space-y-3">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-max text-left text-sm">
-          <thead className="border-b border-slate-200 text-slate-500">
+        <table className="data-table min-w-max">
+          <thead>
             <tr>
               <th scope="col" className="py-2 pr-4 font-medium">
                 Văn bản
@@ -107,7 +107,7 @@ export function RegulationTable({ documents }: { documents: RegulationDocument[]
                           type="button"
                           disabled={busy}
                           onClick={() => change(document)}
-                          className="rounded-md bg-blue-700 px-3 py-1.5 font-medium text-white hover:bg-blue-800 disabled:opacity-60"
+                          className="btn-primary btn-sm"
                         >
                           {busy ? 'Đang lưu…' : 'Xác nhận'}
                         </button>
@@ -115,7 +115,7 @@ export function RegulationTable({ documents }: { documents: RegulationDocument[]
                           type="button"
                           disabled={busy}
                           onClick={() => setConfirmingId(null)}
-                          className="rounded-md border border-slate-300 px-3 py-1.5 font-medium hover:bg-slate-100"
+                          className="btn-secondary px-3 py-1.5"
                         >
                           Huỷ
                         </button>
@@ -127,7 +127,7 @@ export function RegulationTable({ documents }: { documents: RegulationDocument[]
                           mutation.reset()
                           setConfirmingId(document.id)
                         }}
-                        className="rounded-md border border-slate-300 px-3 py-1.5 font-medium hover:bg-slate-100"
+                        className="btn-secondary px-3 py-1.5"
                       >
                         {active ? 'Đánh dấu hết hiệu lực' : 'Bật lại'}
                       </button>
@@ -140,7 +140,7 @@ export function RegulationTable({ documents }: { documents: RegulationDocument[]
         </table>
       </div>
       {mutation.isError && (
-        <p role="alert" className="rounded-md bg-red-50 p-3 text-sm text-red-800">
+        <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-800 ring-1 ring-red-200">
           {errorText(mutation.error)}
         </p>
       )}

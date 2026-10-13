@@ -88,7 +88,7 @@ Học sinh dùng cho kịch bản demo và test biên: `HS1102001` (11A2, em An 
 
 ## Các màn hình
 
-Giao diện tiếng Việt, số kiểu `6,5`, dùng được ở 1366px. Mọi con số do API tính (front-end không tự tính điểm). Kỳ xem (học kỳ I, II, cả năm) nằm trong `?semester=` của URL.
+Giao diện tiếng Việt, số kiểu `6,5`. Thanh bên trái (thu gọn được), chế độ sáng / tối / theo hệ thống (nhớ lựa chọn), dùng được từ điện thoại đến màn hình 1366px trở lên (D-095). Mọi con số do API tính (front-end không tự tính điểm). Kỳ xem (học kỳ I, II, cả năm) nằm trong `?semester=` của URL.
 
 | Địa chỉ | Ai dùng | Nội dung |
 | --- | --- | --- |

@@ -26,8 +26,8 @@ export function ClassAlertsPanel({ classId, canRecord }: ClassAlertsPanelProps) 
             <p className="text-sm text-slate-600">Hiện chưa có học sinh nào cần hỗ trợ.</p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-max text-left text-sm">
-                <thead className="border-b border-slate-200 text-slate-500">
+              <table className="data-table min-w-max">
+                <thead>
                   <tr>
                     <th scope="col" className="py-2 pr-4 font-medium">
                       Học sinh
@@ -49,7 +49,7 @@ export function ClassAlertsPanel({ classId, canRecord }: ClassAlertsPanelProps) 
                       <th scope="row" className="py-2 pr-4 text-left font-normal">
                         <Link
                           to={`/classes/${classId}/students/${alert.student.id}`}
-                          className="text-blue-700 hover:underline"
+                          className="link"
                         >
                           {alert.student.full_name}
                         </Link>

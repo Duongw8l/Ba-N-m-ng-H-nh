@@ -26,8 +26,8 @@ function Th({ children, right = true }: { children: ReactNode; right?: boolean }
 function ClassesTable({ overview }: { overview: GradeOverview }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-max text-left text-sm">
-        <thead className="border-b border-slate-200 text-slate-500">
+      <table className="data-table min-w-max">
+        <thead>
           <tr>
             <Th right={false}>Lớp</Th>
             <Th>Sĩ số</Th>
@@ -41,11 +41,11 @@ function ClassesTable({ overview }: { overview: GradeOverview }) {
             <Th>Có môn điểm quá thấp</Th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody>
           {overview.classes.map((item) => (
             <tr key={item.class_id}>
               <th scope="row" className="px-3 py-2 font-normal">
-                <Link to={`/classes/${item.class_id}`} className="text-blue-700 hover:underline">
+                <Link to={`/classes/${item.class_id}`} className="link">
                   {item.name}
                 </Link>
               </th>
@@ -106,7 +106,7 @@ function Comparison({ first, second }: { first: GradeOverview; second: GradeOver
             <select
               value={subjectId ?? ''}
               onChange={(event) => setChosen(Number(event.target.value))}
-              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-base"
+              className="input w-auto py-1.5"
             >
               {subjects.map((subject) => (
                 <option key={subject.subject_id} value={subject.subject_id}>
@@ -130,11 +130,11 @@ function Comparison({ first, second }: { first: GradeOverview; second: GradeOver
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-max text-left text-sm">
+        <table className="data-table min-w-max">
           <caption className="pb-2 text-left text-sm text-slate-500">
             ĐTB của lớp theo môn: học kỳ I → học kỳ II
           </caption>
-          <thead className="border-b border-slate-200 text-slate-500">
+          <thead>
             <tr>
               <Th right={false}>Môn</Th>
               {first.classes.map((item) => (
@@ -142,7 +142,7 @@ function Comparison({ first, second }: { first: GradeOverview; second: GradeOver
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody>
             {subjects.map((subject) => (
               <tr key={subject.subject_id}>
                 <th scope="row" className="px-3 py-2 font-normal">

@@ -9,6 +9,7 @@ import {
   YAxis,
 } from 'recharts'
 import { formatScore } from '../../lib/format'
+import { axisTick, gridProps, legendProps, tooltipProps } from './theme'
 
 export interface CompareDatum {
   name: string
@@ -27,34 +28,34 @@ interface CompareChartProps {
 // trừ hay tính chênh lệch.
 export function CompareChart({ data, label, kind }: CompareChartProps) {
   return (
-    <figure aria-label={label} className="h-72 w-full">
+    <figure aria-label={label} className="h-72 w-full min-w-0 overflow-hidden">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} />
-          <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+          <CartesianGrid {...gridProps} />
+          <XAxis dataKey="name" tick={axisTick()} />
           <YAxis
             allowDecimals={kind === 'score'}
             domain={kind === 'score' ? [0, 10] : [0, 'auto']}
             ticks={kind === 'score' ? [0, 2, 4, 6, 8, 10] : undefined}
-            tick={{ fontSize: 12 }}
+            tick={axisTick()}
           />
-          <Tooltip
+          <Tooltip {...tooltipProps}
             formatter={(value) =>
               typeof value === 'number' ? (kind === 'score' ? formatScore(value) : value) : '—'
             }
           />
-          <Legend itemSorter={null} />
+          <Legend itemSorter={null} {...legendProps} />
           <Bar
             dataKey="first"
             name="Học kỳ I"
-            fill="#0284c7"
+            fill="var(--chart-accent-2)"
             isAnimationActive={false}
             radius={[4, 4, 0, 0]}
           />
           <Bar
             dataKey="second"
             name="Học kỳ II"
-            fill="#15803d"
+            fill="var(--chart-accent)"
             isAnimationActive={false}
             radius={[4, 4, 0, 0]}
           />

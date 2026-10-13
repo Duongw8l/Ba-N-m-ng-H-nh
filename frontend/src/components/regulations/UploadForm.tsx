@@ -61,7 +61,7 @@ export function UploadForm() {
           disabled={mutation.isPending}
           onChange={(event) => setName(event.target.value)}
           placeholder="Ví dụ: Thông tư 22/2021/TT-BGDĐT"
-          className="mt-1 block w-full max-w-xl rounded-md border border-slate-300 bg-white px-3 py-2 text-base"
+          className="input mt-1 max-w-xl"
         />
       </div>
       <FilePicker
@@ -75,7 +75,7 @@ export function UploadForm() {
         <button
           type="submit"
           disabled={!canSubmit}
-          className="rounded-md bg-blue-700 px-4 py-2 font-medium text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
+          className="btn-primary"
         >
           Tải lên và xử lý
         </button>
@@ -86,12 +86,12 @@ export function UploadForm() {
         )}
       </div>
       {done && (
-        <p role="status" className="rounded-md bg-green-50 p-3 text-sm text-green-800">
+        <p role="status" className="rounded-xl bg-green-50 p-3 text-sm text-green-800 ring-1 ring-green-200">
           {done}
         </p>
       )}
       {mutation.isError && (
-        <p role="alert" className="rounded-md bg-red-50 p-3 text-sm text-red-800">
+        <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-800 ring-1 ring-red-200">
           {errorText(mutation.error)}
         </p>
       )}

@@ -10,6 +10,7 @@ import {
 } from 'recharts'
 import type { ClassOverview } from '../../api/analytics'
 import { LEVEL_COLORS, LEVEL_LABELS } from '../../lib/labels'
+import { axisTick, gridProps, legendProps, tooltipProps } from './theme'
 
 const STACK = ['good', 'fair', 'pass', 'fail', 'incomplete'] as const
 
@@ -17,14 +18,14 @@ const STACK = ['good', 'fair', 'pass', 'fail', 'incomplete'] as const
 export function ClassLevelsChart({ classes, label }: { classes: ClassOverview[]; label: string }) {
   const data = classes.map((item) => ({ name: item.name, ...item.learning_levels }))
   return (
-    <figure aria-label={label} className="h-72 w-full">
+    <figure aria-label={label} className="h-72 w-full min-w-0 overflow-hidden">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} />
-          <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-          <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-          <Tooltip />
-          <Legend itemSorter={null} />
+          <CartesianGrid {...gridProps} />
+          <XAxis dataKey="name" tick={axisTick()} />
+          <YAxis allowDecimals={false} tick={axisTick()} />
+          <Tooltip {...tooltipProps} />
+          <Legend itemSorter={null} {...legendProps} />
           {STACK.map((key) => (
             <Bar
               key={key}

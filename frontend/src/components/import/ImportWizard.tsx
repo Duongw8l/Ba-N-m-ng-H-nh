@@ -16,6 +16,7 @@ import { KIND_LABELS, PERIOD_LABELS } from './format'
 import { MappingEditor } from './MappingEditor'
 import type { MappingChoice } from './MappingEditor'
 import { PreviewTable } from './PreviewTable'
+import { Stepper } from './Stepper'
 import { SummaryCards } from './SummaryCards'
 
 export interface SubjectOption {
@@ -48,7 +49,7 @@ function errorText(error: unknown): string {
 }
 
 function selectClass(): string {
-  return 'mt-1 block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-base'
+  return 'input mt-1'
 }
 
 // Trình hướng dẫn nhập tệp: chọn loại và tệp, xem trước (chưa ghi gì), rồi xác nhận mới ghi.
@@ -156,34 +157,37 @@ export function ImportWizard({
 
   if (result) {
     return (
-      <section
-        aria-labelledby="ket-qua-nhap"
-        className="space-y-4 rounded-xl border border-green-200 bg-green-50 p-6"
-      >
-        <h2 id="ket-qua-nhap" className="text-lg font-medium text-green-900">
-          {result.already_confirmed ? 'Bản xem trước này đã được nhập trước đó' : 'Đã nhập xong'}
-        </h2>
-        <p className="text-green-900">
-          Tạo mới <strong>{result.created}</strong> bản ghi, cập nhật{' '}
-          <strong>{result.updated}</strong> bản ghi, giữ nguyên <strong>{result.unchanged}</strong>{' '}
-          bản ghi.
-        </p>
-        <div className="flex flex-wrap gap-3">
-          <button
-            type="button"
-            onClick={() => reset()}
-            className="rounded-md bg-blue-700 px-4 py-2 font-medium text-white hover:bg-blue-800"
-          >
-            Nhập tệp khác
-          </button>
-          <Link
-            to="/"
-            className="rounded-md border border-slate-300 bg-white px-4 py-2 font-medium hover:bg-slate-100"
-          >
-            Về trang chủ
-          </Link>
-        </div>
-      </section>
+      <div className="space-y-6">
+        <Stepper current={4} />
+        <section
+          aria-labelledby="ket-qua-nhap"
+          className="space-y-4 rounded-2xl border border-green-200 bg-green-50 p-6"
+        >
+          <h2 id="ket-qua-nhap" className="text-lg font-medium text-green-900">
+            {result.already_confirmed ? 'Bản xem trước này đã được nhập trước đó' : 'Đã nhập xong'}
+          </h2>
+          <p className="text-green-900">
+            Tạo mới <strong>{result.created}</strong> bản ghi, cập nhật{' '}
+            <strong>{result.updated}</strong> bản ghi, giữ nguyên <strong>{result.unchanged}</strong>{' '}
+            bản ghi.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => reset()}
+              className="btn-primary"
+            >
+              Nhập tệp khác
+            </button>
+            <Link
+              to="/"
+              className="btn-secondary"
+            >
+              Về trang chủ
+            </Link>
+          </div>
+        </section>
+      </div>
     )
   }
 
@@ -195,9 +199,10 @@ export function ImportWizard({
 
   return (
     <div className="space-y-6">
+      <Stepper current={confirmMutation.isPending ? 3 : preview ? 2 : 1} />
       <section
         aria-labelledby="chon-loai-nhap"
-        className="space-y-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
+        className="card space-y-4 p-6"
       >
         <h2 id="chon-loai-nhap" className="text-lg font-medium">
           Nhập dữ liệu cho lớp {className}
@@ -211,9 +216,9 @@ export function ImportWizard({
               aria-pressed={settings.kind === kind}
               disabled={busy}
               onClick={() => settings.kind !== kind && reset({ kind })}
-              className={`rounded-md border px-4 py-2 font-medium disabled:opacity-60 ${
+              className={`rounded-xl border px-4 py-2 text-sm font-semibold transition-colors disabled:opacity-60 ${
                 settings.kind === kind
-                  ? 'border-blue-700 bg-blue-700 text-white'
+                  ? 'border-brand-700 bg-brand-700 text-white'
                   : 'border-slate-300 hover:bg-slate-100'
               }`}
             >
@@ -293,7 +298,7 @@ export function ImportWizard({
           </p>
         )}
         {error !== null && (
-          <p role="alert" className="rounded-md bg-red-50 p-3 text-sm text-red-700">
+          <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-800 ring-1 ring-red-200">
             {error}
           </p>
         )}
@@ -305,7 +310,7 @@ export function ImportWizard({
             Xem trước: {preview.file_name}
           </h2>
           {preview.notes.length > 0 && (
-            <ul className="space-y-1 rounded-md bg-amber-50 p-3 text-sm text-amber-900">
+            <ul className="space-y-1 rounded-xl bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200">
               {preview.notes.map((note) => (
                 <li key={note}>{note}</li>
               ))}
@@ -337,7 +342,7 @@ export function ImportWizard({
               {shownRows.length > 0 ? (
                 <PreviewTable rows={shownRows} fields={preview.fields} />
               ) : (
-                <p className="rounded-md bg-white p-4 text-sm text-slate-600 shadow-sm">
+                <p className="card p-4 text-sm text-slate-600">
                   Không có dòng nào để hiển thị.
                 </p>
               )}
@@ -348,7 +353,7 @@ export function ImportWizard({
                 </p>
               )}
 
-              <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="space-y-3 card p-4">
                 {preview.summary.error_rows > 0 && (
                   <p role="alert" className="text-sm text-red-700">
                     Tệp còn {preview.summary.error_rows} dòng lỗi nên chưa thể nhập. Hãy sửa tệp rồi
@@ -378,7 +383,7 @@ export function ImportWizard({
                     preview.job_id === null
                   }
                   onClick={() => preview.job_id && confirmMutation.mutate(preview.job_id)}
-                  className="rounded-md bg-blue-700 px-4 py-2 font-medium text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="btn-primary"
                 >
                   {confirmMutation.isPending ? 'Đang nhập…' : 'Xác nhận nhập'}
                 </button>

@@ -47,9 +47,9 @@ function FeedbackButtons({
   value: AssistantFeedback | null
   onRate: (value: AssistantFeedback) => void
 }) {
-  const base = 'rounded-md border px-2 py-1 text-xs font-medium'
+  const base = 'rounded-lg border px-2 py-1 text-xs font-medium transition-colors'
   function pick(option: AssistantFeedback, active: string) {
-    return `${base} ${value === option ? active : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'}`
+    return `${base} ${value === option ? active : 'border-slate-300 bg-surface text-slate-700 hover:bg-slate-100'}`
   }
   return (
     <div className="mt-2 flex items-center gap-2" role="group" aria-label="Đánh giá câu trả lời">
@@ -84,7 +84,7 @@ function Message({
   if (message.role === 'user') {
     return (
       <li className="flex justify-end">
-        <p className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-sm bg-blue-700 px-3 py-2 text-sm text-white">
+        <p className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-sm bg-brand-700 px-3 py-2 text-sm text-white">
           {message.text}
         </p>
       </li>
@@ -102,15 +102,15 @@ function Message({
   const { reply } = message
   return (
     <li className="flex">
-      <div className="max-w-[92%] rounded-2xl rounded-bl-sm border border-slate-200 bg-white px-3 py-2">
+      <div className="max-w-[92%] rounded-2xl rounded-bl-sm border border-slate-200 bg-surface px-3 py-2">
         <p className="whitespace-pre-wrap text-sm text-slate-900">{reply.answer}</p>
         {reply.blocked && (
-          <p className="mt-2 rounded-md bg-amber-50 p-2 text-xs text-amber-900">
+          <p className="mt-2 rounded-lg bg-amber-50 p-2 text-xs text-amber-900 ring-1 ring-amber-200">
             Một phần câu hỏi nằm ngoài quyền xem của bạn nên trợ lý không lấy dữ liệu đó.
           </p>
         )}
         {reply.ungrounded_numbers.length > 0 && (
-          <p className="mt-2 rounded-md bg-amber-50 p-2 text-xs text-amber-900">
+          <p className="mt-2 rounded-lg bg-amber-50 p-2 text-xs text-amber-900 ring-1 ring-amber-200">
             Chưa đối chiếu được với dữ liệu hệ thống các số: {reply.ungrounded_numbers.join(', ')}.
             Hãy kiểm tra lại trước khi dùng.
           </p>
@@ -173,7 +173,7 @@ export function ChatPanel({ variant }: { variant: 'dock' | 'page' }) {
         role="log"
         aria-label="Cuộc trò chuyện với Trợ lý AI"
         aria-live="polite"
-        className={`${listHeight} space-y-3 overflow-y-auto rounded-lg bg-slate-50 p-3`}
+        className={`${listHeight} space-y-3 overflow-y-auto rounded-xl bg-slate-50 p-3`}
       >
         {chat.messages.length === 0 && (
           <li className="text-sm text-slate-600">
@@ -202,7 +202,7 @@ export function ChatPanel({ variant }: { variant: 'dock' | 'page' }) {
                   type="button"
                   disabled={chat.pending}
                   onClick={() => chat.ask(question)}
-                  className="rounded-full border border-slate-300 bg-white px-3 py-1 text-left text-xs text-slate-700 hover:bg-slate-100 disabled:opacity-60"
+                  className="rounded-full border border-slate-300 bg-surface px-3 py-1 text-left text-xs text-slate-700 hover:bg-slate-100 disabled:opacity-60"
                 >
                   {question}
                 </button>
@@ -224,12 +224,12 @@ export function ChatPanel({ variant }: { variant: 'dock' | 'page' }) {
           onChange={(event) => setDraft(event.target.value)}
           onKeyDown={onKeyDown}
           placeholder="Nhập câu hỏi… (Enter để gửi)"
-          className="min-w-0 flex-1 resize-none rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+          className="input min-w-0 flex-1 resize-none text-sm"
         />
         <button
           type="submit"
           disabled={draft.trim() === '' || chat.pending}
-          className="rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
+          className="btn-primary"
         >
           Gửi
         </button>
@@ -243,7 +243,7 @@ export function ChatPanel({ variant }: { variant: 'dock' | 'page' }) {
           <button
             type="button"
             onClick={chat.clear}
-            className="shrink-0 text-xs font-medium text-blue-700 hover:underline"
+            className="shrink-0 text-xs font-medium link"
           >
             Xoá cuộc trò chuyện
           </button>

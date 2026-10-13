@@ -21,7 +21,7 @@ export default function RegulationsPage() {
     <QueryState query={assignments}>
       {(data) =>
         data.user.role !== 'admin' ? (
-          <p className="rounded-xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm">
+          <p className="card p-6 text-slate-600">
             Chỉ quản trị viên được quản lý văn bản quy định.
           </p>
         ) : (
@@ -30,7 +30,7 @@ export default function RegulationsPage() {
               title="Văn bản quy định"
               subtitle="Trợ lý AI chỉ trích dẫn các văn bản còn hiệu lực ở đây."
               actions={
-                <Link to="/" className="text-sm font-medium text-blue-700 hover:underline">
+                <Link to="/" className="link text-sm">
                   ← Trang chủ
                 </Link>
               }

@@ -1,3 +1,4 @@
+import { Icon } from './Icon'
 import { useHealth } from '../hooks/useHealth'
 import { StatusRow } from './StatusRow'
 import type { StatusState } from './StatusRow'
@@ -23,24 +24,32 @@ export function SystemStatus() {
   return (
     <section
       aria-labelledby="trang-thai-he-thong"
-      className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
+      className="rounded-2xl border border-slate-200 bg-surface/70 px-5 py-4"
     >
-      <h2 id="trang-thai-he-thong" className="text-lg font-medium">
+      <h2 id="trang-thai-he-thong" className="text-sm font-semibold text-slate-700">
         Trạng thái hệ thống
       </h2>
-      <ul className="mt-2 divide-y divide-slate-100" aria-live="polite">
+      <ul className="mt-1 divide-y divide-slate-100 text-sm" aria-live="polite">
         <StatusRow label="Máy chủ" state={states.server} />
         <StatusRow label="Cơ sở dữ liệu" state={states.db} />
       </ul>
 
       {health.isError && (
-        <p role="alert" className="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-700">
+        <p
+          role="alert"
+          className="mt-3 flex items-start gap-2 rounded-xl bg-red-50 p-3 text-sm text-red-800 ring-1 ring-red-200"
+        >
+          <Icon name="alert" className="mt-0.5 h-4 w-4" />
           Không kết nối được tới máy chủ. Hãy kiểm tra back-end đã chạy chưa (make up hoặc make
           dev-be).
         </p>
       )}
       {dbDown && (
-        <p role="alert" className="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-700">
+        <p
+          role="alert"
+          className="mt-3 flex items-start gap-2 rounded-xl bg-red-50 p-3 text-sm text-red-800 ring-1 ring-red-200"
+        >
+          <Icon name="alert" className="mt-0.5 h-4 w-4" />
           Máy chủ đang chạy nhưng không kết nối được cơ sở dữ liệu. Hãy kiểm tra PostgreSQL (make
           db) và biến DATABASE_URL.
         </p>
