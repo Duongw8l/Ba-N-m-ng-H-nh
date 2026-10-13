@@ -50,6 +50,7 @@ make dev-fe              # terminal 2: giao diện tại http://localhost:5173
 | `make regulations` | Nạp văn bản quy định trong `data/regulations/` (tách Điều/Khoản, tính vector); văn bản đã nạp thì bỏ qua |
 | `make rag-model` | Tải sẵn mô hình embedding bge-m3 (khoảng 2,3 GB, chỉ lần đầu) |
 | `make eval-rag` | Đo RAG bằng mô hình thật: Hit@4 và tỉ lệ từ chối đúng (`eval/rag_questions.json`) |
+| `make eval-assistant` | Đo Trợ lý AI bằng LLM thật: % chọn đúng hàm, % đúng số liệu, % từ chối đúng (15 câu trong `eval/assistant_questions.json`); cần `LLM_PROVIDER` và khoá API. Thêm `ASSISTANT_ARGS=--dry-run` để chỉ in đáp án kỳ vọng |
 | `make dev-be` / `make dev-fe` | Chạy back-end (uvicorn) / front-end (Vite) với tự nạp lại |
 | `make test` | pytest. Gồm test cần PostgreSQL thật nên phải `make db` trước; chỉ chạy test không cần DB: `cd backend && python -m pytest -m "not db"` |
 | `make lint` | ruff check, ruff format --check (cả `backend/`, `data/` và `eval/`), eslint, tsc |
@@ -97,7 +98,8 @@ Giao diện tiếng Việt, số kiểu `6,5`, dùng được ở 1366px. Mọi 
 | `/classes/{id}/students/{student_id}` | GVCN, BGH (đầy đủ); GVBM (chỉ môn mình dạy) | Hồ sơ học sinh: điểm từng môn, học tập, rèn luyện, chuyên cần, phụ huynh (chỉ khi API trả về) |
 | `/grades/{level}` | BGH | So sánh các lớp trong khối, học kỳ I cạnh học kỳ II |
 | `/classes/{id}/import` | GVBM, GVCN | Nhập dữ liệu từ tệp (mục bên dưới) |
-| `/assistant`, `/reports` | Mọi vai trò | Khung Trợ lý AI và Nhận xét & báo cáo (nối API ở Giai đoạn 8 và 9) |
+| `/assistant` | GVBM, GVCN, BGH | Trợ lý AI (cùng khung chat với nút nổi "Hỏi Trợ lý AI" ở mọi màn hình); Admin không dùng |
+| `/reports` | Mọi vai trò | Khung Nhận xét & báo cáo (nối API ở Giai đoạn 9) |
 | `/admin/regulations` | Admin | Quản lý văn bản quy định: danh sách, tải lên, đánh dấu hết hiệu lực / bật lại, thử tìm (mục "Văn bản quy định") |
 
 Id lớp và học sinh xem ở mục tài khoản dev (lớp 11A2 có id 5, môn Toán có id 2). Hồ sơ học sinh qua API: `GET /api/v1/classes/{id}/students/{student_id}/profile?semester=1|2|year`; GVBM nhận hồ sơ chỉ có các môn mình dạy.
@@ -111,6 +113,16 @@ Giai đoạn 6: hai lớp, gộp thành mức **Cao / Trung bình / Thấp** cho
 - **API** (xem Swagger): `GET /api/v1/classes/{id}/alerts` (GVCN của lớp, BGH), `PATCH /api/v1/alerts/{id}` (GVCN ghi `contacted` / `false_alarm` / `new`), `GET /api/v1/alerts?level=high` (chỉ BGH, cảnh báo toàn trường). GVBM không thấy cảnh báo.
 - **Tự chạy lại** sau mỗi lần nhập tệp (hook `on_data_changed`; lỗi chỉ ghi log, không làm hỏng việc nhập). Cảnh báo chỉ thêm dòng mới khi nội dung đổi nên ghi nhận "đã trao đổi" / "báo nhầm" của GVCN không bị mất.
 - **Demo**: `make seed SEED_ARGS="--hold-out 2027-03"`, đăng nhập `gvcn.11a2@example.com`, xem em An ("nghỉ 34 buổi") ở dashboard lớp 11A2, nhập `data/samples/diem-danh-11a2-2027-03.csv`, mở lại dashboard: cảnh báo của em An đã đổi thành "nghỉ 38 buổi".
+
+## Trợ lý AI
+
+Giai đoạn 8: giáo viên và BGH hỏi bằng tiếng Việt (nút nổi **Hỏi Trợ lý AI** ở góc phải mọi màn hình, hoặc trang `/assistant`). LLM chỉ được chọn trong **7 hàm chỉ đọc** (`backend/app/assistant/tools.py`); số liệu do Analytics tính, điều khoản do RAG tra; mỗi câu trả lời có mục **Nguồn** và nút Đúng / Sai.
+
+- **Cấu hình LLM** (`.env`, xem `.env.example`): `LLM_PROVIDER=anthropic` + `LLM_API_KEY` (SDK chính thức, mặc định `claude-sonnet-5-5`), hoặc `LLM_PROVIDER=gemini` + `LLM_API_KEY` (khoá tạo ở Google AI Studio, mặc định `gemini-flash-latest`; gói miễn phí giới hạn vài yêu cầu mỗi phút và không có Pro), hoặc `LLM_PROVIDER=ollama` + `LLM_MODEL` + `OLLAMA_URL` (chạy nội bộ). Để trống thì Trợ lý trả HTTP 503 ("chưa được cấu hình") còn các phần khác vẫn chạy. Đổi nhà cung cấp chỉ đổi biến môi trường. `ASSISTANT_RATE_PER_MINUTE` (mặc định 10) giới hạn số câu hỏi mỗi phút mỗi tài khoản.
+- **Riêng tư:** họ tên và mã học sinh được thay bằng mã tạm `HS_01`... trước khi gửi LLM và đổi lại khi hiển thị; không bao giờ gửi ngày sinh hay thông tin phụ huynh. Bộ ẩn danh chỉ sống trong một câu hỏi; `ai_logs` lưu bản đã ẩn danh.
+- **Phân quyền:** mỗi hàm qua `authorize()`; lớp, môn, kỳ của màn hình đang mở là mặc định, giá trị LLM tự điền vẫn phải qua `authorize()` (ngoài quyền thì bị chặn và trợ lý báo không có quyền). GVBM chỉ hỏi được môn mình dạy; Admin không dùng trợ lý.
+- **API** (xem Swagger): `POST /api/v1/assistant/chat` (`question`, và tuỳ chọn `class_id`, `subject_id`, `semester` của màn hình đang mở), `PATCH /api/v1/assistant/logs/{id}/feedback` (`correct` hoặc `incorrect`, chỉ người đã hỏi). Mỗi câu hỏi độc lập, trợ lý không nhớ các câu trước.
+- **Thử không cần khoá API:** `make test` dùng LLM giả. Để thử bằng LLM thật điền khoá vào `.env`, `make up`, đăng nhập `gvcn.11a2@example.com`, mở lớp 11A2 và hỏi "Vì sao em An bị cảnh báo?". Đo chất lượng: `make eval-assistant`.
 
 ## Nhập điểm, điểm danh, rèn luyện từ tệp
 

@@ -31,11 +31,16 @@ class Settings(BaseSettings):
     # Thời hạn access token. Chưa có refresh token hay thu hồi token, nên giữ vừa phải.
     jwt_expire_minutes: int = Field(default=120, ge=5, le=1440)
 
-    # Chưa dùng ở Giai đoạn 0. Khai báo sẵn để .env.example và Settings luôn đồng bộ.
-    llm_provider: str = ""
+    # Trợ lý AI (Giai đoạn 8, D-085, D-094). LLM_PROVIDER: "anthropic", "gemini" hoặc "ollama";
+    # trống là chưa cấu hình (API trợ lý trả 503). LLM_MODEL trống thì Anthropic và Gemini dùng mô
+    # hình mặc định, Ollama bắt buộc đặt.
+    llm_provider: Literal["", "anthropic", "ollama", "gemini"] = ""
     llm_api_key: SecretStr = SecretStr("")
     llm_model: str = ""
     ollama_url: str = "http://localhost:11434"
+    llm_timeout_seconds: int = Field(default=60, ge=5, le=600)
+    # Số câu hỏi tối đa mỗi phút cho mỗi tài khoản (DESIGN mục 10).
+    assistant_rate_per_minute: int = Field(default=10, ge=1, le=600)
     # Để trống (kể cả EMBEDDING_MODEL= trong .env) thì dùng bge-m3 (D-076).
     embedding_model: str = DEFAULT_EMBEDDING_MODEL
     # Số chiều vector của regulation_chunks.embedding. Migration đọc giá trị này lúc chạy và cố định

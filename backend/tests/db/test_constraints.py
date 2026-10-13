@@ -281,3 +281,30 @@ def test_two_active_documents_with_the_same_name_are_rejected(
     db_conn.execute(
         text("INSERT INTO regulation_documents (name, file_name) VALUES ('c', 'c2.txt')")
     )
+
+
+def test_ai_log_feedback_accepts_only_known_values_and_gets_a_timestamp(
+    db_conn: Connection, expect_rejected: Callable[..., None]
+) -> None:
+    insert = "INSERT INTO ai_logs (user_id, question, feedback) VALUES (1, 'câu hỏi', :feedback)"
+    db_conn.execute(text(insert), {"feedback": "correct"})
+    db_conn.execute(text(insert), {"feedback": "incorrect"})
+    db_conn.execute(text(insert), {"feedback": None})
+    expect_rejected(insert, feedback="tuyet_voi")
+
+    created = db_conn.execute(
+        text("SELECT count(*) FROM ai_logs WHERE user_id = 1 AND created_at IS NOT NULL")
+    ).scalar_one()
+    assert created == 3  # created_at tự có (cần cho giới hạn số câu hỏi mỗi phút)
+
+
+def test_ai_logs_have_an_index_for_the_per_minute_rate_limit(db_conn: Connection) -> None:
+    columns = db_conn.execute(
+        text(
+            "SELECT pg_get_indexdef(indexrelid) FROM pg_index "
+            "WHERE indrelid = 'ai_logs'::regclass "
+            "AND indexrelid::regclass::text = 'ix_ai_logs_user_created'"
+        )
+    ).scalar_one()
+
+    assert "(user_id, created_at)" in columns

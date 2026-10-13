@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 
 from app.analytics.router import router as analytics_router
+from app.assistant.router import router as assistant_router
 from app.auth.router import router as auth_router
 from app.classes.router import router as classes_router
 from app.core.authorize import AuthorizationError, authorization_error_handler
@@ -34,6 +35,7 @@ def create_app() -> FastAPI:
     app.include_router(imports_router, prefix=API_PREFIX)
     app.include_router(warning_router, prefix=API_PREFIX)
     app.include_router(rag_router, prefix=API_PREFIX)
+    app.include_router(assistant_router, prefix=API_PREFIX)
     return app
 
 

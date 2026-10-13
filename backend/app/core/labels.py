@@ -9,6 +9,7 @@ from enum import StrEnum
 from app.core.enums import (
     AssessmentKind,
     AssessmentType,
+    AssistantFeedback,
     AttendanceStatus,
     AuditAction,
     CommentResult,
@@ -105,6 +106,10 @@ LABELS_VI: dict[type[StrEnum], dict[StrEnum, str]] = {
     RegulationStatus: {
         RegulationStatus.ACTIVE: "Còn hiệu lực",
         RegulationStatus.EXPIRED: "Hết hiệu lực",
+    },
+    AssistantFeedback: {
+        AssistantFeedback.CORRECT: "Đúng",
+        AssistantFeedback.INCORRECT: "Sai",
     },
     ImportStatus: {
         ImportStatus.PREVIEWED: "Đã xem trước",

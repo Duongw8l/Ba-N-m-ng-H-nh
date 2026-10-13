@@ -68,6 +68,11 @@ class RegulationStatus(StrEnum):
     EXPIRED = "expired"  # hết hiệu lực: RAG không bao giờ trích
 
 
+class AssistantFeedback(StrEnum):
+    CORRECT = "correct"  # người hỏi đánh giá câu trả lời của trợ lý là đúng
+    INCORRECT = "incorrect"  # đánh giá là sai
+
+
 class TeacherStatus(StrEnum):
     NEW = "new"
     CONTACTED = "contacted"  # đã trao đổi với học sinh / phụ huynh

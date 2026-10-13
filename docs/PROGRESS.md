@@ -1,6 +1,6 @@
 # Tiến độ
 
-Cập nhật lần cuối: 2026-10-13 (Giai đoạn 7). Tên và thứ tự giai đoạn lấy từ bộ prompt [PROMPTS.md](PROMPTS.md).
+Cập nhật lần cuối: 2026-10-13 (Giai đoạn 8). Tên và thứ tự giai đoạn lấy từ bộ prompt [PROMPTS.md](PROMPTS.md).
 
 ## Bảng 12 giai đoạn
 
@@ -13,8 +13,8 @@ Cập nhật lần cuối: 2026-10-13 (Giai đoạn 7). Tên và thứ tự giai
 | 4 | Import Excel/CSV | Xong, đã commit `667bf88` (giao diện đã chạy thử trên Chrome ở Giai đoạn 5; chưa thử với sổ điểm thật; xem bên dưới) |
 | 5 | Dashboard và giao diện chính | Xong, đã commit `36b2882` (hoãn Vitest/Playwright theo lựa chọn của bạn; xem bên dưới) |
 | 6 | Cảnh báo sớm (luật + ML) | Xong, đã commit `f5a021f` (dữ liệu huấn luyện là giả lập; xem bên dưới) |
-| 7 | RAG văn bản quy định | Xong, chưa commit (ngưỡng tìm kiếm chưa tách chắc hai nhóm câu hỏi, Hit@4 6/8 trên bộ kiểm; chưa thử với văn bản thật; xem bên dưới) |
-| 8 | Trợ lý AI gọi hàm | Chưa làm |
+| 7 | RAG văn bản quy định | Xong, đã commit `517998f` (ngưỡng tìm kiếm chưa tách chắc hai nhóm câu hỏi, Hit@4 6/8 trên bộ kiểm; chưa thử với văn bản thật; xem bên dưới) |
+| 8 | Trợ lý AI gọi hàm | Xong, chưa commit (chưa gọi LLM thật nên chưa có số đo; xem bên dưới) |
 | 9 | Nhận xét và báo cáo | Chưa làm |
 | 10 | Đánh giá AI | Chưa làm |
 | 11 | Bảo mật, triển khai, demo | Chưa làm |
@@ -331,3 +331,49 @@ Cập nhật lần cuối: 2026-10-13 (Giai đoạn 7). Tên và thứ tự giai
 4. Swagger: `GET /api/v1/regulations/search?q=...` bằng token của bất kỳ vai trò nào; `GET /api/v1/admin/regulations` chỉ Admin (các vai trò khác 403).
 5. Văn bản thật: chép vào `data/regulations/`, thêm tên hiển thị vào `manifest.json`, `make regulations`, rồi `make eval-rag` và hiệu chỉnh `rag_min_similarity` trong bảng `settings` (xem D-082).
 6. `make test`, `make lint`. Test mô hình thật: `RUN_EMBEDDING_TESTS=1` rồi `cd backend && python -m pytest tests/rag/test_embedding.py`.
+
+
+## Giai đoạn 8: Trợ lý AI gọi hàm
+
+### Đã làm
+
+- **`LLMProvider`** (`backend/app/assistant/llm.py`, `providers/`; D-085, D-094): giao diện chung, ba bản cài đặt dùng SDK chính thức (`AnthropicProvider`, `GeminiProvider`, `OllamaProvider`), chọn bằng `LLM_PROVIDER`. Gemini thêm theo yêu cầu của bạn (mặc định `gemini-flash-latest`; thử lại lỗi 5xx và chờ đúng thời gian Google yêu cầu khi hết hạn mức theo phút). Thiếu cấu hình thì API trả 503 (sau khi kiểm quyền).
+- **Ẩn danh** (`core/pseudonymize.py`; D-086): họ tên và mã học sinh thành `HS_01`... trước khi gửi LLM, đổi lại khi hiển thị; tên gọi riêng chỉ khớp trong lớp đang mở và khi duy nhất một em (trùng thì hỏi lại, không gọi LLM); hàng rào quét khoá cấm (`date_of_birth`, `guardian_*`) và mọi họ tên/mã thật trước **mỗi** lần gọi LLM.
+- **Bảy hàm** (`assistant/tools.py`; D-087, D-088): `get_class_summary`, `get_student_detail`, `list_students`, `get_subject_scores`, `get_grade_overview`, `get_attendance_summary`, `search_regulation`. Qua `authorize()` (ngoài quyền thì bị chặn rõ ràng, không đọc gì), chạy trong transaction chỉ đọc, đầu ra không có danh tính. Bổ sung Analytics ở `analytics/queries.py`: số buổi nghỉ trung bình, lọc học sinh, nghỉ theo khoảng ngày.
+- **Vòng lặp** (`assistant/service.py`, `prompts/system_v1.vi.md`; D-089, D-090): tối đa 4 vòng gọi hàm, dữ liệu nằm trong thẻ `<du_lieu>` (chống chỉ dẫn độc), kiểm số liệu sau khi trả lời (số không đối chiếu được bị gắn cờ), mỗi câu hỏi độc lập.
+- **API** (D-091): `POST /assistant/chat`, `PATCH /assistant/logs/{id}/feedback`; giới hạn số câu hỏi mỗi phút; **migration thứ 9** (`ai_logs` thêm `created_at`, `model`, `prompt_version`, `rounds`, `error`, CHECK cho `feedback`); `question` và `answer` trong `ai_logs` là bản đã ẩn danh.
+- **Giao diện** (D-093): nút nổi "Hỏi Trợ lý AI" ở mọi màn hình (trừ Admin), trang `/assistant` dùng chung khung chat; câu hỏi gợi ý, mục Nguồn, nút Đúng/Sai, cảnh báo cho dữ liệu bị chặn và số chưa đối chiếu.
+- **Đánh giá** (D-092): `eval/assistant_eval.py` + 15 câu mẫu, đáp án tính bằng SQL độc lập; `make eval-assistant` (`ASSISTANT_ARGS=--dry-run` chỉ in đáp án kỳ vọng).
+- **Test**: 1.103 test qua, 1 bỏ qua (thêm 195). Với LLM giả (`ScriptedLLM`): chọn đúng hàm (câu "Vì sao em An bị cảnh báo?" gọi `get_student_detail` + `search_regulation`), GVBM hỏi môn khác bị chặn và LLM không nhận được dữ liệu nào, **toàn bộ message gửi sang LLM trong cả vòng lặp không chứa họ tên thật, mã học sinh thật, ngày sinh, họ tên hay số điện thoại phụ huynh**, `ai_logs` chỉ có bản đã ẩn danh, giới hạn 4 vòng, hàm lạ/tham số sai, chỉ dẫn độc trong dữ liệu, 429/502/503, ma trận 4 vai trò × từng hàm và từng endpoint, đáp án SQL khớp Analytics. Đã thử "đột biến" thủ công 17 chỗ (bỏ `require_all_subjects`, bỏ hạn chế môn của GVBM, rò họ tên, GVBM lọc theo nghỉ, bỏ `authorize` môn và khối, bỏ chế độ chỉ đọc, bỏ hàng rào ẩn danh, MAX_ROUNDS 5, không đổi tên về, nhật ký lưu tên thật, bỏ kiểm Admin, feedback không kiểm chủ nhân, giới hạn lệch một, không vô hiệu thẻ đóng, màn hình mở không qua `authorize`, tên trùng vẫn gọi LLM): test đỏ cả 17.
+
+### Chưa làm (thuộc các giai đoạn sau, hoặc ngoài phạm vi)
+
+- Đo bằng một mô hình duy nhất (cần gói trả phí hoặc Ollama; gói miễn phí chỉ 20 yêu cầu mỗi ngày mỗi mô hình), so Claude với Gemini với Ollama; đủ 50 câu và bộ 20 câu phân quyền/bảo mật AI của DESIGN mục 12: Giai đoạn 10. Hỏi nối tiếp (nhớ câu trước), text-to-SQL, ghi dữ liệu qua trợ lý: không làm (D-089).
+- Nhận xét và báo cáo do AI sinh (`reports`): Giai đoạn 9. Giới hạn dung lượng yêu cầu ở reverse proxy, nhật ký các lần bị từ chối: Giai đoạn 11. Kiểm tự động giao diện vẫn hoãn (D-069).
+
+### Đã kiểm chứng và còn chờ kiểm chứng
+
+| Mục | Trạng thái |
+| --- | --- |
+| `alembic upgrade head` (migration thứ 9), `downgrade -1` rồi lên lại, `alembic check`; cột, CHECK và chỉ mục của `ai_logs` | Đã chạy, đúng |
+| `make lint` (ruff trên `backend/`, `data/`, `eval/`; eslint; tsc) và `make test` (1.088 test) | Đã chạy, qua |
+| `vite build`; `make up` (dựng lại image vì thêm `anthropic`, `ollama`): 3 dịch vụ `healthy`, SDK import được trong container | Đã chạy, đúng |
+| API thật ở cổng 8000 (chưa cấu hình LLM): GVCN nhận 503 "chưa được cấu hình", Admin 403, không token 401 | Đã chạy, đúng |
+| **Đầu-cuối trên seed thật với máy chủ demo tạm** (backend thật, DB seed thật, bge-m3 thật, LLM giả theo luật đặt ngoài repo): GVCN 11A2 hỏi về em An nhận "Trần Minh An đã nghỉ 38 buổi (25 có phép, 13 không phép)" kèm điều khoản; liệt kê nghỉ từ 30 buổi; GVBM Ngữ văn hỏi điểm Toán bị chặn; số do LLM tự tính ("84%") bị gắn cờ; Admin 403; phản hồi Đúng chỉ chủ nhân ghi được | Đã chạy, đúng; đã dọn `ai_logs` sau khi thử |
+| Đáp án SQL độc lập của bộ đánh giá khớp kết quả hàm Analytics (nghỉ ≥ 30 buổi, nghỉ trung bình 3,9, ĐTB Toán 11A2 học kỳ I 6,4, số em dưới 3,5, so sánh khối 11, sĩ số) | Đã chạy, đúng (và thành test) |
+| **Trình duyệt thật** (Chrome, 1366×768, script tạm ngoài repo, nối vào máy chủ demo): nút nổi, câu gợi ý, câu trả lời có tên thật, Nguồn, nút Đúng, cuộc trò chuyện còn khi chuyển trang, cảnh báo số chưa đối chiếu, thông báo 429 (mô phỏng) và 503 (thật), trang `/assistant` ẩn nút nổi, GVBM thấy "ngoài quyền xem", Admin không có khung chat; không tràn ngang, không lỗi console ngoài hai phản hồi lỗi cố ý | Đã chạy, đúng |
+| **Gọi LLM thật: Gemini** (gói miễn phí, khoá bạn cung cấp): `make eval-assistant` 15 câu | Đã chạy: **chọn đúng hàm 12/12, đúng số liệu 12/12, từ chối đúng 3/3**, không có số bị gắn cờ; câu hỏi demo qua Docker trả lời đúng trong 3,4 giây. **Hạn chế quan trọng**: chia 4 đợt trên 4 mô hình Flash vì hạn mức ngày (20 yêu cầu mỗi mô hình), nên không phải số đo của một mô hình; mẫu 15 câu quá nhỏ; chạy một lần (D-092, D-094) |
+| **Gọi LLM thật: Anthropic Claude và Ollama** | **Chưa thử**: chưa có khoá Anthropic, chưa cài Ollama. Chỉ kiểm chuyển đổi định dạng bằng client giả |
+| Gemini Pro (`gemini-pro-latest`) | **Không dùng được** với khoá này: gói miễn phí hạn mức 0 |
+| Khớp tên gọi riêng ("em An") có nhận nhầm từ viết hoa đầu câu không; tên viết thường | **Chưa đo** với câu hỏi thật; hạn chế đã ghi ở D-086 |
+| Quy tắc Thông tư 22 | Vẫn **cần bạn đối chiếu văn bản gốc** (D-047 đến D-051) |
+| CI GitHub Actions | **Chưa kiểm**: cần đẩy lên GitHub; CI cài thêm `anthropic`, `ollama` qua `make install` |
+
+### Cách kiểm tra
+
+1. `make db`, `make migrate` (migration thứ 9), `make seed`, `make regulations` (nếu chưa nạp văn bản mẫu), `make up` (dựng lại image vì thêm SDK).
+2. Điền `.env`: `LLM_PROVIDER=anthropic`, `LLM_API_KEY=...` (hoặc `LLM_PROVIDER=gemini`, `LLM_API_KEY=...`, tuỳ chọn `LLM_MODEL=...`; hoặc `LLM_PROVIDER=ollama`, `LLM_MODEL=...`, `OLLAMA_URL=...`), khởi động lại backend (`docker compose up -d backend`). Gói miễn phí của Gemini chỉ 20 yêu cầu mỗi ngày mỗi mô hình: hết thì đổi `LLM_MODEL`.
+3. Đăng nhập `gvcn.11a2@example.com`, mở lớp 11A2, bấm "Hỏi Trợ lý AI", hỏi "Vì sao em An bị cảnh báo?" (nhận về số buổi nghỉ 38 kèm điều khoản và mục Nguồn); thử "Lớp em nào nghỉ từ 30 buổi?", bấm Đúng/Sai. Đăng nhập `gv.van.11@example.com`, mở bảng điểm Ngữ văn, hỏi "Điểm Toán của lớp thế nào?" (bị chặn). Đăng nhập `bgh1@example.com`, hỏi "So sánh số học sinh nghỉ từ 30 buổi giữa các lớp khối 11". `admin@example.com` không có khung chat.
+4. `make eval-assistant ASSISTANT_ARGS=--dry-run` xem đáp án kỳ vọng; `make eval-assistant` đo bằng LLM thật (ghi `ai_logs` vào database đang chạy).
+5. Xem nhật ký: `docker compose exec db psql -U classroom -d classroom -c "select id, model, rounds, left(question, 60), tools_called from ai_logs"` (không có họ tên học sinh).
+6. `make test`, `make lint`. Swagger: `POST /api/v1/assistant/chat`.

@@ -4,7 +4,7 @@
 # cú pháp chung của cả hai shell: "cd dir && lệnh", không dùng bash-ism.
 # Python (venv đã kích hoạt, xem README) và Node phải có sẵn trên PATH khi chạy ngoài Docker.
 
-.PHONY: install up down db migrate seed samples warn train regulations rag-model dev-be dev-fe test lint eval eval-rag
+.PHONY: install up down db migrate seed samples warn train regulations rag-model dev-be dev-fe test lint eval eval-rag eval-assistant
 
 # In "chưa triển khai: <lệnh>". Dòng lệnh Python dưới đây cố ý thuần ASCII (dùng chr() cho hai chữ
 # có dấu): nếu để chữ có dấu trong Makefile, make trên Windows chuyển byte UTF-8 cho cmd.exe theo
@@ -88,3 +88,9 @@ eval:
 # make eval-rag RAG_ARGS="--threshold 0.6"
 eval-rag:
 	python eval/rag_eval.py $(RAG_ARGS)
+
+# Danh gia Tro ly AI goi ham bang LLM that (chon dung ham, dung so lieu, tu choi dung; 15 cau mau).
+# Can DB da migrate va seed, LLM_PROVIDER + LLM_API_KEY trong .env, va make regulations cho cau ve
+# quy dinh. Chi in dap an ky vong, khong goi LLM: make eval-assistant ASSISTANT_ARGS=--dry-run
+eval-assistant:
+	python eval/assistant_eval.py $(ASSISTANT_ARGS)

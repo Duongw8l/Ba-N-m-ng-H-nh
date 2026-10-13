@@ -110,6 +110,12 @@ def authorize_admin(user: User) -> None:
         raise AuthorizationError
 
 
+def authorize_assistant(user: User) -> None:
+    """Dùng Trợ lý AI: giáo viên và BGH. Admin không xem dữ liệu học sinh nên không dùng (D-087)."""
+    if user.role not in (UserRole.TEACHER, UserRole.PRINCIPAL):
+        raise AuthorizationError
+
+
 def authorize_school(user: User) -> None:
     """Dữ liệu cấp toàn trường (ví dụ cảnh báo mức Cao của mọi lớp): chỉ BGH (D-072)."""
     if user.role is not UserRole.PRINCIPAL:

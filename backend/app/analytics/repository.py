@@ -206,6 +206,18 @@ def attendance_days(
     return [(row[0], row[1]) for row in session.execute(query).all()]
 
 
+def attendance_rows_in_range(
+    session: Session, class_id: int, start: date, end: date
+) -> list[tuple[int, date, AttendanceStatus]]:
+    """(class_student_id, ngày, trạng thái) của cả lớp trong khoảng [start, end] (gồm hai đầu)."""
+    rows = session.execute(
+        select(Attendance.class_student_id, Attendance.date, Attendance.status)
+        .join(ClassStudent, ClassStudent.id == Attendance.class_student_id)
+        .where(ClassStudent.class_id == class_id, Attendance.date.between(start, end))
+    ).all()
+    return [(row[0], row[1], row[2]) for row in rows]
+
+
 def raw_student_scores(session: Session, class_student_id: int) -> dict[int, list[RawScore]]:
     """Từng đầu điểm của một học sinh, gom theo môn (cả hai học kỳ)."""
     rows = session.execute(
