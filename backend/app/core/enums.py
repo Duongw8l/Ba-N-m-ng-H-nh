@@ -107,12 +107,25 @@ class AuditAction(StrEnum):
     UPDATE_ALERT = "update_alert"  # GVCN ghi nhận "đã trao đổi" hoặc "báo nhầm"
     UPLOAD_REGULATION = "upload_regulation"  # Admin tải văn bản quy định lên (Giai đoạn 7)
     UPDATE_REGULATION = "update_regulation"  # Admin đánh dấu hết hiệu lực hoặc bật lại
+    # Quản trị hệ thống (D-096 trở đi). Giá trị không dài quá 20 ký tự để khỏi đổi độ dài cột.
+    CREATE_USER = "create_user"  # Admin tạo tài khoản
+    UPDATE_USER = "update_user"  # Admin sửa tên, email, vai trò, khoá / mở khoá
+    RESET_USER_PASSWORD = "reset_user_password"  # Admin đặt lại mật khẩu
+    CHANGE_PASSWORD = "change_password"  # người dùng tự đổi mật khẩu của mình
+    UPDATE_SCHOOL_YEAR = "update_school_year"  # Admin tạo hoặc sửa năm học
+    CREATE_CLASS = "create_class"
+    UPDATE_CLASS = "update_class"  # đổi tên lớp hoặc GVCN
+    DELETE_CLASS = "delete_class"
+    SET_ASSIGNMENT = "set_assignment"  # gán hoặc đổi giáo viên của một cặp lớp-môn
+    REMOVE_ASSIGNMENT = "remove_assignment"
+    REMOVE_CLASS_STUDENT = "remove_class_student"  # gỡ một học sinh khỏi lớp
 
 
 class ImportKind(StrEnum):
     ASSESSMENTS = "assessments"  # điểm một môn, một học kỳ
     ATTENDANCE = "attendance"  # điểm danh
     CONDUCT = "conduct"  # rèn luyện
+    ROSTER = "roster"  # danh sách học sinh của một lớp (chỉ Admin nhập, D-100)
 
 
 class ImportStatus(StrEnum):

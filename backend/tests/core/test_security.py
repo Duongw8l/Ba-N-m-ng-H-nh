@@ -1,6 +1,12 @@
 import pytest
 
-from app.core.security import MAX_PASSWORD_BYTES, hash_password, verify_password
+from app.core.security import (
+    MAX_PASSWORD_BYTES,
+    TEMPORARY_PASSWORD_LENGTH,
+    generate_temporary_password,
+    hash_password,
+    verify_password,
+)
 
 
 def test_hash_then_verify_accepts_right_password_and_rejects_wrong_one() -> None:
@@ -31,3 +37,16 @@ def test_verify_returns_false_instead_of_raising_for_bad_input() -> None:
 
     assert not verify_password("a" * (MAX_PASSWORD_BYTES + 1), hashed)
     assert not verify_password("ok", "khong-phai-hash-bcrypt")
+
+
+def test_temporary_password_is_long_random_and_hashable() -> None:
+    passwords = {generate_temporary_password() for _ in range(200)}
+
+    assert len(passwords) == 200  # không trùng nhau
+    for password in passwords:
+        assert len(password) == TEMPORARY_PASSWORD_LENGTH
+        assert any(ch.islower() for ch in password)
+        assert any(ch.isupper() for ch in password)
+        assert any(ch.isdigit() for ch in password)
+        assert not set(password) & set("ilIO01")  # không có ký tự dễ nhầm
+    assert len(next(iter(passwords)).encode()) <= MAX_PASSWORD_BYTES

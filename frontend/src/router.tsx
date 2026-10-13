@@ -41,10 +41,26 @@ export const router = createBrowserRouter([
           },
           { path: '/assistant', element: <AssistantPage /> },
           { path: '/reports', element: <ReportsPage /> },
+          {
+            path: '/account/password',
+            lazy: async () => ({ Component: (await import('./pages/ChangePasswordPage')).default }),
+          },
           // Chỉ Admin (trang tự kiểm vai trò, back-end kiểm lại ở mọi yêu cầu).
           {
             path: '/admin/regulations',
             lazy: async () => ({ Component: (await import('./pages/RegulationsPage')).default }),
+          },
+          {
+            path: '/admin/users',
+            lazy: async () => ({ Component: (await import('./pages/AdminUsersPage')).default }),
+          },
+          {
+            path: '/admin/school',
+            lazy: async () => ({ Component: (await import('./pages/AdminSchoolPage')).default }),
+          },
+          {
+            path: '/admin/classes/:classId',
+            lazy: async () => ({ Component: (await import('./pages/AdminClassPage')).default }),
           },
         ],
       },

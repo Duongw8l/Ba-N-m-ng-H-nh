@@ -68,7 +68,11 @@ export function AppLayout() {
   if (role === 'admin') {
     groups.push({
       title: 'Quản trị',
-      items: [{ to: '/admin/regulations', label: 'Văn bản quy định', icon: 'book' }],
+      items: [
+        { to: '/admin/users', label: 'Tài khoản', icon: 'users' },
+        { to: '/admin/school', label: 'Năm học & lớp', icon: 'layers' },
+        { to: '/admin/regulations', label: 'Văn bản quy định', icon: 'book' },
+      ],
     })
   }
 

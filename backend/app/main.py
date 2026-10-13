@@ -2,7 +2,9 @@ from fastapi import FastAPI
 
 from app.analytics.router import router as analytics_router
 from app.assistant.router import router as assistant_router
+from app.auth.admin_router import router as admin_users_router
 from app.auth.router import router as auth_router
+from app.classes.admin_router import router as admin_classes_router
 from app.classes.router import router as classes_router
 from app.core.authorize import AuthorizationError, authorization_error_handler
 from app.core.config import get_settings
@@ -30,7 +32,9 @@ def create_app() -> FastAPI:
     app.add_exception_handler(AuthorizationError, authorization_error_handler)
     app.include_router(health_router, prefix=API_PREFIX)
     app.include_router(auth_router, prefix=API_PREFIX)
+    app.include_router(admin_users_router, prefix=API_PREFIX)
     app.include_router(classes_router, prefix=API_PREFIX)
+    app.include_router(admin_classes_router, prefix=API_PREFIX)
     app.include_router(analytics_router, prefix=API_PREFIX)
     app.include_router(imports_router, prefix=API_PREFIX)
     app.include_router(warning_router, prefix=API_PREFIX)

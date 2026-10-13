@@ -1,7 +1,7 @@
 import { apiGet, apiPost, apiUpload } from './client'
 
 // Khớp schema của back-end (backend/app/imports/schemas.py).
-export type ImportKind = 'assessments' | 'attendance' | 'conduct'
+export type ImportKind = 'assessments' | 'attendance' | 'conduct' | 'roster'
 export type ConductPeriod = 'hk1' | 'hk2' | 'year'
 export type RowStatus = 'ok' | 'warning' | 'error'
 export type RowAction = 'new' | 'changed' | 'unchanged'

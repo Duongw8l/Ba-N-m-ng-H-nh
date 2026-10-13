@@ -1,6 +1,6 @@
 # Tiến độ
 
-Cập nhật lần cuối: 2026-10-13 (Giao diện v2). Tên và thứ tự giai đoạn lấy từ bộ prompt [PROMPTS.md](PROMPTS.md).
+Cập nhật lần cuối: 2026-10-13 (Chức năng Admin). Tên và thứ tự giai đoạn lấy từ bộ prompt [PROMPTS.md](PROMPTS.md).
 
 ## Bảng 12 giai đoạn
 
@@ -15,8 +15,9 @@ Cập nhật lần cuối: 2026-10-13 (Giao diện v2). Tên và thứ tự giai
 | 6 | Cảnh báo sớm (luật + ML) | Xong, đã commit `f5a021f` (dữ liệu huấn luyện là giả lập; xem bên dưới) |
 | 7 | RAG văn bản quy định | Xong, đã commit `517998f` (ngưỡng tìm kiếm chưa tách chắc hai nhóm câu hỏi, Hit@4 6/8 trên bộ kiểm; chưa thử với văn bản thật; xem bên dưới) |
 | 8 | Trợ lý AI gọi hàm | Xong, đã commit `9f911cf` (đo bằng Gemini gói miễn phí, mẫu 15 câu, chia nhiều mô hình; chưa thử Claude/Ollama; xem bên dưới) |
-| 9 | Nhận xét và báo cáo | Chưa làm (tạm dừng theo yêu cầu của bạn để làm Giao diện v2) |
-| — | Giao diện v2 (thiết kế lại toàn bộ giao diện) | Xong, chưa commit (chưa thử ngoài Chrome; xem mục cuối) |
+| 9 | Nhận xét và báo cáo | Chưa làm (tạm dừng theo yêu cầu của bạn để làm Giao diện v2 và chức năng Admin) |
+| — | Giao diện v2 (thiết kế lại toàn bộ giao diện) | Xong, đã commit `479e486` (chưa thử ngoài Chrome; xem mục riêng) |
+| — | Chức năng Admin (tài khoản, năm học, lớp, phân công, nhập danh sách học sinh) | Xong, chưa commit (chưa thử với tệp thật của trường; xem mục cuối) |
 | 10 | Đánh giá AI | Chưa làm |
 | 11 | Bảo mật, triển khai, demo | Chưa làm |
 
@@ -416,3 +417,41 @@ Làm theo yêu cầu của bạn trong lúc Giai đoạn 9 tạm dừng. Chỉ �
 2. Mở http://localhost:5173, đăng nhập `gvcn.11a2@example.com` / `ThdaDev#2026`; thử ba nút mặt trời / màn hình / mặt trăng ở thanh trên (sáng, theo hệ thống, tối), nút thu gọn thanh bên, thu hẹp cửa sổ dưới 1024px để thấy ngăn kéo (nút ba gạch).
 3. Đăng nhập lần lượt `bgh1@`, `gv.toan.11@`, `admin@` (cùng mật khẩu) để xem thanh bên theo từng vai trò.
 4. `make lint`, `make test`.
+
+
+## Chức năng Admin (quản trị hệ thống)
+
+Làm theo yêu cầu "làm nốt chức năng admin" (D-096 đến D-101), trong lúc Giai đoạn 9 tạm dừng. Phạm vi đã chốt với bạn: **tài khoản; năm học, lớp, GVCN; phân công giảng dạy; nhập danh sách học sinh từ Excel/CSV**. Không làm đợt này: danh mục môn học, chỉnh hệ số và ngưỡng Thông tư 22 qua giao diện, nhiều năm học.
+
+### Đã làm
+
+- **Tài khoản** (`backend/app/auth/admin_*`; D-096, D-097): danh sách có lọc, tạo (mật khẩu tạm ngẫu nhiên, hiện một lần), sửa tên / email / vai trò, đặt lại mật khẩu, **khoá và mở khoá** (không xoá). Tài khoản bị khoá không đăng nhập được và phiên đang mở bị từ chối ngay. Mọi vai trò tự đổi mật khẩu ở `POST /auth/change-password` (menu người dùng). **Migration thứ 10**: `users.is_active`, hành động nhật ký quản trị, loại nhập `roster`.
+- **Năm học, lớp, GVCN** (`backend/app/classes/admin_*`; D-098): một năm học duy nhất (tạo hoặc sửa), thêm / đổi tên / xoá lớp trống, giáo viên chủ nhiệm (mỗi giáo viên một lớp). Phản hồi chỉ có số đếm, không có tên học sinh.
+- **Phân công giảng dạy** (D-099): gán hoặc đổi giáo viên cho từng cặp lớp-môn, gỡ phân công (từ chối nếu lớp đã có điểm môn đó), sao chép các môn còn trống từ lớp cùng khối. Thay cho `POST /admin/assignments` của DESIGN mục 7.
+- **Nhập danh sách học sinh** (`backend/app/imports/roster.py`; D-100): loại `roster` trong luồng nhập có sẵn, chỉ Admin; xem trước không hiện dữ liệu cũ; học sinh có mã đã có thì cập nhật, đang ở lớp khác thì lỗi; gỡ học sinh nhập nhầm theo mã (chỉ khi chưa có dữ liệu). Tệp mẫu `data/samples/danh-sach-hoc-sinh-11a9.xlsx`.
+- **Giao diện** (D-101): `/admin/users`, `/admin/school`, `/admin/classes/{id}`, `/account/password`; mục "Quản trị" ở thanh bên và ba lối tắt ở trang chủ Admin.
+- **Test**: 1.247 test qua, 1 bỏ qua (thêm 144): phân quyền 4 vai trò + chưa đăng nhập cho mọi endpoint mới, các quy tắc (tự khoá, đổi vai trò khi còn phân công, email trùng hoa/thường, khoá có hiệu lực ngay, mật khẩu tạm không lọt vào nhật ký, GVCN một lớp, xoá lớp còn dữ liệu, gỡ phân công khi đã có điểm, sao chép, gỡ học sinh), nhập danh sách (kiểm dòng, số điện thoại, xem trước không lộ dữ liệu cũ, `rows` bị xoá sau xác nhận, xung đột giữa hai bản xem trước, người khác và Admin bị hạ quyền không xác nhận được).
+
+### Chưa làm (ngoài phạm vi, hoặc để sau)
+
+- Danh mục môn học, chỉnh `settings` (ngưỡng Thông tư 22) qua giao diện; nhiều năm học và lên lớp cuối năm; chuyển lớp giữa năm; Admin xem danh sách học sinh (giữ D-039); gửi mật khẩu qua email; buộc đổi mật khẩu ở lần đăng nhập đầu; thu hồi token cũ sau khi đổi mật khẩu (D-097); phân trang danh sách tài khoản.
+
+### Đã kiểm chứng và còn chờ kiểm chứng
+
+| Mục | Trạng thái |
+| --- | --- |
+| `alembic upgrade head` (migration thứ 10), `downgrade -1` rồi lên lại, `alembic check`; CHECK của `audit_logs` và `import_*` | Đã chạy, đúng |
+| `make lint` (ruff, eslint, tsc) và `make test` (1.247 test) | Đã chạy, qua |
+| **Đột biến thủ công** (bỏ kiểm Admin, kiểm khoá ở đăng nhập và `get_current_user`, tự khoá, đổi vai trò khi còn phân công, GVCN hai lớp, gỡ phân công khi có điểm, gỡ học sinh có dữ liệu, xoá lớp còn học sinh, đổi ngày năm học, sao chép, mật khẩu vào nhật ký, bỏ kiểm Admin ở nhập danh sách, giữ họ tên sau xác nhận, lộ giá trị cũ, so mã phân biệt hoa thường, bỏ kiểm xung đột lúc xác nhận…) | 31 đột biến; 3 lần lọt ở lượt đầu (xoá lớp còn học sinh nhưng không còn phân công, Admin bị hạ quyền sau khi xem trước, mã lưu chữ thường) đã bổ sung test và đỏ lại; còn 2 đột biến tương đương (kiểm trùng email trước khi ghi, DB cũng chặn bằng chỉ mục duy nhất nên kết quả giống nhau) |
+| **Chrome thật** (script tạm ngoài repo): tạo tài khoản, đăng nhập bằng mật khẩu tạm, đổi mật khẩu, khoá (phiên đang mở bị đăng xuất), mở khoá, đặt lại mật khẩu; tạo lớp 11A9 với GVCN mới, phân công, sao chép, nhập tệp mẫu 30 học sinh, GVCN mới thấy lớp với 30 học sinh; gỡ học sinh; BGH, GVCN, GVBM mở thẳng trang quản trị chỉ thấy lời báo | Đã chạy, đúng; đã dọn dữ liệu thử |
+| Ảnh sáng/tối × 1366/390 px của trang quản trị: không tràn ngang, không lỗi console ngoài các phản hồi lỗi cố ý; tương phản đạt cả hai chế độ | Đã chạy, đúng |
+| Trình duyệt khác Chrome, trình đọc màn hình, điện thoại thật | **Chưa kiểm** |
+| Nhập danh sách bằng tệp Excel thật của nhà trường (cột và định dạng tuỳ phần mềm), kéo thả tệp | **Chưa kiểm** (chỉ tệp mẫu giả; chưa thử kéo thả) |
+
+### Cách kiểm tra
+
+1. `make migrate` (migration thứ 10), `make up` (hoặc `make dev-be`, `make dev-fe`).
+2. Đăng nhập `admin@example.com` (mật khẩu dev trong README): "Tài khoản" → tạo giáo viên mới, ghi lại mật khẩu tạm; đăng nhập bằng tài khoản đó ở cửa sổ ẩn danh, đổi mật khẩu ở menu người dùng.
+3. "Năm học & lớp" → thêm lớp `11A9` với giáo viên mới làm GVCN → "Quản lý" → gán Toán, hoặc chọn 11A1 rồi "Sao chép" → kéo `data/samples/danh-sach-hoc-sinh-11a9.xlsx` vào, xem trước, "Xác nhận nhập". Giáo viên mới đăng nhập lại sẽ thấy "Lớp 11A9" với 30 học sinh.
+4. Khoá giáo viên mới ở "Tài khoản": phiên của họ bị đăng xuất ở yêu cầu kế tiếp. Dọn dữ liệu thử: `make seed`.
+5. `make test`, `make lint`. Swagger `/api/docs`, nhóm `admin`.

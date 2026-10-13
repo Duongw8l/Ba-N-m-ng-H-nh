@@ -1,14 +1,15 @@
 # Tệp mẫu nhập dữ liệu
 
-Ba tệp để thử luồng nhập tệp của Giai đoạn 4 (xem [README gốc](../../README.md), mục "Nhập điểm, điểm danh, rèn luyện từ tệp"). **Toàn bộ là dữ liệu giả lập** do chính bộ sinh của seed tạo ra (`data/seed/`), nên mã học sinh khớp với DB sau `make seed`. Không bao giờ đặt sổ điểm thật vào thư mục này (nguyên tắc 7 của CLAUDE.md).
+Bốn tệp để thử luồng nhập tệp (ba tệp đầu của Giai đoạn 4, tệp thứ tư của chức năng Admin) (xem [README gốc](../../README.md), mục "Nhập điểm, điểm danh, rèn luyện từ tệp"). **Toàn bộ là dữ liệu giả lập** do chính bộ sinh của seed tạo ra (`data/seed/`), nên mã học sinh khớp với DB sau `make seed`. Không bao giờ đặt sổ điểm thật vào thư mục này (nguyên tắc 7 của CLAUDE.md).
 
-Sinh lại bằng `make samples` (script `make_samples.py`, logic ở `build.py`; cần DB đã migrate vì hệ số tính ĐTB đọc từ bảng `settings`). Test `tests/imports/test_samples.py` so nội dung ba tệp đã commit với bộ sinh, nên đổi seed mà quên chạy lại `make samples` thì test đỏ.
+Sinh lại bằng `make samples` (script `make_samples.py`, logic ở `build.py`; cần DB đã migrate vì hệ số tính ĐTB đọc từ bảng `settings`). Test `tests/imports/test_samples.py` so nội dung các tệp đã commit với bộ sinh, nên đổi seed mà quên chạy lại `make samples` thì test đỏ.
 
 | Tệp | Dùng với | Nội dung |
 | --- | --- | --- |
 | `diem-toan-11a2-hk1.xlsx` | `gv.toan.11@example.com`, lớp 11A2, môn Toán, học kỳ I | Sổ điểm đúng định dạng "xuất từ sổ điểm điện tử" (xem bên dưới). Khác DB ở **3 học sinh** nên xem trước có 3 dòng "Đổi" và 37 dòng "Giữ nguyên" |
 | `diem-toan-11a2-hk1-loi.xlsx` | như trên | Cùng sổ điểm nhưng có lỗi cài sẵn; **không thể xác nhận**, hệ thống không ghi gì |
 | `diem-danh-11a2-2027-03.csv` | `gvcn.11a2@example.com`, lớp 11A2 | Điểm danh cả lớp tháng 3/2027: 40 học sinh × 23 ngày học = 920 dòng. UTF-8 có BOM |
+| `danh-sach-hoc-sinh-11a9.xlsx` | `admin@example.com`, một lớp **11A9 mới** | Danh sách 30 học sinh (mã `HS1109001` đến `HS1109030`): `STT`, `Mã HS`, `Họ và tên`, `Ngày sinh`, `Họ tên phụ huynh`, `Số điện thoại`. Tạo lớp 11A9 ở "Năm học & lớp" rồi nhập từ trang quản trị của lớp. Họ tên và số điện thoại giả (đầu số `0000`), không trùng học sinh nào của seed |
 
 ## `diem-toan-11a2-hk1.xlsx`
 

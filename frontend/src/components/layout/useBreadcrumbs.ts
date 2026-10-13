@@ -34,5 +34,12 @@ export function useBreadcrumbs(data: Assignments | undefined): Crumb[] {
   if (at('/assistant')) return [home, { label: 'Trợ lý AI' }]
   if (at('/reports')) return [home, { label: 'Nhận xét & báo cáo' }]
   if (at('/admin/regulations')) return [home, { label: 'Quản trị' }, { label: 'Văn bản quy định' }]
+  if (at('/admin/users')) return [home, { label: 'Quản trị' }, { label: 'Tài khoản' }]
+  if (at('/admin/school')) return [home, { label: 'Quản trị' }, { label: 'Năm học & lớp' }]
+  m = at('/admin/classes/:classId')
+  if (m) {
+    return [home, { label: 'Quản trị' }, { label: 'Năm học & lớp', to: '/admin/school' }, { label: 'Quản lý lớp' }]
+  }
+  if (at('/account/password')) return [home, { label: 'Đổi mật khẩu' }]
   return [{ label: 'Trang chủ' }]
 }

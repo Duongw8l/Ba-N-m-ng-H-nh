@@ -18,7 +18,7 @@ from app.analytics import repository as analytics_repo
 from app.analytics.config import load_config
 from app.auth.audit import record_access
 from app.auth.models import User
-from app.core.authorize import AuthorizationError, authorize_write
+from app.core.authorize import AuthorizationError, authorize_admin, authorize_write
 from app.core.enums import (
     AssessmentType,
     AuditAction,
@@ -28,7 +28,7 @@ from app.core.enums import (
 )
 from app.imports import mappings as templates
 from app.imports import repository as repo
-from app.imports import validation
+from app.imports import roster, validation
 from app.imports.columns import FieldSpec, detect_header_line, fields_for, resolve_mapping
 from app.imports.models import ImportJob
 from app.imports.parsing import read_grid, table_from_grid
@@ -136,6 +136,13 @@ def _validate(
     mapping: Mapping[str, str | None],
     fields: Sequence[FieldSpec],
 ) -> list[RowResult]:
+    if request.kind is ImportKind.ROSTER:
+        return roster.validate_roster(
+            table,
+            mapping,
+            class_id=request.class_id,
+            memberships=roster.class_memberships(session, roster.codes_in(table, mapping)),
+        )
     students = repo.students_by_code(session, request.class_id)
     if request.kind is ImportKind.ATTENDANCE:
         start, end = analytics_repo.school_year_range(session, request.class_id)
@@ -325,7 +332,10 @@ def confirm_job(session: Session, user: User, job_id: uuid.UUID) -> tuple[Confir
         raise ImportJobNotFound
     if job.user_id != user.id:
         raise AuthorizationError
-    authorize_write(session, user, class_id=job.class_id, subject_id=job.subject_id)
+    if job.kind is ImportKind.ROSTER:
+        authorize_admin(user)  # nhập danh sách học sinh chỉ dành cho Admin (D-100)
+    else:
+        authorize_write(session, user, class_id=job.class_id, subject_id=job.subject_id)
 
     if job.status is ImportStatus.CONFIRMED:
         return _result_of(job, already=True), job.class_id, False
@@ -339,6 +349,8 @@ def confirm_job(session: Session, user: User, job_id: uuid.UUID) -> tuple[Confir
         unchanged = int(job.summary.get("records_unchanged", 0))
         job.status = ImportStatus.CONFIRMED
         job.confirmed_at = datetime.now(UTC)
+        if job.kind is ImportKind.ROSTER:
+            job.rows = []  # họ tên, ngày sinh, số điện thoại không nằm lại trong job (D-100)
         job.summary = {
             **job.summary,
             "result": {"created": created, "updated": updated, "unchanged": unchanged},
@@ -361,7 +373,9 @@ def confirm_job(session: Session, user: User, job_id: uuid.UUID) -> tuple[Confir
             commit=False,
         )
         session.commit()
-    except IntegrityError as error:
+    except (IntegrityError, roster.RosterConflict) as error:
         session.rollback()
         raise ImportConflict from error
-    return _result_of(job, already=False), job.class_id, bool(created or updated)
+    # Danh sách học sinh chưa có điểm nên không có gì để cảnh báo sớm tính lại.
+    written = bool(created or updated) and job.kind is not ImportKind.ROSTER
+    return _result_of(job, already=False), job.class_id, written

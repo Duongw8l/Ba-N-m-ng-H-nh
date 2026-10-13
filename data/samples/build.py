@@ -1,19 +1,23 @@
-"""Sinh ba tệp mẫu để thử luồng nhập dữ liệu (Giai đoạn 4) từ chính bộ sinh của seed.
+"""Sinh bốn tệp mẫu để thử luồng nhập dữ liệu (Giai đoạn 4) từ chính bộ sinh của seed.
 
 Mã học sinh, họ tên và điểm lấy từ `generate()` với tham số mặc định, nên khớp DB sau `make seed`.
 Chỉ dữ liệu giả lập (nguyên tắc 7). ĐTB trong tệp điểm tính bằng `app.analytics.scores` với hệ số
 đọc từ bảng `settings` (nguyên tắc 2), nên đây không phải nơi thứ hai cài công thức.
 
-Ba tệp (xem data/samples/README.md):
+Bốn tệp (xem data/samples/README.md):
 - diem-toan-11a2-hk1.xlsx: sổ điểm Toán 11A2 học kỳ I, đúng; khác DB ở 3 học sinh.
 - diem-toan-11a2-hk1-loi.xlsx: cùng sổ điểm nhưng có lỗi cài sẵn (danh sách FAULTS).
 - diem-danh-11a2-2027-03.csv: điểm danh cả lớp 11A2 tháng 3/2027 (UTF-8 có BOM).
+- danh-sach-hoc-sinh-11a9.xlsx: danh sách 30 học sinh của một lớp 11A9 MỚI (Admin tạo lớp rồi nhập,
+  D-100). Họ tên và số điện thoại giả từ `data/seed/people.py`, không trùng học sinh nào của seed.
 """
 
 import csv
 import io
+import random
 from collections import defaultdict
 from dataclasses import dataclass
+from datetime import date, timedelta
 from decimal import Decimal
 from typing import Any, Literal
 
@@ -25,6 +29,7 @@ from app.core.enums import AttendanceStatus
 from app.core.labels import label_vi
 from data.seed.generate import TableRows, generate
 from data.seed.params import SeedParams
+from data.seed.people import random_full_name, random_phone
 
 CLASS_NAME = "11A2"
 SUBJECT_NAME = "Toán"
@@ -34,6 +39,10 @@ ATTENDANCE_MONTH = (2027, 3)
 CORRECT_XLSX = "diem-toan-11a2-hk1.xlsx"
 FAULTY_XLSX = "diem-toan-11a2-hk1-loi.xlsx"
 ATTENDANCE_CSV = "diem-danh-11a2-2027-03.csv"
+ROSTER_XLSX = "danh-sach-hoc-sinh-11a9.xlsx"
+ROSTER_CLASS = "11A9"
+ROSTER_SIZE = 30
+ROSTER_SEED = 20261013  # cố định để tệp sinh lại luôn giống nhau
 
 TITLE_ROWS = 3  # hai dòng tiêu đề lớn và một dòng trống phía trên bảng, như sổ điểm xuất ra
 HEADER_LINE = TITLE_ROWS + 1
@@ -154,11 +163,11 @@ def _score_cells(scores: _Scores, config: AnalyticsConfig) -> list[Any]:
     return [*(float(v) for v in scores.tx), float(scores.gk), float(scores.ck), float(average or 0)]
 
 
-def _workbook_bytes(grid: list[list[Any]]) -> bytes:
+def _workbook_bytes(grid: list[list[Any]], title: str = "Bảng điểm") -> bytes:
     workbook = Workbook()
     sheet = workbook.active
     assert sheet is not None
-    sheet.title = "Bảng điểm"
+    sheet.title = title
     for row in grid:
         sheet.append(row)
     sheet.column_dimensions["C"].width = 28
@@ -262,6 +271,25 @@ def _csv_bytes(grid: list[list[str]]) -> bytes:
     return b"\xef\xbb\xbf" + buffer.getvalue().encode("utf-8")  # BOM để Excel mở đúng tiếng Việt
 
 
+def roster_grid() -> list[list[str]]:
+    """Danh sách lớp 11A9 (lớp mới, chưa có trong seed): mã HS1109001..HS1109030, sinh năm 2010."""
+    rng = random.Random(ROSTER_SEED)
+    grid = [["STT", "Mã HS", "Họ và tên", "Ngày sinh", "Họ tên phụ huynh", "Số điện thoại"]]
+    for number in range(1, ROSTER_SIZE + 1):
+        born = date(2010, 1, 1) + timedelta(days=rng.randrange(365))
+        grid.append(
+            [
+                str(number),
+                f"HS1109{number:03d}",
+                random_full_name(rng),
+                born.strftime("%d/%m/%Y"),
+                random_full_name(rng),
+                random_phone(rng),
+            ]
+        )
+    return grid
+
+
 def build_samples(config: AnalyticsConfig) -> dict[str, bytes]:
     """Tên tệp -> nội dung. Dữ liệu sinh với tham số mặc định (không --hold-out)."""
     data = generate(SeedParams(), config.regular_assessment_count, "khong-dung-mat-khau")
@@ -269,4 +297,5 @@ def build_samples(config: AnalyticsConfig) -> dict[str, bytes]:
         CORRECT_XLSX: _workbook_bytes(correct_score_grid(data, config)),
         FAULTY_XLSX: _workbook_bytes(faulty_score_grid(data, config)),
         ATTENDANCE_CSV: _csv_bytes(attendance_grid(data)),
+        ROSTER_XLSX: _workbook_bytes(roster_grid(), "Danh sách lớp"),
     }

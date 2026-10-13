@@ -31,6 +31,10 @@ interface ImportWizardProps {
   subjects: SubjectOption[]
   initialKind: ImportKind
   initialSubjectId: number | null
+  // Nơi "quay về" sau khi nhập xong (mặc định trang chủ) và việc cần làm sau khi xác nhận (ví dụ làm
+  // mới sĩ số lớp ở trang quản trị).
+  home?: { to: string; label: string }
+  onConfirmed?: () => void
 }
 
 interface Settings {
@@ -61,6 +65,8 @@ export function ImportWizard({
   subjects,
   initialKind,
   initialSubjectId,
+  home = { to: '/', label: 'Về trang chủ' },
+  onConfirmed,
 }: ImportWizardProps) {
   const { token } = useAuth()
   const [settings, setSettings] = useState<Settings>({
@@ -99,6 +105,7 @@ export function ImportWizard({
     onSuccess: (data) => {
       setResult(data)
       setError(null)
+      onConfirmed?.()
     },
     onError: (caught) => setError(errorText(caught)),
   })
@@ -166,11 +173,18 @@ export function ImportWizard({
           <h2 id="ket-qua-nhap" className="text-lg font-medium text-green-900">
             {result.already_confirmed ? 'Bản xem trước này đã được nhập trước đó' : 'Đã nhập xong'}
           </h2>
-          <p className="text-green-900">
-            Tạo mới <strong>{result.created}</strong> bản ghi, cập nhật{' '}
-            <strong>{result.updated}</strong> bản ghi, giữ nguyên <strong>{result.unchanged}</strong>{' '}
-            bản ghi.
-          </p>
+          {settings.kind === 'roster' ? (
+            <p className="text-green-900">
+              Đã thêm <strong>{result.created}</strong> học sinh vào lớp và cập nhật thông tin của{' '}
+              <strong>{result.updated}</strong> học sinh đã có trong lớp.
+            </p>
+          ) : (
+            <p className="text-green-900">
+              Tạo mới <strong>{result.created}</strong> bản ghi, cập nhật{' '}
+              <strong>{result.updated}</strong> bản ghi, giữ nguyên{' '}
+              <strong>{result.unchanged}</strong> bản ghi.
+            </p>
+          )}
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
@@ -179,11 +193,8 @@ export function ImportWizard({
             >
               Nhập tệp khác
             </button>
-            <Link
-              to="/"
-              className="btn-secondary"
-            >
-              Về trang chủ
+            <Link to={home.to} className="btn-secondary">
+              {home.label}
             </Link>
           </div>
         </section>
@@ -205,10 +216,16 @@ export function ImportWizard({
         className="card space-y-4 p-6"
       >
         <h2 id="chon-loai-nhap" className="text-lg font-medium">
-          Nhập dữ liệu cho lớp {className}
+          {settings.kind === 'roster'
+            ? `Nhập danh sách học sinh cho lớp ${className}`
+            : `Nhập dữ liệu cho lớp ${className}`}
         </h2>
 
-        <div role="group" aria-label="Loại dữ liệu" className="flex flex-wrap gap-2">
+        <div
+          role="group"
+          aria-label="Loại dữ liệu"
+          className={kinds.length > 1 ? 'flex flex-wrap gap-2' : 'hidden'}
+        >
           {kinds.map((kind) => (
             <button
               key={kind}
@@ -290,6 +307,17 @@ export function ImportWizard({
           </label>
         )}
 
+        {settings.kind === 'roster' && (
+          <p className="text-sm text-slate-600">
+            Tệp .xlsx hoặc .csv, mỗi dòng một học sinh, gồm cột <strong>Mã HS</strong> và{' '}
+            <strong>Họ và tên</strong> (bắt buộc), cùng <strong>Ngày sinh</strong>,{' '}
+            <strong>Họ tên phụ huynh</strong>, <strong>Số điện thoại</strong> (tuỳ chọn). Mã đã có
+            trong lớp thì được cập nhật theo tệp; ô trống không xoá thông tin cũ. Học sinh đang ở
+            lớp khác không nhập được. Quản trị viên không xem được dữ liệu học sinh đang lưu nên bản
+            xem trước chỉ nêu dòng nào mới, dòng nào cập nhật.
+          </p>
+        )}
+
         <FilePicker file={file} onPick={pickFile} disabled={busy} />
 
         {previewMutation.isPending && (
@@ -367,9 +395,10 @@ export function ImportWizard({
                 )}
                 {preview.can_confirm && preview.summary.has_changes && (
                   <p className="text-sm text-slate-600">
-                    Sẽ tạo mới {preview.summary.records_to_create} bản ghi và cập nhật{' '}
-                    {preview.summary.records_to_update} bản ghi. Chưa có gì được ghi cho tới khi bạn
-                    xác nhận.
+                    {settings.kind === 'roster'
+                      ? `Sẽ thêm ${preview.summary.records_to_create} học sinh vào lớp và cập nhật thông tin của ${preview.summary.records_to_update} học sinh đã có trong lớp.`
+                      : `Sẽ tạo mới ${preview.summary.records_to_create} bản ghi và cập nhật ${preview.summary.records_to_update} bản ghi.`}{' '}
+                    Chưa có gì được ghi cho tới khi bạn xác nhận.
                     {preview.expires_at &&
                       ` Bản xem trước hết hạn lúc ${new Date(preview.expires_at).toLocaleString('vi-VN')}.`}
                   </p>

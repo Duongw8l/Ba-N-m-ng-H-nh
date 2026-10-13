@@ -136,3 +136,33 @@ def parse_note(text: str) -> str:
     if len(text) > MAX_COMMENT_LENGTH:
         raise CellError(f"Nhận xét dài quá {MAX_COMMENT_LENGTH} ký tự.")
     return text
+
+
+_PHONE_SEPARATORS = re.compile(r"[\s.\-()]")
+
+
+def parse_phone(text: str) -> tuple[str, bool]:
+    """Số điện thoại Việt Nam: trả (số đã chuẩn hoá, có phải đã bù số 0 đầu không).
+
+    Nhận "0912 345 678", "091.234.5678", "+84 912 345 678", "84912345678". Ô số của Excel làm mất số
+    0 đầu ("912345678", hoặc "912345678.0" khi đọc ra chuỗi): 9 chữ số không bắt đầu bằng 0 được bù
+    số 0 và người dùng được báo. Kết quả luôn bắt đầu bằng 0 và dài 10 hoặc 11 chữ số.
+    """
+    stripped = text.strip()
+    # "912345678.0": Excel lưu số điện thoại dạng số; phải xử lý TRƯỚC khi bỏ dấu chấm phân cách.
+    whole = re.fullmatch(r"(\d+)\.0+", stripped)
+    cleaned = whole.group(1) if whole else _PHONE_SEPARATORS.sub("", stripped)
+    if cleaned.startswith("+84"):
+        cleaned = "0" + cleaned[3:]
+    elif cleaned.startswith("84") and len(cleaned) == 11:
+        cleaned = "0" + cleaned[2:]
+    if not cleaned.isascii() or not cleaned.isdigit():
+        raise CellError(f"'{text}' không phải là số điện thoại.")
+    padded = False
+    if len(cleaned) == 9 and not cleaned.startswith("0"):
+        cleaned, padded = "0" + cleaned, True
+    if not cleaned.startswith("0") or not 10 <= len(cleaned) <= 11:
+        raise CellError(
+            f"Số điện thoại '{text}' không hợp lệ (cần 10 hoặc 11 chữ số, bắt đầu bằng 0)."
+        )
+    return cleaned, padded

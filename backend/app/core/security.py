@@ -4,6 +4,8 @@ Dùng thư viện `bcrypt` trực tiếp (D-033). Không thuộc module nào nê
 get_current_user nằm ở app/auth/ (Giai đoạn 2).
 """
 
+import secrets
+
 import bcrypt
 
 # Hệ số chi phí: mỗi lần tăng 1 là chậm gấp đôi. 12 là mức phổ biến hiện nay (~0,25 giây).
@@ -29,3 +31,27 @@ def verify_password(plain: str, hashed: str) -> bool:
         return bcrypt.checkpw(data, hashed.encode("ascii"))
     except ValueError:
         return False
+
+
+# Bỏ các ký tự dễ nhầm khi đọc hoặc chép tay: i, l, o, I, O, 0, 1.
+_TEMP_LOWER = "abcdefghjkmnpqrstuvwxyz"
+_TEMP_UPPER = "ABCDEFGHJKLMNPQRSTUVWXYZ"
+_TEMP_DIGITS = "23456789"
+TEMPORARY_PASSWORD_LENGTH = 12
+
+
+def generate_temporary_password() -> str:
+    """Mật khẩu tạm ngẫu nhiên (`secrets`) cho tài khoản mới hoặc được đặt lại (D-097).
+
+    Luôn có chữ thường, chữ hoa và chữ số. Chỉ hiện cho Admin một lần; nơi duy nhất còn lại là
+    bản băm bcrypt.
+    """
+    alphabet = _TEMP_LOWER + _TEMP_UPPER + _TEMP_DIGITS
+    while True:
+        password = "".join(secrets.choice(alphabet) for _ in range(TEMPORARY_PASSWORD_LENGTH))
+        if (
+            any(ch in _TEMP_LOWER for ch in password)
+            and any(ch in _TEMP_UPPER for ch in password)
+            and any(ch in _TEMP_DIGITS for ch in password)
+        ):
+            return password

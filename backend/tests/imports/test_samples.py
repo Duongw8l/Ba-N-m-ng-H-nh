@@ -1,16 +1,16 @@
-"""Ba tệp mẫu trong data/samples/: khớp bộ sinh, và chạy được qua đúng kịch bản demo (DESIGN 12)."""
+"""Các tệp mẫu trong data/samples/: khớp bộ sinh, và chạy được qua kịch bản demo (DESIGN 12)."""
 
 from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
 
 import pytest
-from sqlalchemy import delete
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from app.analytics.config import load_config
 from app.classes.academic import Attendance
-from app.classes.models import ClassStudent
+from app.classes.models import ClassStudent, SchoolClass, Student
 from app.imports.parsing import read_grid
 from data.samples import build
 from tests.imports.conftest import ImportApi
@@ -30,7 +30,12 @@ def test_committed_samples_are_what_the_generator_produces_now(db_session: Sessi
     """Đổi seed mà quên chạy lại `make samples` thì test này báo (so nội dung, không so byte)."""
     fresh = build.build_samples(load_config(db_session))
 
-    assert set(fresh) == {build.CORRECT_XLSX, build.FAULTY_XLSX, build.ATTENDANCE_CSV}
+    assert set(fresh) == {
+        build.CORRECT_XLSX,
+        build.FAULTY_XLSX,
+        build.ATTENDANCE_CSV,
+        build.ROSTER_XLSX,
+    }
     for name, content in fresh.items():
         assert read_grid(name, sample_bytes(name)) == read_grid(name, content), name
 
@@ -159,3 +164,34 @@ def test_demo_scenario_hold_out_then_import_restores_the_full_year(imp: ImportAp
 
     again = upload_attendance(imp)  # nhập lại lần nữa: không có gì mới
     assert again["summary"]["new_rows"] == 0 and again["summary"]["unchanged_rows"] == 40 * 23
+
+
+def test_roster_sample_imports_into_a_new_class_and_matches_the_naming_convention(
+    imp: ImportApi,
+) -> None:
+    """Tạo lớp 11A9 mới rồi nhập tệp mẫu bằng Admin: 30 học sinh, không đụng học sinh seed."""
+    year_id = imp.session.scalar(select(SchoolClass.school_year_id).limit(1))
+    new_class = SchoolClass(school_year_id=year_id, grade_level=11, name=build.ROSTER_CLASS)
+    imp.session.add(new_class)
+    imp.session.flush()
+    students_before = imp.session.scalar(select(func.count()).select_from(Student))
+
+    preview = imp.upload(
+        "admin@example.com",
+        new_class.id,
+        "roster",
+        sample_bytes(build.ROSTER_XLSX),
+        build.ROSTER_XLSX,
+    ).json()
+
+    assert preview["missing_required"] == [] and preview["can_confirm"] is True
+    assert preview["summary"]["total_rows"] == build.ROSTER_SIZE
+    assert preview["summary"]["new_rows"] == build.ROSTER_SIZE
+    assert preview["summary"]["error_rows"] == 0 and preview["summary"]["warning_rows"] == 0
+    assert [r["student_code"] for r in preview["rows"]][:2] == ["HS1109001", "HS1109002"]
+
+    result = imp.confirm("admin@example.com", preview["job_id"]).json()
+    assert result["created"] == build.ROSTER_SIZE
+    assert imp.session.scalar(select(func.count()).select_from(Student)) == (
+        (students_before or 0) + build.ROSTER_SIZE
+    )

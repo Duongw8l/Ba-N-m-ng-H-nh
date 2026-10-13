@@ -5,6 +5,7 @@ export const KIND_LABELS: Record<ImportKind, string> = {
   assessments: 'Điểm',
   attendance: 'Điểm danh',
   conduct: 'Rèn luyện',
+  roster: 'Danh sách học sinh',
 }
 
 export const PERIOD_LABELS: Record<ConductPeriod, string> = {
@@ -30,7 +31,7 @@ const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/
 export function formatValue(field: string, value: string | null | undefined): string {
   if (value === null || value === undefined || value === '') return '—'
   if (SCORE_FIELD.test(field)) return value.replace('.', ',')
-  if (field === 'date') {
+  if (field === 'date' || field === 'date_of_birth') {
     const match = ISO_DATE.exec(value)
     return match ? `${match[3]}/${match[2]}/${match[1]}` : value
   }

@@ -44,7 +44,7 @@ make dev-fe              # terminal 2: giao diện tại http://localhost:5173
 | `make install` | Cài dependency ngoài Docker |
 | `make migrate` | `alembic upgrade head` |
 | `make seed` | Sinh dữ liệu giả lập vào DB (cần `make db` và `make migrate` trước) |
-| `make samples` | Sinh lại 3 tệp mẫu nhập dữ liệu trong `data/samples/` (cần DB đã migrate) |
+| `make samples` | Sinh lại các tệp mẫu nhập dữ liệu trong `data/samples/` (cần DB đã migrate) |
 | `make warn` | Chạy cảnh báo sớm cho cả trường (`make seed` đã tự chạy; chỉ thêm dòng mới khi nội dung đổi) |
 | `make train` | Huấn luyện lại mô hình cảnh báo sớm (2 đến 3 phút, dùng database tạm), ghi `backend/ml/models/` và `backend/ml/REPORT.md` |
 | `make regulations` | Nạp văn bản quy định trong `data/regulations/` (tách Điều/Khoản, tính vector); văn bản đã nạp thì bỏ qua |
@@ -72,7 +72,7 @@ Mật khẩu dev dùng chung cho mọi tài khoản (chỉ dành cho môi trư�
 
 | Vai trò | Email | Ghi chú |
 | --- | --- | --- |
-| Admin | `admin@example.com` | cấu hình hệ thống |
+| Admin | `admin@example.com` | cấu hình hệ thống: tài khoản, năm học, lớp, phân công, danh sách học sinh, văn bản quy định (không xem điểm hay danh sách học sinh) |
 | Ban giám hiệu | `bgh1@example.com`, `bgh2@example.com` | toàn trường |
 | GVCN (chỉ chủ nhiệm) | `gvcn.10a2@example.com`, `gvcn.10a3@example.com`, ... `gvcn.12a3@example.com` | một người cho mỗi lớp từ A2 |
 | GVBM | `gv.<môn>.<khối>@example.com`, ví dụ `gv.van.11@example.com`, `gv.ly.12@example.com` | một giáo viên cho mỗi cặp môn-khối, dạy mọi lớp của khối có học môn đó |
@@ -101,8 +101,22 @@ Giao diện tiếng Việt, số kiểu `6,5`. Thanh bên trái (thu gọn đư�
 | `/assistant` | GVBM, GVCN, BGH | Trợ lý AI (cùng khung chat với nút nổi "Hỏi Trợ lý AI" ở mọi màn hình); Admin không dùng |
 | `/reports` | Mọi vai trò | Khung Nhận xét & báo cáo (nối API ở Giai đoạn 9) |
 | `/admin/regulations` | Admin | Quản lý văn bản quy định: danh sách, tải lên, đánh dấu hết hiệu lực / bật lại, thử tìm (mục "Văn bản quy định") |
+| `/admin/users` | Admin | Tài khoản: danh sách có lọc, tạo (mật khẩu tạm hiện một lần), sửa tên / email / vai trò, đặt lại mật khẩu, khoá / mở khoá (mục "Quản trị") |
+| `/admin/school` | Admin | Năm học (một năm duy nhất), các lớp theo khối, giáo viên chủ nhiệm, thêm / xoá lớp trống |
+| `/admin/classes/{id}` | Admin | Quản trị một lớp: phân công giảng dạy (có sao chép từ lớp cùng khối), nhập danh sách học sinh từ Excel/CSV, gỡ học sinh nhập nhầm theo mã |
+| `/account/password` | Mọi vai trò | Tự đổi mật khẩu (menu người dùng › Đổi mật khẩu) |
 
 Id lớp và học sinh xem ở mục tài khoản dev (lớp 11A2 có id 5, môn Toán có id 2). Hồ sơ học sinh qua API: `GET /api/v1/classes/{id}/students/{student_id}/profile?semester=1|2|year`; GVBM nhận hồ sơ chỉ có các môn mình dạy.
+
+## Quản trị (Admin)
+
+Chức năng của Admin (D-096 đến D-101). **Admin không xem điểm hay danh sách học sinh** (D-039): các màn hình chỉ có số đếm (sĩ số, số môn đã phân công), và gỡ học sinh theo mã gõ vào.
+
+- **Tài khoản**: không xoá, chỉ **khoá** (tài khoản bị khoá không đăng nhập được và phiên đang mở bị từ chối ở yêu cầu kế tiếp). Tạo mới hoặc đặt lại mật khẩu thì hệ thống sinh mật khẩu tạm 12 ký tự, **chỉ hiện một lần** (không lưu bản đọc được, không ghi nhật ký); người dùng tự đổi ở menu người dùng. Admin không tự khoá hay hạ quyền chính mình, nên luôn còn ít nhất một Admin; giáo viên còn chủ nhiệm hoặc phân công thì chưa đổi sang vai trò khác được.
+- **Năm học và lớp**: chỉ **một năm học** (code hiện không có "năm hiện hành", D-098). Tên lớp bắt đầu bằng số khối (ví dụ `11A9`); mỗi giáo viên chỉ chủ nhiệm một lớp; chỉ xoá được lớp chưa có học sinh và phân công. Đổi ngày năm học bị từ chối nếu có điểm danh nằm ngoài khoảng mới.
+- **Phân công**: môn của lớp chính là các dòng phân công, nên lớp mới tạo phải được phân công thì giáo viên bộ môn mới nhập được điểm. Gỡ phân công bị từ chối khi lớp đã có điểm môn đó (chỉ đổi giáo viên).
+- **Nhập danh sách học sinh** (`kind=roster`, chỉ Admin): cột `Mã HS`, `Họ và tên` bắt buộc; `Ngày sinh`, `Họ tên phụ huynh`, `Số điện thoại` tuỳ chọn. Mã đã có trong lớp thì cập nhật theo tệp (ô trống không xoá thông tin cũ); học sinh đang ở lớp khác thì báo lỗi. Bản xem trước **không hiện thông tin cũ**. Tệp mẫu: `data/samples/danh-sach-hoc-sinh-11a9.xlsx` (tạo lớp 11A9 trước).
+- **Thử nhanh**: đăng nhập `admin@example.com`, vào "Năm học & lớp", thêm lớp `11A9` với một giáo viên chưa chủ nhiệm lớp nào (tạo ở "Tài khoản" trước), "Quản lý" lớp đó, gán Toán hoặc sao chép phân công từ 11A1, rồi nhập tệp mẫu. API: Swagger `/api/docs`, nhóm `admin`. Dọn dữ liệu thử bằng `make seed`.
 
 ## Cảnh báo sớm
 
@@ -130,7 +144,7 @@ Giai đoạn 4: giáo viên nhập tệp `.xlsx` hoặc `.csv` (UTF-8) xuất t�
 
 - **Ai nhập được:** điểm chỉ do giáo viên được phân công đúng lớp-môn; điểm danh và rèn luyện chỉ do GVCN của lớp. Ban giám hiệu và Admin xem được nhưng không nhập.
 - **API** (xem Swagger): `POST /api/v1/classes/{id}/import/{assessments|attendance|conduct}` (multipart, trả bản xem trước), `POST /api/v1/imports/{job_id}/confirm` (ghi dữ liệu), `GET /api/v1/imports/mappings` (mẫu chọn cột đã lưu). Nhập lại cùng tệp không nhân đôi dữ liệu; ô trống không xoá điểm đã có; bản xem trước hết hạn sau 24 giờ.
-- **Tệp mẫu** (`data/samples/`, cột và kịch bản thử xem [data/samples/README.md](data/samples/README.md)): `diem-toan-11a2-hk1.xlsx` (đúng), `diem-toan-11a2-hk1-loi.xlsx` (có lỗi cài sẵn), `diem-danh-11a2-2027-03.csv`.
+- **Tệp mẫu** (`data/samples/`, cột và kịch bản thử xem [data/samples/README.md](data/samples/README.md)): `diem-toan-11a2-hk1.xlsx` (đúng), `diem-toan-11a2-hk1-loi.xlsx` (có lỗi cài sẵn), `diem-danh-11a2-2027-03.csv`, `danh-sach-hoc-sinh-11a9.xlsx` (danh sách lớp mới cho Admin, xem mục "Quản trị (Admin)").
 - **Kịch bản demo "GVCN nhập tệp điểm danh tháng mới":** `make seed SEED_ARGS="--hold-out 2027-03"`, đăng nhập `gvcn.11a2@example.com`, nhập `diem-danh-11a2-2027-03.csv` cho lớp 11A2: 920 dòng mới, số buổi nghỉ của em An (`HS1102001`) từ 34 lên 38. Chạy `make seed` không tham số để về dữ liệu đầy đủ.
 - Tệp tối đa 5 MB, 20.000 dòng, 60 cột. Giới hạn dung lượng thật khi triển khai cần đặt thêm ở reverse proxy (Giai đoạn 11).
 

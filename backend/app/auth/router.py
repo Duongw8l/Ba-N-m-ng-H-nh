@@ -1,11 +1,15 @@
-"""POST /api/v1/auth/login.
+"""POST /api/v1/auth/login và POST /api/v1/auth/change-password.
 
-NGOẠI LỆ nguyên tắc 4 của CLAUDE.md: endpoint công khai, không qua authorize() vì chưa có phiên.
-Chỉ trả token và thông tin của chính người đăng nhập. Xem docs/DECISIONS.md (D-042).
+NGOẠI LỆ nguyên tắc 4 của CLAUDE.md: `login` công khai, không qua authorize() vì chưa có phiên;
+chỉ trả token và thông tin của chính người đăng nhập (D-042). `change-password` chỉ đụng tài khoản
+của chính người gọi, không có phạm vi lớp/môn nào để kiểm (D-097).
 """
 
 from fastapi import APIRouter, HTTPException, status
 
+from app.auth import admin_service
+from app.auth.admin_schemas import ChangePasswordIn, MessageOut
+from app.auth.deps import CurrentUser
 from app.auth.schemas import LoginRequest, LoginResponse, UserOut
 from app.auth.service import authenticate
 from app.auth.tokens import create_access_token
@@ -28,3 +32,23 @@ def login(body: LoginRequest, session: DbSession) -> LoginResponse:
     return LoginResponse(
         access_token=token, expires_in=expires_in, user=UserOut.model_validate(user)
     )
+
+
+@router.post(
+    "/change-password",
+    response_model=MessageOut,
+    summary="Đổi mật khẩu của chính mình (mọi vai trò)",
+)
+def change_password(body: ChangePasswordIn, user: CurrentUser, session: DbSession) -> MessageOut:
+    try:
+        admin_service.change_password(session, user, body)
+    except admin_service.WrongPassword:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Mật khẩu hiện tại không đúng."
+        ) from None
+    except admin_service.PasswordUnchanged:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Mật khẩu mới phải khác mật khẩu hiện tại.",
+        ) from None
+    return MessageOut(detail="Đã đổi mật khẩu.")

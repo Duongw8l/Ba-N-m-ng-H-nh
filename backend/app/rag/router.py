@@ -13,9 +13,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 
-from app.auth.deps import CurrentUser
-from app.auth.models import User
-from app.core.authorize import authorize_admin
+from app.auth.deps import AdminUser, CurrentUser
 from app.core.db import DbSession
 from app.core.labels import label_vi
 from app.rag import repository as repo
@@ -36,15 +34,6 @@ def get_embedder_dependency() -> Embedder:
 
 
 EmbedderDep = Annotated[Embedder, Depends(get_embedder_dependency)]
-
-
-def _require_admin(user: CurrentUser) -> User:
-    authorize_admin(user)
-    return user
-
-
-# 401 (chưa đăng nhập) rồi tới 403 (không phải Admin), cả hai trước khi kiểm hình dạng yêu cầu.
-AdminUser = Annotated[User, Depends(_require_admin)]
 
 
 def _document_out(row: repo.DocumentRow) -> DocumentOut:

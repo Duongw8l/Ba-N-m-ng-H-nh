@@ -14,7 +14,8 @@ from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile, sta
 
 from app.analytics import repository as analytics_repo
 from app.auth.deps import CurrentUser
-from app.core.authorize import authorize_write
+from app.classes.service import class_exists
+from app.core.authorize import authorize_admin, authorize_write
 from app.core.db import DbSession
 from app.core.enums import ConductPeriod, ImportKind
 from app.imports import hooks, mappings, service
@@ -45,7 +46,10 @@ def _parse_mapping(raw: str | None) -> dict[str, str | None] | None:
 @router.post(
     "/classes/{class_id}/import/{kind}",
     response_model=PreviewOut,
-    summary="Tải tệp điểm, điểm danh hoặc rèn luyện và xem trước (chưa ghi dữ liệu)",
+    summary=(
+        "Tải tệp điểm, điểm danh, rèn luyện hoặc danh sách học sinh (roster, chỉ Admin) "
+        "và xem trước (chưa ghi dữ liệu)"
+    ),
 )
 def import_preview(
     class_id: int,
@@ -70,12 +74,18 @@ def import_preview(
     if kind is ImportKind.CONDUCT and period is None:
         raise _bad_request("Nhập rèn luyện cần period (hk1, hk2 hoặc year).")
 
-    authorize_write(
-        session,
-        user,
-        class_id=class_id,
-        subject_id=subject_id if kind is ImportKind.ASSESSMENTS else None,
-    )
+    if kind is ImportKind.ROSTER:
+        # Danh sách học sinh: chỉ Admin (D-100). Kiểm quyền trước, rồi mới tới lớp có thật không.
+        authorize_admin(user)
+        if not class_exists(session, class_id):
+            raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Không có lớp này.")
+    else:
+        authorize_write(
+            session,
+            user,
+            class_id=class_id,
+            subject_id=subject_id if kind is ImportKind.ASSESSMENTS else None,
+        )
 
     subject = None
     if kind is ImportKind.ASSESSMENTS:

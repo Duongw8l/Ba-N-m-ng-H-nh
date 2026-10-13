@@ -4,7 +4,7 @@ teaching_assignments và classes.homeroom_teacher_id (xem docs/DESIGN.md mục 2
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, func, text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, func, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -24,6 +24,9 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255))
     full_name: Mapped[str] = mapped_column(String(100))
     role: Mapped[UserRole] = mapped_column(enum_type(UserRole, "role"))
+    # Tài khoản bị khoá không đăng nhập được và token cũ nhận 401 ngay (D-096); không xoá tài khoản
+    # vì điểm, nhật ký, phân công còn tham chiếu tới người dùng.
+    is_active: Mapped[bool] = mapped_column(Boolean, server_default=text("true"))
 
 
 class AuditLog(Base):

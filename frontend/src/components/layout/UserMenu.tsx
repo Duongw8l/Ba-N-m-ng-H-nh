@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import type { AuthUser } from '../../api/auth'
 import { initialsOf } from '../../lib/initials'
 import { Icon } from '../Icon'
@@ -62,6 +63,15 @@ export function UserMenu({ user, roleLabel, onLogout }: UserMenuProps) {
             <span className="badge-info mt-2">{roleLabel}</span>
           </div>
           <div className="my-1 border-t border-slate-100" />
+          <Link
+            to="/account/password"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+          >
+            <Icon name="lock" className="h-4 w-4" />
+            Đổi mật khẩu
+          </Link>
           <button
             type="button"
             role="menuitem"

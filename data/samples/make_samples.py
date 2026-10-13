@@ -1,4 +1,4 @@
-"""Sinh lại ba tệp mẫu trong data/samples/, thường gọi qua `make samples`.
+"""Sinh lại các tệp mẫu trong data/samples/, thường gọi qua `make samples`.
 
 Cú pháp: `python data/samples/make_samples.py`. Chạy từ thư mục nào cũng được. Cần DB đã migrate
 (make db, make migrate) vì hệ số tính ĐTB đọc từ bảng settings; không cần đã seed.

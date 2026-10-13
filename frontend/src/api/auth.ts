@@ -45,3 +45,14 @@ export function login(email: string, password: string): Promise<LoginResponse> {
 export function fetchAssignments(signal?: AbortSignal): Promise<Assignments> {
   return apiGet<Assignments>('/me/assignments', signal)
 }
+
+// Tự đổi mật khẩu của chính mình (mọi vai trò). Back-end trả {detail} khi xong.
+export function changePassword(
+  currentPassword: string,
+  newPassword: string,
+): Promise<{ detail: string }> {
+  return apiPost<{ detail: string }>('/auth/change-password', {
+    current_password: currentPassword,
+    new_password: newPassword,
+  })
+}

@@ -42,7 +42,7 @@ async function errorMessage(response: Response): Promise<string> {
 }
 
 async function request<T>(
-  method: 'GET' | 'POST' | 'PATCH',
+  method: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE',
   path: string,
   body: unknown,
   options: RequestOptions,
@@ -77,6 +77,15 @@ export function apiPost<T>(path: string, body: unknown, options: RequestOptions 
 
 export function apiPatch<T>(path: string, body: unknown): Promise<T> {
   return request<T>('PATCH', path, body, {})
+}
+
+export function apiPut<T>(path: string, body: unknown): Promise<T> {
+  return request<T>('PUT', path, body, {})
+}
+
+// Back-end luôn trả JSON cho cả yêu cầu xoá (thông điệp hoặc dữ liệu mới), nên đọc như các yêu cầu khác.
+export function apiDelete<T>(path: string): Promise<T> {
+  return request<T>('DELETE', path, undefined, {})
 }
 
 // Tải tệp lên (multipart/form-data).

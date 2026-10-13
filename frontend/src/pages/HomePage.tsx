@@ -20,6 +20,58 @@ function Notice({ icon = 'info', children }: { icon?: 'info' | 'book'; children:
   )
 }
 
+const ADMIN_SHORTCUTS: { to: string; icon: 'users' | 'layers' | 'book'; title: string; text: string }[] = [
+  {
+    to: '/admin/users',
+    icon: 'users',
+    title: 'Tài khoản',
+    text: 'Tạo tài khoản giáo viên, Ban giám hiệu; đặt lại mật khẩu, khoá và mở khoá.',
+  },
+  {
+    to: '/admin/school',
+    icon: 'layers',
+    title: 'Năm học & lớp',
+    text: 'Năm học, các lớp, giáo viên chủ nhiệm; vào từng lớp để phân công và nhập danh sách học sinh.',
+  },
+  {
+    to: '/admin/regulations',
+    icon: 'book',
+    title: 'Văn bản quy định',
+    text: 'Thông tư 22, quy chế thi, nội quy... mà Trợ lý AI được phép trích dẫn.',
+  },
+]
+
+// Lối tắt của Admin tới các việc cấu hình. Quản trị viên không xem điểm hay danh sách học sinh.
+function AdminShortcuts() {
+  return (
+    <section aria-labelledby="quan-tri" className="space-y-3">
+      <h2 id="quan-tri" className="text-base font-semibold tracking-tight">
+        Quản trị hệ thống
+      </h2>
+      <div className="grid gap-4 md:grid-cols-3">
+        {ADMIN_SHORTCUTS.map((item) => (
+          <Link
+            key={item.to}
+            to={item.to}
+            className="card flex items-start gap-4 p-5 transition-shadow hover:shadow-pop"
+          >
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-tint text-brand-700 dark:text-brand-300">
+              <Icon name={item.icon} />
+            </span>
+            <span>
+              <span className="block font-semibold">{item.title}</span>
+              <span className="mt-1 block text-sm text-slate-500">{item.text}</span>
+            </span>
+          </Link>
+        ))}
+      </div>
+      <p className="text-sm text-slate-500">
+        Quản trị viên không xem điểm hay danh sách học sinh.
+      </p>
+    </section>
+  )
+}
+
 const TODAY = new Intl.DateTimeFormat('vi-VN', {
   weekday: 'long',
   day: 'numeric',
@@ -67,20 +119,7 @@ export default function HomePage() {
             )}
             {data.teaching.length > 0 && <TeachingTable items={data.teaching} />}
 
-            {role === 'admin' && (
-              <>
-                <Notice>
-                  Tài khoản quản trị: các chức năng cấu hình khác (năm học, lớp, phân công, tài
-                  khoản) sẽ có ở bản sau. Quản trị viên không xem điểm hay danh sách học sinh.
-                </Notice>
-                <Notice icon="book">
-                  <Link to="/admin/regulations" className="link">
-                    Quản lý văn bản quy định
-                  </Link>{' '}
-                  (Thông tư 22, quy chế thi, nội quy...) mà Trợ lý AI được phép trích dẫn.
-                </Notice>
-              </>
-            )}
+            {role === 'admin' && <AdminShortcuts />}
             {role === 'teacher' && nothingAssigned && (
               <Notice>Bạn chưa được phân công lớp hay môn nào. Hãy liên hệ giáo vụ.</Notice>
             )}

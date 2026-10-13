@@ -113,6 +113,58 @@ CONDUCT_FIELDS = [
 ]
 
 
+# Nhập danh sách học sinh của một lớp (Admin, D-100). Họ tên bắt buộc (khác các loại nhập khác, nơi
+# học sinh đã có sẵn trong hệ thống nên cột tên chỉ để đối chiếu).
+ROSTER_FIELDS = [
+    STUDENT_CODE,
+    FieldSpec(
+        "full_name",
+        "Họ và tên",
+        frozenset({"hovaten", "hoten", "tenhocsinh", "hotenhocsinh", "fullname", "ten"}),
+    ),
+    FieldSpec(
+        "date_of_birth",
+        "Ngày sinh",
+        frozenset({"ngaysinh", "ns", "dateofbirth", "dob", "sinhngay", "ngaythangnamsinh"}),
+        required=False,
+    ),
+    FieldSpec(
+        "guardian_name",
+        "Họ tên phụ huynh",
+        frozenset(
+            {
+                "hotenphuhuynh",
+                "tenphuhuynh",
+                "phuhuynh",
+                "nguoigiamho",
+                "hotennguoigiamho",
+                "guardian",
+                "guardianname",
+            }
+        ),
+        required=False,
+    ),
+    FieldSpec(
+        "guardian_phone",
+        "Số điện thoại phụ huynh",
+        frozenset(
+            {
+                "sdt",
+                "sodienthoai",
+                "dienthoai",
+                "sdtphuhuynh",
+                "sodienthoaiphuhuynh",
+                "dienthoaiphuhuynh",
+                "guardianphone",
+                "phone",
+                "sodt",
+            }
+        ),
+        required=False,
+    ),
+]
+
+
 @dataclass(frozen=True)
 class MappingResolution:
     mapping: dict[str, str | None]  # trường -> tên cột trong tệp (None: chưa có)
@@ -206,6 +258,8 @@ def fields_for(
         return ATTENDANCE_FIELDS
     if kind is ImportKind.CONDUCT:
         return CONDUCT_FIELDS
+    if kind is ImportKind.ROSTER:
+        return ROSTER_FIELDS
     if is_comment_subject:
         return comment_subject_fields(allow_partial=allow_partial)
     return score_fields(tx_required, allow_partial=allow_partial)

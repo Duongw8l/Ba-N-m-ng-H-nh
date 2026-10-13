@@ -22,6 +22,7 @@ from app.core.enums import (
     ImportKind,
 )
 from app.imports.models import ImportJob
+from app.imports.roster import write_roster
 
 CHUNK = 1000
 INSERTED = literal_column("(xmax = 0)")  # True khi dòng vừa được chèn, False khi bị ghi đè
@@ -121,4 +122,6 @@ def write_job(session: Session, job: ImportJob) -> tuple[int, int]:
         return _write_assessments(session, job)
     if job.kind is ImportKind.ATTENDANCE:
         return _write_attendance(session, job)
+    if job.kind is ImportKind.ROSTER:
+        return write_roster(session, job)
     return _write_conduct(session, job)
