@@ -15,7 +15,7 @@ Cập nhật lần cuối: 2026-10-13 (Giai đoạn 9). Tên và thứ tự giai
 | 6 | Cảnh báo sớm (luật + ML) | Xong, đã commit `f5a021f` (dữ liệu huấn luyện là giả lập; xem bên dưới) |
 | 7 | RAG văn bản quy định | Xong, đã commit `517998f` (ngưỡng tìm kiếm chưa tách chắc hai nhóm câu hỏi, Hit@4 6/8 trên bộ kiểm; chưa thử với văn bản thật; xem bên dưới) |
 | 8 | Trợ lý AI gọi hàm | Xong, đã commit `9f911cf` (đo bằng Gemini gói miễn phí, mẫu 15 câu, chia nhiều mô hình; chưa thử Claude/Ollama; xem bên dưới) |
-| 9 | Nhận xét và báo cáo | Xong, chưa commit (đã chạy thật với Gemini gói miễn phí; chưa có giáo viên chấm chất lượng; xem bên dưới) |
+| 9 | Nhận xét và báo cáo | Xong, đã commit `7af1220` và push (đã chạy thật với Gemini gói miễn phí; chưa có giáo viên chấm chất lượng; xem bên dưới) |
 | — | Giao diện v2 (thiết kế lại toàn bộ giao diện) | Xong, đã commit `479e486` (chưa thử ngoài Chrome; xem mục riêng) |
 | — | Chức năng Admin (tài khoản, năm học, lớp, phân công, nhập danh sách học sinh) | Xong, đã commit `2eb8947` và push (chưa thử với tệp thật của trường; xem mục cuối) |
 | 10 | Đánh giá AI | Chưa làm |
