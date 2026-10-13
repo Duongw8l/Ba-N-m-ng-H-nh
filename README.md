@@ -99,7 +99,7 @@ Giao diện tiếng Việt, số kiểu `6,5`. Thanh bên trái (thu gọn đư�
 | `/grades/{level}` | BGH | So sánh các lớp trong khối, học kỳ I cạnh học kỳ II |
 | `/classes/{id}/import` | GVBM, GVCN | Nhập dữ liệu từ tệp (mục bên dưới) |
 | `/assistant` | GVBM, GVCN, BGH | Trợ lý AI (cùng khung chat với nút nổi "Hỏi Trợ lý AI" ở mọi màn hình); Admin không dùng |
-| `/reports` | Mọi vai trò | Khung Nhận xét & báo cáo (nối API ở Giai đoạn 9) |
+| `/reports` | GVBM, GVCN, BGH | Nhận xét & báo cáo do AI viết: sinh cả lớp (chạy nền, có tiến độ), sửa từng em, duyệt, xuất PDF (mục "Nhận xét và báo cáo"); Admin không dùng |
 | `/admin/regulations` | Admin | Quản lý văn bản quy định: danh sách, tải lên, đánh dấu hết hiệu lực / bật lại, thử tìm (mục "Văn bản quy định") |
 | `/admin/users` | Admin | Tài khoản: danh sách có lọc, tạo (mật khẩu tạm hiện một lần), sửa tên / email / vai trò, đặt lại mật khẩu, khoá / mở khoá (mục "Quản trị") |
 | `/admin/school` | Admin | Năm học (một năm duy nhất), các lớp theo khối, giáo viên chủ nhiệm, thêm / xoá lớp trống |
@@ -137,6 +137,25 @@ Giai đoạn 8: giáo viên và BGH hỏi bằng tiếng Việt (nút nổi **H�
 - **Phân quyền:** mỗi hàm qua `authorize()`; lớp, môn, kỳ của màn hình đang mở là mặc định, giá trị LLM tự điền vẫn phải qua `authorize()` (ngoài quyền thì bị chặn và trợ lý báo không có quyền). GVBM chỉ hỏi được môn mình dạy; Admin không dùng trợ lý.
 - **API** (xem Swagger): `POST /api/v1/assistant/chat` (`question`, và tuỳ chọn `class_id`, `subject_id`, `semester` của màn hình đang mở), `PATCH /api/v1/assistant/logs/{id}/feedback` (`correct` hoặc `incorrect`, chỉ người đã hỏi). Mỗi câu hỏi độc lập, trợ lý không nhớ các câu trước.
 - **Thử không cần khoá API:** `make test` dùng LLM giả. Để thử bằng LLM thật điền khoá vào `.env`, `make up`, đăng nhập `gvcn.11a2@example.com`, mở lớp 11A2 và hỏi "Vì sao em An bị cảnh báo?". Đo chất lượng: `make eval-assistant`.
+
+## Nhận xét và báo cáo
+
+Giai đoạn 9 (D-102 đến D-109): AI viết **bản nháp**, giáo viên đọc, sửa và **duyệt**; chỉ bản đã duyệt mới xuất được PDF. Màn hình `/reports` (mở từ thanh bên, hoặc nút "Tạo nhận xét" ở hồ sơ học sinh).
+
+| Loại | Ai viết và duyệt | Nội dung |
+| --- | --- | --- |
+| Nhận xét môn | GVBM dạy đúng lớp-môn | Điểm các đầu điểm và ĐTB học kỳ của một môn, không có điểm trung bình lớp |
+| Nhận xét học bạ | GVCN của lớp | Mức học tập, rèn luyện, ĐTB các môn, chuyên cần |
+| Phiếu liên lạc | GVCN của lớp | Như học bạ, thêm lời gửi phụ huynh, bảng điểm; xuất PDF có tên trường, lớp, học kỳ |
+| Báo cáo lớp | GVCN của lớp hoặc BGH | Số liệu tổng hợp của lớp, không nêu tên học sinh |
+| Báo cáo khối | BGH | So sánh các lớp trong khối |
+
+- **Sinh cả lớp** chạy nền: bấm "Sinh nhận xét cả lớp", đóng trang cũng được. Mỗi lần gọi AI viết tối đa 5 em để tiết kiệm yêu cầu (gói Gemini miễn phí chỉ 20 yêu cầu mỗi ngày mỗi mô hình; đo thật: 40 em trong khoảng 74 giây, khoảng 13 yêu cầu). Hết hạn mức giữa chừng thì dừng, giữ phần đã viết; bấm "Tiếp tục" để viết phần còn thiếu.
+- **Kiểm tự động trước khi lưu nháp:** mọi con số phải có trong dữ liệu hệ thống; không có từ gắn nhãn tiêu cực, so sánh với bạn khác hay nhắc hoàn cảnh gia đình ([backend/app/reports/banned_words.txt](backend/app/reports/banned_words.txt), nhà trường bổ sung dần); không có tên hay mã học sinh. Không đạt thì AI viết lại tối đa 2 lần, vẫn không đạt thì để trống cho giáo viên tự viết ("Cần tự viết"). Văn bản giáo viên sửa không bị chặn nhưng hiện cảnh báo nếu có vấn đề.
+- **Riêng tư:** AI nhận số liệu của từng em dưới mã tạm `HS_01`...; không nhận họ tên, mã, ngày sinh, thông tin phụ huynh, cảnh báo sớm hay điều kiện lên lớp; nhận xét gọi học sinh là "em". Họ tên và tên phụ huynh chỉ xuất hiện trong PDF, lấy từ cơ sở dữ liệu.
+- **Cấu hình:** `SCHOOL_NAME` trong `.env` là tên trường in ở đầu PDF (mặc định "Trường THPT (chưa đặt tên)"). LLM cấu hình như Trợ lý AI (mục trên). PDF dùng `reportlab` và phông Noto Sans (giấy phép OFL, đã cắt còn Latin và tiếng Việt) nằm sẵn trong `backend/app/reports/assets/`, không cần thư viện hệ thống.
+- **Thử nhanh:** đăng nhập `gvcn.11a2@example.com`, `/reports`, chọn "Phiếu liên lạc", "Sinh nhận xét cả lớp", mở em An, sửa, "Duyệt", "Xuất PDF". Cần `LLM_PROVIDER` và khoá trong `.env`; không có thì trang báo "chưa được cấu hình" (HTTP 503). Test dùng LLM giả nên không cần khoá. Dọn dữ liệu thử: xoá các dòng của bảng `reports` và `report_jobs`.
+- **API** (xem Swagger, nhóm `reports`): `POST /reports` (một em hoặc báo cáo: 201; cả lớp: 202 kèm công việc), `GET /reports` (danh sách và tiến độ), `PUT /reports/{id}` (sửa và/hoặc duyệt), `POST /reports/{id}/regenerate`, `GET /reports/{id}/export?format=pdf`, `GET /reports/jobs/{id}`.
 
 ## Nhập điểm, điểm danh, rèn luyện từ tệp
 

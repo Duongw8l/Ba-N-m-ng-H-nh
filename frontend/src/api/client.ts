@@ -92,3 +92,24 @@ export function apiDelete<T>(path: string): Promise<T> {
 export function apiUpload<T>(path: string, form: FormData): Promise<T> {
   return request<T>('POST', path, form, {})
 }
+
+export interface Download {
+  blob: Blob
+  filename: string
+}
+
+// Tải một tệp (ví dụ PDF) về. Phải đi qua fetch có kèm token (không mở bằng liên kết thường vì
+// liên kết không mang tiêu đề Authorization).
+export async function apiDownload(path: string, fallbackName: string): Promise<Download> {
+  const token = getToken()
+  const response = await fetch(`${API_BASE}${path}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  })
+  if (!response.ok) {
+    if (response.status === 401 && token) onUnauthorized?.()
+    throw new ApiError(response.status, await errorMessage(response))
+  }
+  const disposition = response.headers.get('Content-Disposition') ?? ''
+  const filename = /filename="([^"]+)"/.exec(disposition)?.[1] ?? fallbackName
+  return { blob: await response.blob(), filename }
+}

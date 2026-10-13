@@ -86,6 +86,7 @@ class ReportScope(StrEnum):
 
 
 class ReportType(StrEnum):
+    SUBJECT_COMMENT = "subject_comment"  # nhận xét môn của GVBM (D-102)
     SCHOOL_RECORD = "school_record"  # học bạ
     CONTACT_SLIP = "contact_slip"  # phiếu liên lạc
     REPORT = "report"  # báo cáo
@@ -94,6 +95,12 @@ class ReportType(StrEnum):
 class ReportStatus(StrEnum):
     DRAFT = "draft"  # mọi bản AI sinh ra bắt đầu ở đây (nguyên tắc 6)
     APPROVED = "approved"
+
+
+class ReportJobStatus(StrEnum):
+    RUNNING = "running"
+    DONE = "done"  # đã xử lý hết mọi em của lớp
+    STOPPED = "stopped"  # dừng giữa chừng (lỗi LLM, hết hạn mức, mất luồng khi khởi động lại)
 
 
 class AuditAction(StrEnum):
@@ -119,6 +126,12 @@ class AuditAction(StrEnum):
     SET_ASSIGNMENT = "set_assignment"  # gán hoặc đổi giáo viên của một cặp lớp-môn
     REMOVE_ASSIGNMENT = "remove_assignment"
     REMOVE_CLASS_STUDENT = "remove_class_student"  # gỡ một học sinh khỏi lớp
+    # Nhận xét và báo cáo (Giai đoạn 9, D-102 trở đi). `details` không chứa văn bản nhận xét.
+    GENERATE_REPORT = "generate_report"  # sinh bản nháp (một em, cả lớp, báo cáo lớp / khối)
+    EDIT_REPORT = "edit_report"  # giáo viên sửa văn bản
+    APPROVE_REPORT = "approve_report"
+    EXPORT_REPORT = "export_report"  # xuất PDF bản đã duyệt
+    VIEW_CLASS_REPORTS = "view_class_reports"  # danh sách bản nháp kèm học sinh của lớp
 
 
 class ImportKind(StrEnum):

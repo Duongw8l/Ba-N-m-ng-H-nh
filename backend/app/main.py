@@ -11,6 +11,7 @@ from app.core.config import get_settings
 from app.core.health import router as health_router
 from app.imports.router import router as imports_router
 from app.rag.router import router as rag_router
+from app.reports.router import router as reports_router
 from app.warning.router import router as warning_router
 
 API_PREFIX = "/api/v1"
@@ -40,6 +41,7 @@ def create_app() -> FastAPI:
     app.include_router(warning_router, prefix=API_PREFIX)
     app.include_router(rag_router, prefix=API_PREFIX)
     app.include_router(assistant_router, prefix=API_PREFIX)
+    app.include_router(reports_router, prefix=API_PREFIX)
     return app
 
 

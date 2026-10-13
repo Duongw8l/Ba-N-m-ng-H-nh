@@ -1,0 +1,109 @@
+# Cụm từ không được xuất hiện trong nhận xét do AI viết (Giai đoạn 9, D-105).
+#
+# - Mỗi dòng một cụm từ; dòng bắt đầu bằng # và dòng trống bị bỏ qua.
+# - Dòng dạng [ten_nhom] mở một nhóm. Ba nhóm: tieu_cuc, so_sanh, gia_dinh.
+# - Khớp không phân biệt hoa thường, theo ranh giới từ ("lười" không khớp "lưỡi").
+# - tieu_cuc kiểm cho mọi loại nhận xét và báo cáo. so_sanh và gia_dinh chỉ kiểm cho nhận xét
+#   học sinh (báo cáo khối so sánh các lớp là đúng mục đích).
+# - Đây là danh sách khởi đầu, không đầy đủ: nhà trường bổ sung dần. Thêm cụm vào đây là xong,
+#   không phải sửa mã. Cụm càng dài càng ít khớp nhầm; tránh từ đơn hay gặp trong câu bình thường.
+
+[tieu_cuc]
+học yếu
+học kém
+học lực yếu
+học lực kém
+yếu kém
+kém cỏi
+kết quả kém
+rất kém
+quá kém
+lười
+lười biếng
+lười nhác
+ngu
+ngu dốt
+dốt
+đần
+chậm hiểu
+chậm tiến
+tiếp thu kém
+kém thông minh
+cá biệt
+hư hỏng
+quậy phá
+ngỗ nghịch
+bướng bỉnh
+hỗn láo
+vô kỷ luật
+vô ý thức
+thiếu ý thức
+không có ý thức
+vô dụng
+thất bại
+
+[so_sanh]
+hơn bạn
+kém bạn
+hơn các bạn
+kém các bạn
+thua bạn
+thua các bạn
+chưa bằng bạn
+chưa bằng các bạn
+bằng các bạn
+so với bạn
+so với các bạn
+so với bạn bè
+so với những bạn
+so với cả lớp
+so với lớp
+so với mặt bằng chung
+so với các em khác
+so với các em
+hơn các em
+kém các em
+các bạn khác
+bạn khác
+các em khác
+em khác
+mặt bằng chung
+xếp thứ
+xếp hạng
+đứng thứ
+đứng đầu lớp
+đứng cuối lớp
+dẫn đầu lớp
+nhất lớp
+cao nhất lớp
+thấp nhất lớp
+điểm trung bình của lớp
+điểm trung bình lớp
+trung bình của lớp
+
+[gia_dinh]
+hoàn cảnh gia đình
+hoàn cảnh khó khăn
+gia đình khó khăn
+gia đình nghèo
+gia đình thiếu
+gia đình không
+hộ nghèo
+hộ cận nghèo
+bố mẹ ly hôn
+cha mẹ ly hôn
+ly hôn
+ly thân
+mồ côi
+bố mất
+mẹ mất
+cha mất
+mất cha
+mất mẹ
+bố mẹ bận
+cha mẹ bận
+bố mẹ không quan tâm
+cha mẹ không quan tâm
+thiếu sự quan tâm của gia đình
+sống với ông bà
+ở với ông bà

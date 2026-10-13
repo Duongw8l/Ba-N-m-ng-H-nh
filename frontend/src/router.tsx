@@ -7,7 +7,6 @@ import HomePage from './pages/HomePage'
 import ImportPage from './pages/ImportPage'
 import LoginPage from './pages/LoginPage'
 import NotFoundPage from './pages/NotFoundPage'
-import ReportsPage from './pages/ReportsPage'
 
 // Các trang có biểu đồ nạp theo yêu cầu để thư viện Recharts (phần nặng nhất của gói) không làm chậm
 // trang đăng nhập và trang chủ.
@@ -40,7 +39,10 @@ export const router = createBrowserRouter([
             lazy: async () => ({ Component: (await import('./pages/GradeOverviewPage')).default }),
           },
           { path: '/assistant', element: <AssistantPage /> },
-          { path: '/reports', element: <ReportsPage /> },
+          {
+            path: '/reports',
+            lazy: async () => ({ Component: (await import('./pages/ReportsPage')).default }),
+          },
           {
             path: '/account/password',
             lazy: async () => ({ Component: (await import('./pages/ChangePasswordPage')).default }),

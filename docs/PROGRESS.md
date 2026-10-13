@@ -1,6 +1,6 @@
 # Tiến độ
 
-Cập nhật lần cuối: 2026-10-13 (Chức năng Admin). Tên và thứ tự giai đoạn lấy từ bộ prompt [PROMPTS.md](PROMPTS.md).
+Cập nhật lần cuối: 2026-10-13 (Giai đoạn 9). Tên và thứ tự giai đoạn lấy từ bộ prompt [PROMPTS.md](PROMPTS.md).
 
 ## Bảng 12 giai đoạn
 
@@ -15,9 +15,9 @@ Cập nhật lần cuối: 2026-10-13 (Chức năng Admin). Tên và thứ tự 
 | 6 | Cảnh báo sớm (luật + ML) | Xong, đã commit `f5a021f` (dữ liệu huấn luyện là giả lập; xem bên dưới) |
 | 7 | RAG văn bản quy định | Xong, đã commit `517998f` (ngưỡng tìm kiếm chưa tách chắc hai nhóm câu hỏi, Hit@4 6/8 trên bộ kiểm; chưa thử với văn bản thật; xem bên dưới) |
 | 8 | Trợ lý AI gọi hàm | Xong, đã commit `9f911cf` (đo bằng Gemini gói miễn phí, mẫu 15 câu, chia nhiều mô hình; chưa thử Claude/Ollama; xem bên dưới) |
-| 9 | Nhận xét và báo cáo | Chưa làm (tạm dừng theo yêu cầu của bạn để làm Giao diện v2 và chức năng Admin) |
+| 9 | Nhận xét và báo cáo | Xong, chưa commit (đã chạy thật với Gemini gói miễn phí; chưa có giáo viên chấm chất lượng; xem bên dưới) |
 | — | Giao diện v2 (thiết kế lại toàn bộ giao diện) | Xong, đã commit `479e486` (chưa thử ngoài Chrome; xem mục riêng) |
-| — | Chức năng Admin (tài khoản, năm học, lớp, phân công, nhập danh sách học sinh) | Xong, chưa commit (chưa thử với tệp thật của trường; xem mục cuối) |
+| — | Chức năng Admin (tài khoản, năm học, lớp, phân công, nhập danh sách học sinh) | Xong, đã commit `2eb8947` và push (chưa thử với tệp thật của trường; xem mục cuối) |
 | 10 | Đánh giá AI | Chưa làm |
 | 11 | Bảo mật, triển khai, demo | Chưa làm |
 
@@ -380,6 +380,51 @@ Cập nhật lần cuối: 2026-10-13 (Chức năng Admin). Tên và thứ tự 
 4. `make eval-assistant ASSISTANT_ARGS=--dry-run` xem đáp án kỳ vọng; `make eval-assistant` đo bằng LLM thật (ghi `ai_logs` vào database đang chạy).
 5. Xem nhật ký: `docker compose exec db psql -U classroom -d classroom -c "select id, model, rounds, left(question, 60), tools_called from ai_logs"` (không có họ tên học sinh).
 6. `make test`, `make lint`. Swagger: `POST /api/v1/assistant/chat`.
+
+## Giai đoạn 9: Nhận xét và báo cáo
+
+### Đã làm
+
+- **Bốn loại** (D-102): nhận xét môn (GVBM), học bạ và phiếu liên lạc (GVCN), báo cáo lớp (GVCN hoặc BGH), báo cáo khối (BGH). Quyền ở `reports/permissions.py`, mọi cửa đi qua `authorize()`; BGH không viết nhận xét học sinh; Admin 403. Mọi bản AI sinh ra là **`draft`**; duyệt mới lưu `final_text`; sửa bản đã duyệt đưa về nháp; **bản nháp không xuất PDF được** (409).
+- **Số liệu và viết** (D-103, D-106): `reports/facts.py` chỉ gọi Analytics (không tính công thức mới) và không có họ tên, mã, ngày sinh, phụ huynh, cảnh báo; `reports/generation.py` gộp tối đa 5 em mỗi lần gọi, ẩn danh bằng `Pseudonymizer`, hàng rào `assert_safe` trước MỖI lần gọi, LLM không được gọi hàm nào; mẫu điểm mạnh → cần cố gắng → gợi ý bằng cấu trúc JSON; lời nhắc có phiên bản (`reports-v1`).
+- **Kiểm tự động** (D-105, `reports/checks.py`, `banned_words.txt`): số phải có trong dữ liệu, không từ cấm / so sánh với bạn / hoàn cảnh gia đình, không tên hay mã học sinh, không Markdown, độ dài; viết lại tối đa 2 lần rồi để giáo viên tự viết. Không bao giờ lưu hay gửi lại văn bản vi phạm, chỉ mã vi phạm.
+- **Sinh cả lớp chạy nền** (D-104, `reports/jobs.py`): luồng riêng, bảng `report_jobs`, tiến độ, dừng khi lỗi LLM rồi tiếp tục, bỏ qua em đã có bản, kiểm lại quyền khi chạy, một job mỗi phạm vi.
+- **API** (D-107): `POST /reports` (201 hoặc 202), `GET /reports`, `PUT /reports/{id}`, `POST /reports/{id}/regenerate`, `GET /reports/{id}/export?format=pdf`, `GET /reports/jobs/{id}`; **migration thứ 11** (cột mới của `reports`, bảng `report_jobs`, 5 hành động nhật ký, `subject_comment`).
+- **PDF** (D-108, `reports/pdf.py`, `export.py`): `reportlab` + Noto Sans (OFL, đã cắt còn 33 KB mỗi kiểu); phiếu liên lạc có tên trường (`SCHOOL_NAME`), năm học, học kỳ, lớp, bảng điểm, chuyên cần, nhận xét đã duyệt, chữ ký.
+- **Giao diện** (D-109): `/reports` viết lại (chọn loại, lớp, môn, khối, kỳ; sinh cả lớp có thanh tiến độ; mở từng em để sửa, lưu, duyệt, sinh lại có góp ý, xuất PDF; nhãn "Bản nháp do AI tạo"); nút "Tạo nhận xét" ở hồ sơ học sinh đã bật; trang nạp theo yêu cầu.
+- **Test**: thêm 247 test (1.494 qua). Với LLM giả: số ngoài dữ liệu bị chặn; từ cấm, so sánh, hoàn cảnh gia đình bị chặn (có biến thể hoa thường); mã tạm hay họ tên thật trong văn bản bị chặn; viết lại đúng 2 lần rồi để giáo viên tự viết; **dữ liệu gửi LLM không có họ tên, mã học sinh, ngày sinh, thông tin phụ huynh** (quét mọi tin nhắn, cả khoá cấm trong dữ liệu có cấu trúc); LLM không nhận hàm nào; **bản nháp không xuất PDF được**, sửa bản đã duyệt thì rút lại việc xuất; ma trận quyền 7 vai trò × loại × endpoint; sinh cả lớp (tiến độ, bỏ qua em đã có, dừng khi lỗi LLM rồi tiếp tục, job mất luồng, kiểm lại quyền); PDF trích chữ lại bằng `pypdf` (tiếng Việt có dấu, số khớp Analytics, không in số điện thoại phụ huynh, không in ngày sinh); ràng buộc DB và migration lên/xuống.
+- **Đột biến thủ công**: 28 chỗ (BGH viết nhận xét, GVCN viết nhận xét môn, báo cáo khối cho giáo viên, GVBM viết báo cáo lớp, xuất bản nháp, sinh lại đè bản đã duyệt, sửa bản đã duyệt vẫn giữ trạng thái, duyệt bản rỗng, không lưu người duyệt, id lạ 404, bỏ hàng rào ẩn danh, không quét khoá cấm, cho LLM gọi hàm, viết lại 3 lần, bỏ kiểm số, bỏ kiểm từ cấm, bỏ kiểm so sánh, mã tạm lọt vào văn bản, lưu văn bản vi phạm, job ghi đè em đã có bản, bản đã duyệt bị ghi đè khi chạy đua, job không kiểm lại quyền, lỗi LLM làm mất cả job, nhật ký không ghi xem, nhật ký ghi cả văn bản, PDF in số điện thoại, facts có họ tên, nhận xét môn có điểm trung bình lớp). **3 lần lọt ở lượt đầu** (job ghi đè nháp giáo viên đã sửa, lớp bảo vệ bản đã duyệt ở tầng lưu, job không kiểm lại quyền khi đổi GVCN) đã bổ sung test và đỏ lại; cả 28 đều bị bắt.
+
+### Chưa làm (thuộc giai đoạn sau, hoặc ngoài phạm vi)
+
+- **Đánh giá chất lượng nhận xét** (DESIGN mục 12: 20 nhận xét, 2 đến 3 giáo viên chấm, đếm câu tiêu cực): Giai đoạn 10. Chưa có giáo viên nào đọc nhận xét do AI viết.
+- Xuất Excel, gộp nhiều phiếu thành một PDF để in, gửi qua email hay Zalo, lịch sử các lần sửa (D-108).
+- Hàng đợi riêng cho job (chỉ chạy trong một tiến trình; khởi động lại là mất luồng, bấm "Tiếp tục"), giới hạn dung lượng yêu cầu: Giai đoạn 11. Kiểm tự động giao diện vẫn hoãn (D-069).
+
+### Đã kiểm chứng và còn chờ kiểm chứng
+
+| Mục | Trạng thái |
+| --- | --- |
+| `alembic upgrade head` (migration thứ 11), `downgrade -1` rồi lên lại, `alembic check`; ràng buộc `reports` (khoá một bản, kỳ, nháp / cần tự viết) và `report_jobs` | Đã chạy, đúng |
+| `make lint` (ruff trên `backend/`, `data/`, `eval/`; eslint; `tsc -b`) | Đã chạy, qua |
+| `make test` (**1.494 test qua, 1 bỏ qua**; thêm 247 so với 1.247 trước đó) | Đã chạy, qua |
+| `vite build`: gói chính 387,9 kB (không tăng), `ReportsPage` 18 kB nạp theo yêu cầu; image backend dựng lại vì thêm `reportlab` (3 dịch vụ `healthy`, Swagger có đủ route `reports`) | Đã chạy, đúng |
+| **Gemini thật** (`gemini-3.1-flash-lite`, gói miễn phí, qua backend Docker): một em (5 giây, đạt ngay); **cả lớp 11A2, 40 em: 74 giây, 35 em đạt lần đầu, 5 em viết lại một lần, 0 em cần tự viết, khoảng 13 yêu cầu** (trong hạn mức 20 mỗi ngày); văn bản tự nhiên, số đúng | Đã chạy. Mẫu một lần, một mô hình, **chưa có người chấm**. Quan sát: bộ kiểm không bắt được nhận định định tính ("tích cực trong hoạt động trên lớp", "học tập tốt" cho mức Khá); đã siết lời nhắc nhưng **chưa chạy lại** để đo (D-105) |
+| **Chrome thật** (script tạm ngoài repo, máy chủ demo dùng LLM giả theo luật, cùng DB seed): GVCN sinh cả lớp có tiến độ, sửa, duyệt, tải PDF (`%PDF`), sửa bản đã duyệt thì về nháp, sinh lại có góp ý, em "cần tự viết", cảnh báo từ cấm; BGH báo cáo khối và lớp; GVBM nhận xét môn cả lớp; liên kết từ hồ sơ học sinh; Admin thấy lời báo; giáo viên khác không vào được lớp lạ | Đã chạy, đúng |
+| Ảnh sáng/tối × 1366/390 px của `/reports`: không tràn ngang, không lỗi console; tương phản chữ/nền đạt cả hai chế độ | Đã chạy, đúng |
+| PDF mở bằng trình đọc | Trích chữ bằng `pypdf` và nhìn ảnh dựng bằng `pypdfium2` một phiếu thật (đủ dấu tiếng Việt, bảng, chữ ký); **chưa mở bằng Acrobat, trình duyệt hay in thật** |
+| Trình duyệt ngoài Chrome, trình đọc màn hình, điện thoại thật | **Chưa kiểm** |
+| Sinh bằng Claude hoặc Ollama; sinh với gói trả phí (không bị giới hạn 5 yêu cầu mỗi phút) | **Chưa thử** |
+| Chất lượng và độ phù hợp lứa tuổi của nhận xét, danh sách từ cấm đủ chưa | **Chưa kiểm** (cần giáo viên đọc, Giai đoạn 10) |
+| Quy tắc Thông tư 22 | Vẫn **cần bạn đối chiếu văn bản gốc** (D-047 đến D-051) |
+
+### Cách kiểm tra
+
+1. `make migrate` (migration thứ 11), `make up` (dựng lại image vì thêm `reportlab`). Điền `.env` như Trợ lý AI (`LLM_PROVIDER`, `LLM_API_KEY`, tuỳ chọn `LLM_MODEL`) và `SCHOOL_NAME=Trường THPT ...`; khởi động lại backend.
+2. Đăng nhập `gvcn.11a2@example.com`, mở **Nhận xét & báo cáo**, chọn "Phiếu liên lạc", học kỳ I, bấm "Sinh nhận xét cả lớp". Xem thanh tiến độ, mở em An ("Mở"), sửa vài chữ, "Lưu nháp", "Duyệt", "Xuất PDF". Thử sửa lại bản đã duyệt (trở về nháp, nút xuất tắt) và "Sinh lại" kèm góp ý. Nếu AI không viết được bản đạt kiểm tra thì em đó hiện "Cần tự viết".
+3. Đăng nhập `gv.van.11@example.com`: "Nhận xét môn", lớp 11A2 · Ngữ văn. `bgh1@example.com`: "Báo cáo lớp / khối", khối 11. Hồ sơ học sinh: nút "Tạo nhận xét".
+4. Dọn dữ liệu thử: `docker compose exec db psql -U classroom -d classroom -c "delete from reports; delete from report_jobs"`.
+5. `make test`, `make lint`. Swagger `/api/docs`, nhóm `reports`.
 
 
 ## Giao diện v2: thiết kế lại toàn bộ giao diện

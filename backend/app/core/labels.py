@@ -18,6 +18,7 @@ from app.core.enums import (
     ImportKind,
     ImportStatus,
     RegulationStatus,
+    ReportJobStatus,
     ReportScope,
     ReportStatus,
     ReportType,
@@ -78,6 +79,7 @@ LABELS_VI: dict[type[StrEnum], dict[StrEnum, str]] = {
         ReportScope.GRADE: "Khối",
     },
     ReportType: {
+        ReportType.SUBJECT_COMMENT: "Nhận xét môn",
         ReportType.SCHOOL_RECORD: "Học bạ",
         ReportType.CONTACT_SLIP: "Phiếu liên lạc",
         ReportType.REPORT: "Báo cáo",
@@ -85,6 +87,11 @@ LABELS_VI: dict[type[StrEnum], dict[StrEnum, str]] = {
     ReportStatus: {
         ReportStatus.DRAFT: "Bản nháp",
         ReportStatus.APPROVED: "Đã duyệt",
+    },
+    ReportJobStatus: {
+        ReportJobStatus.RUNNING: "Đang chạy",
+        ReportJobStatus.DONE: "Đã xong",
+        ReportJobStatus.STOPPED: "Đã dừng",
     },
     AuditAction: {
         AuditAction.VIEW_CLASS_STUDENTS: "Xem danh sách học sinh của lớp",
@@ -108,6 +115,11 @@ LABELS_VI: dict[type[StrEnum], dict[StrEnum, str]] = {
         AuditAction.SET_ASSIGNMENT: "Phân công giảng dạy",
         AuditAction.REMOVE_ASSIGNMENT: "Gỡ phân công giảng dạy",
         AuditAction.REMOVE_CLASS_STUDENT: "Gỡ học sinh khỏi lớp",
+        AuditAction.GENERATE_REPORT: "Sinh bản nháp nhận xét hoặc báo cáo",
+        AuditAction.EDIT_REPORT: "Sửa nhận xét hoặc báo cáo",
+        AuditAction.APPROVE_REPORT: "Duyệt nhận xét hoặc báo cáo",
+        AuditAction.EXPORT_REPORT: "Xuất PDF nhận xét hoặc báo cáo",
+        AuditAction.VIEW_CLASS_REPORTS: "Xem danh sách nhận xét của lớp",
     },
     ImportKind: {
         ImportKind.ASSESSMENTS: "Điểm",

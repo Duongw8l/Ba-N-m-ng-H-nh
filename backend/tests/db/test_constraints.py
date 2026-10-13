@@ -170,28 +170,78 @@ def test_conduct_and_risk_values_are_checked(expect_rejected: Callable[..., None
     expect_rejected("INSERT INTO risk_alerts (class_student_id, level) VALUES (1, 'critical')")
 
 
+REPORT_COLUMNS = "scope, target_id, type, draft_text, semester, created_by"
+REPORT_VALUES = "'student', 1, 'contact_slip', 'Nháp', '1', 1"
+
+
 def test_report_cannot_be_approved_without_an_approver(
     db_conn: Connection, expect_rejected: Callable[..., None]
 ) -> None:
-    draft = (
-        "INSERT INTO reports (scope, target_id, type, draft_text) "
-        "VALUES ('student', 1, 'contact_slip', 'Nháp')"
-    )
-    db_conn.execute(text(draft))
+    db_conn.execute(text(f"INSERT INTO reports ({REPORT_COLUMNS}) VALUES ({REPORT_VALUES})"))
     default_status = db_conn.execute(
         text("SELECT status FROM reports ORDER BY id DESC LIMIT 1")
     ).scalar_one()
     assert default_status == "draft"
 
     expect_rejected(
-        "INSERT INTO reports (scope, target_id, type, draft_text, status) "
-        "VALUES ('student', 1, 'contact_slip', 'Nháp', 'approved')"
+        f"INSERT INTO reports ({REPORT_COLUMNS}, status) VALUES ({REPORT_VALUES}, 'approved')"
     )
     db_conn.execute(
         text(
-            "INSERT INTO reports (scope, target_id, type, draft_text, status, approved_by) "
-            "VALUES ('student', 1, 'contact_slip', 'Nháp', 'approved', 1)"
+            f"INSERT INTO reports ({REPORT_COLUMNS}, status, approved_by) "
+            f"VALUES ('student', 2, 'contact_slip', 'Nháp', '1', 1, 'approved', 1)"
         )
+    )
+
+
+def test_report_semester_and_manual_flag_are_checked(
+    db_conn: Connection, expect_rejected: Callable[..., None]
+) -> None:
+    expect_rejected(
+        f"INSERT INTO reports ({REPORT_COLUMNS}) "
+        "VALUES ('student', 1, 'contact_slip', 'Nháp', '3', 1)"
+    )
+    # Chờ giáo viên tự viết thì không thể đã duyệt.
+    expect_rejected(
+        f"INSERT INTO reports ({REPORT_COLUMNS}, status, approved_by, needs_manual) "
+        f"VALUES ({REPORT_VALUES}, 'approved', 1, true)"
+    )
+    db_conn.execute(
+        text(f"INSERT INTO reports ({REPORT_COLUMNS}, needs_manual) VALUES ({REPORT_VALUES}, true)")
+    )
+
+
+def test_report_has_one_row_per_key_with_or_without_a_subject(
+    db_conn: Connection, expect_rejected: Callable[..., None]
+) -> None:
+    subject, other = db_conn.execute(text("SELECT id FROM subjects ORDER BY id LIMIT 2")).scalars()
+    plain = f"INSERT INTO reports ({REPORT_COLUMNS}) VALUES ({REPORT_VALUES})"
+    db_conn.execute(text(plain))
+    expect_rejected(plain)  # cùng loại, phạm vi, em, kỳ và không có môn
+
+    def comment(semester: str, subject_id: int) -> str:
+        return (
+            f"INSERT INTO reports ({REPORT_COLUMNS}, subject_id) VALUES "
+            f"('student', 1, 'subject_comment', 'Nháp', '{semester}', 1, {subject_id})"
+        )
+
+    db_conn.execute(text(comment("1", subject)))
+    expect_rejected(comment("1", subject))  # trùng khoá có môn
+    db_conn.execute(text(comment("1", other)))  # môn khác thì được
+    db_conn.execute(text(comment("2", subject)))  # kỳ khác thì được
+
+
+def test_report_job_semester_and_status_are_checked(
+    db_conn: Connection, expect_rejected: Callable[..., None]
+) -> None:
+    columns = "class_id, type, semester, created_by"
+    db_conn.execute(text(f"INSERT INTO report_jobs ({columns}) VALUES (1, 'contact_slip', '1', 1)"))
+    status = db_conn.execute(text("SELECT status FROM report_jobs")).scalar_one()
+    assert status == "running"
+    expect_rejected(f"INSERT INTO report_jobs ({columns}) VALUES (1, 'contact_slip', '3', 1)")
+    expect_rejected(f"INSERT INTO report_jobs ({columns}) VALUES (1, 'bao_cao', '1', 1)")
+    expect_rejected(
+        f"INSERT INTO report_jobs ({columns}, status) VALUES (1, 'contact_slip', '1', 1, 'paused')"
     )
 
 

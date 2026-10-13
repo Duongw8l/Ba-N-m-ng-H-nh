@@ -18,6 +18,7 @@ ENV_FILE = Path(__file__).resolve().parents[3] / ".env"
 # Khoá ký JWT ngắn dễ bị dò; HS256 nên dùng khoá dài từ 32 ký tự (256 bit).
 JWT_SECRET_MIN_LENGTH = 32
 DEFAULT_EMBEDDING_MODEL = "BAAI/bge-m3"
+DEFAULT_SCHOOL_NAME = "Trường THPT (chưa đặt tên)"
 
 
 class Settings(BaseSettings):
@@ -41,6 +42,8 @@ class Settings(BaseSettings):
     llm_timeout_seconds: int = Field(default=60, ge=5, le=600)
     # Số câu hỏi tối đa mỗi phút cho mỗi tài khoản (DESIGN mục 10).
     assistant_rate_per_minute: int = Field(default=10, ge=1, le=600)
+    # Tên trường in ở đầu phiếu liên lạc và báo cáo PDF (Giai đoạn 9, D-107).
+    school_name: str = DEFAULT_SCHOOL_NAME
     # Để trống (kể cả EMBEDDING_MODEL= trong .env) thì dùng bge-m3 (D-076).
     embedding_model: str = DEFAULT_EMBEDDING_MODEL
     # Số chiều vector của regulation_chunks.embedding. Migration đọc giá trị này lúc chạy và cố định
@@ -52,6 +55,11 @@ class Settings(BaseSettings):
     @classmethod
     def _blank_embedding_model_means_default(cls, value: str) -> str:
         return value.strip() or DEFAULT_EMBEDDING_MODEL
+
+    @field_validator("school_name")
+    @classmethod
+    def _blank_school_name_means_default(cls, value: str) -> str:
+        return value.strip() or DEFAULT_SCHOOL_NAME
 
     @field_validator("jwt_secret")
     @classmethod

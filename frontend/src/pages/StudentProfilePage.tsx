@@ -282,6 +282,14 @@ export default function StudentProfilePage() {
     assignments.data !== undefined &&
     (assignments.data.user.role === 'principal' ||
       assignments.data.homeroom_classes.some((item) => item.id === classId))
+  // Nhận xét học sinh do người viết: GVCN (phiếu liên lạc) hoặc GVBM của môn (nhận xét môn); BGH
+  // không viết nhận xét học sinh nên không có nút. Màn hình nhận xét kiểm lại quyền ở back-end.
+  const taught = data?.scope === 'subjects' ? data.subjects[0] : undefined
+  const commentLink = isHomeroom
+    ? `/reports?type=contact_slip&class=${classId}&semester=${period}&student=${studentId}`
+    : taught
+      ? `/reports?type=subject_comment&class=${classId}&subject=${taught.subject_id}&student=${studentId}`
+      : null
 
   return (
     <>
@@ -317,14 +325,11 @@ export default function StudentProfilePage() {
               ← Dashboard lớp
             </Link>
           )}
-          <button
-            type="button"
-            disabled
-            title="Tạo nhận xét có ở Giai đoạn 9"
-            className="btn-secondary btn-sm"
-          >
-            Tạo nhận xét
-          </button>
+          {commentLink && (
+            <Link to={commentLink} className="btn-secondary btn-sm">
+              Tạo nhận xét
+            </Link>
+          )}
         </div>
       </header>
       <QueryState query={profile}>

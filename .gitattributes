@@ -4,3 +4,6 @@
 
 # Tệp Excel mẫu (data/samples/) là nhị phân: không bao giờ đổi ký tự xuống dòng.
 *.xlsx binary
+
+# Phông nhúng trong PDF (backend/app/reports/assets/) cũng là nhị phân.
+*.ttf binary
