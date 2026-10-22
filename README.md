@@ -22,6 +22,30 @@ Muốn đăng nhập cần có dữ liệu mẫu: `make migrate` rồi `make see
 
 `.env` chứa giá trị mẫu cho môi trường phát triển và không bao giờ được commit. Khoá API của LLM (nếu dùng) chỉ điền vào `.env`.
 
+## Lần đầu clone về (cho người mới)
+
+`.env` **không có trong repo** (chứa bí mật nên bị `.gitignore` loại; GitHub cũng chặn push nếu có khoá thật). Sau khi clone, mỗi người tự tạo `.env` của mình:
+
+1. Tạo `.env` từ mẫu:
+   ```bash
+   cp .env.example .env     # PowerShell: Copy-Item .env.example .env
+   ```
+2. Mở `.env` và đặt các giá trị bắt buộc:
+   - `JWT_SECRET` — chuỗi ngẫu nhiên **dài từ 32 ký tự** (ngắn hơn thì app không khởi động).
+   - `POSTGRES_PASSWORD` và mật khẩu trong `DATABASE_URL` — đặt trùng nhau.
+3. Muốn dùng **Trợ lý AI / Nhận xét & báo cáo** thì điền thêm (không điền cũng chạy được phần còn lại, các tính năng AI trả HTTP 503):
+   - `LLM_PROVIDER=gemini` và `LLM_API_KEY=<khoá của bạn>`. Khoá Gemini miễn phí, tạo 1 phút ở <https://aistudio.google.com/apikey>.
+   - Hoặc `LLM_PROVIDER=anthropic` + `LLM_API_KEY`, hoặc `LLM_PROVIDER=ollama` + `LLM_MODEL` (chạy nội bộ, không cần khoá).
+4. Chạy:
+   ```bash
+   make up          # dựng db + backend + frontend
+   make migrate     # tạo bảng
+   make seed        # nạp dữ liệu giả lập và tài khoản dev
+   ```
+   Rồi mở <http://localhost:5173/login> và đăng nhập bằng tài khoản dev ở mục "Dữ liệu giả lập và tài khoản dev".
+
+> **Không commit `.env`.** Mỗi người dùng khoá API riêng; nếu cần dùng chung thì gửi khoá qua kênh riêng, đừng đẩy lên git.
+
 ## Phát triển ngoài Docker
 
 ```bash
